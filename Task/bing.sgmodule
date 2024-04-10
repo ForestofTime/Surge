@@ -1,0 +1,8 @@
+#!name=bing
+#!desc=Bing 领取积分🎉（积分可兑换京东E卡或抽奖）方法：复制到对应文件下，登录 https://rewards.bing.com 获取 Cookie
+
+[MITM]
+hostname =%APPEND% rewards.bing.com
+
+[Script]
+Bing积分 = type=cron,cronexp="0 10 0 * * ?",wake-system=1,script-path= https://raw.githubusercontent.com/lowking/Scripts/master/bing/bingPoint.js

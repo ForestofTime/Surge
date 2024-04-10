@@ -1,0 +1,61 @@
+#!name=去广告
+#!desc=滴滴，京东，去哪儿
+
+[rule]
+##京东
+URL-REGEX,^https?:\/\/api\.m\.jd\.com\/client\.action\?functionId=start$,REJECT-TINYGIF
+
+# > 滴滴出行 去广告
+//01 安全提示横幅
+URL-REGEX,^https:\/\/guard\.sec\.xiaojukeji\.com\/api\/guard\/psg\/v2\/getShieldStatus,REJECT
+//02 底部打车&代价推荐
+URL-REGEX,^https:\/\/conf\.diditaxi\.com\.cn\/one,REJECT
+//03 福利专区-金融服务-公交-骑车-滴滴乐园
+URL-REGEX,^https:\/\/conf\.diditaxi\.com\.cn\/nav\/widget,REJECT
+//04 接送机-优惠商城
+URL-REGEX,^https:\/\/api\.udache\.com\/gulfstream,REJECT
+//05 主页 领任务
+URL-REGEX,^https:\/\/conf\.diditaxi\.com\.cn\/api\/(component|fusion|dynamicmodule|usercenter),REJECT
+URL-REGEX,^https:\/\/conf\.diditaxi\.com\.cn\/dynamic,REJECT
+//06 主页 非主流式悬浮挂件
+URL-REGEX,^https:\/\/res\.xiaojukeji\.com\/resapi\/activity\/mget,REJECT
+//07 商城
+URL-REGEX,^https:\/\/shop-gw\.chengxinyouxuan\.com\/(route|indexConfig|apolloConfig|getShopTuanInfos),REJECT
+//08 开屏广告
+URL-REGEX,^https:\/\/img-ys011\.didistatic\.com\/static,REJECT
+//09 骑行
+URL-REGEX,^https:\/\/pt-starimg\.didistatic\.com\/static,REJECT
+
+# > 去哪儿 
+URL-REGEX,^https:\/\/qde\.qunar\.com\/preload,REJECT
+
+
+
+[URL Rewrite]
+
+# > 滴滴出行
+https?://res\.xiaojukeji\.com\/resapi\/activity\/mget -reject
+https?:\/\/res\.xiaojukeji\.com\/resapi\/activity\/get(Ruled|Preload|PasMultiNotices) - reject
+^https?:\/\/img-ys011\.didistatic\.com\/static\/ad_oss\/.*.jpg - reject
+^https?:\/\/capis(-?\w*)?\.didapinche\.com\/ad\/cx\/startup\? - reject
+
+# > 京东
+^https?:\/\/m15\.360buyimg\.com\/mobilecms\/jfs\/t1\/202220\/24\/21575\/134711\/625b821bE5d642d73\/77636692989bd2be\.jpg - reject
+^https?:\/\/m\.360buyimg\.com\/mobilecms\/s1125x2436_jfs\/t1\/96405\/17\/28473\/168578\/625cd144E7997a990\/8233ce8a10c4e463\.jpg - reject
+^https?:\/\/m\.360buyimg\.com\/mobilecms\/s1125x2436_jfs\/t1\/182114\/23\/23904\/121433\/62593c9cEd77c4519\/2e3f4c518b771094\.jpg - reject
+^https?:\/\/m\.360buyimg\.com\/mobilecms\/s1125x2436_jfs\/t1\/202971\/34\/26906\/282671\/6319c862E1818d3fa\/0597464cf6bc8e2f\.jpg - reject
+^https?:\/\/m\.360buyimg\.com\/mobilecms\/s1125x2436_jfs\/t1\/143222\/27\/29233\/141967\/631b1f8cE3a112e54\/d3fe0b2f9f0a9f30\.jpg - reject
+^https?:\/\/m\.360buyimg\.com\/mobilecms\/s1125x2436_jfs - reject
+^https?:\/\/m15\.360buyimg\.com\/mobilecms\/jfs\/t1\/197429\/22/22400\/119193\/62562ef0Eff59b4d4 - reject
+^https?:\/\/api\.m\.jd\.com\/client\.action\?functionId=start$ - reject
+^https?:\/\/ms\.jr\.jd\.com\/gw\/generic\/(aladdin\/na\/m\/getLoadingPicture|aladdin\/na\/m\/getLoadingPicture) - reject
+^https?:\/\/ms\.jr\.jd\.com\/gw\/generic\/aladdin\/na\/m\/getLoadingPicture - reject
+^https?:\/\/ms\.jr\.jd\.com\/gw\/generic\/base\/(new)?na\/m\/adInfo - reject
+^https?:\/\/ms\.jr\.jd\.com\/gw\/generic\/base\/na\/m\/adInfo - reject
+^https?:\/\/bdsp-x\.jd\.com\/adx\/ - reject
+^https?:\/\/api\.m\.jd.com\/client\.action\?functionId=(start|queryMaterialAdverts) - reject
+^https?:\/\/(bdsp-x|dsp-x)\.jd\.com\/adx\/ - reject
+^https?:\/\/api\.m\.jd\.com\/client\.action\?functionId=start$ - reject
+
+[MITM]
+hostname = %APPEND% api.m.jd.com,img-ys011.didistatic.com,qde.qunar.com,pt-starimg.didistatic.com,m.360buyimg.com,dns.jd.com, m.jd.com, api.jdcloud.com, jdread-api.jd.com, ms.jr.jd.com
