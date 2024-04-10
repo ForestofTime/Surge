@@ -1,0 +1,13 @@
+#!name=定时任务
+#!desc=签到等定时任务  
+# By Evilbutcher GitHub：https://github.com/evilbutcher/Quantumult_X/tree/master zhiyou.smzdm.com,daojia.jd.com, api.m.jd.com, ms.jr.jd.com,
+
+
+
+[Script]
+
+欧可林签到 =type=cron,cronexp=1 0 * * *,script-path=https://raw.githubusercontent.com/zZPiglet/Task/master/Oclean/Oclean_mini.js
+
+贴吧_每日签到 = type=cron,cronexp=30 0 * * *,timeout=60,script-path=https://raw.githubusercontent.com/Voldeemort/Surge/main/module/tieba/tiebacheck.js
+[MITM]
+hostname = %APPEND% tiebac.baidu.com,c.tieba.baidu.com

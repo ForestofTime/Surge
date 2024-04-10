@@ -1,0 +1,14 @@
+#!name=自用相机解锁VIP
+#!desc=美图秀秀解锁VIP
+
+[MITM]
+hostname=%APPEND% pi.xiuxiu.meitu.com, h5.xiuxiu.meitu.com
+
+[Script]
+# 美图秀秀解锁VIP api.xiuxiu.meitu.com, h5.xiuxiu.meitu.com
+美图秀秀VIP=type=http-response,pattern=^https?:\/\/(h5|api)\.xiuxiu\.meitu\.com\/v\d\/(h\d\/vip|vip|user)\/,requires-body=1,script-path=https://raw.githubusercontent.com/I-am-R-E/QuantumultX/main/JavaScript/MeiTuXiuXiu.js
+
+
+#轻颜相机解锁VIP
+#轻颜相机VIP= type=http-response,requires-body=1,max-size=0,pattern=^https://(commerce-.*api|pay).(faceu|wecut).(com|mobi)/(commerce|apple)/(iosAppVerifyReceipt.php|v1/subscription/user_info),script-path=https://raw.githubusercontent.com/SuperLingyun/surge/main/JS/qingyan.js
+#91porn = type=http-response,requires-body=1,max-size=0,pattern="^https?:\/\/(\w{0,3}(\.){0,1}(91porn)(\.)\w{0,3})(?!.*?(/(cdn-cgi)))(?!.*?(\.(css|js|jpeg|jpg|png|gif|ico|mp3|mp4|svg|tff|ttf|PNG|woff|woff2|m3u8))).*",script-path=https://raw.githubusercontent.com/limbopro/Adblock4limbo/main/Adguard/surge_91porn.js
