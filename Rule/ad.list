@@ -1,0 +1,6 @@
+# 防止应用循环请求
+IP-CIDR,0.0.0.0/32,no-resolve
+# 滴滴去广告
+DOMAIN-SUFFIX,gwp.xiaojukeji.com
+IP-CIDR,139.199.240.12/32,no-resolve
+IP-CIDR,139.199.240.15/32,no-resolve
