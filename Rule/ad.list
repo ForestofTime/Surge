@@ -5,6 +5,5 @@ DOMAIN-SUFFIX,gwp.xiaojukeji.com
 IP-CIDR,139.199.240.12/32,no-resolve
 IP-CIDR,139.199.240.15/32,no-resolve
 #贴吧去广告
-[Rule]
 DOMAIN, afd.baidu.com
 DOMAIN, mobads.baidu.com
