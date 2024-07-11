@@ -1,6 +1,7 @@
 #个人
-DOMAIN-SUFFIX,shuyz.com
+DOMAIN-SUFFIX,shuyz.com // Added for:日历订阅
 DOMAIN-SUFFIX,qq.com // Added for: wspeed.qq.com:443
+DOMAIN-SUFFIX,nodeseek.com // Added for: nodeseek论坛
 #来自老刘
 # China Apps
 USER-AGENT,MicroMessenger Client
