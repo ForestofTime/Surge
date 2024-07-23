@@ -3,6 +3,9 @@ DOMAIN-SUFFIX,shuyz.com // Added for:日历订阅
 DOMAIN-SUFFIX,qq.com // Added for: wspeed.qq.com:443
 DOMAIN,www.nodeseek.com // Added for: nodeseek论坛
 DOMAIN,sessions.bugsnag.com
+DOMAIN-KEYWORD,xiaomi
+DOMAIN-SUFFIX,mi.com
+DOMAIN-SUFFIX, mipay.com
 #来自老刘
 # China Apps
 USER-AGENT,MicroMessenger Client
