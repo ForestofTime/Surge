@@ -5,6 +5,7 @@ DOMAIN-SUFFIX,cloudflare-dns.com
 DOMAIN-SUFFIX,sms-activate
 DOMAIN-SUFFIX,pstatp.com
 DOMAIN,www.surge-activation.com
+DOMAIN-SUFFIX,1passwordservices.com
 
 DOMAIN,cache.agilebits.com
 DOMAIN,cloud.mfpud.com
@@ -24,7 +25,7 @@ DOMAIN,receiptcheck.quantumult.app
 DOMAIN,sdkconfig.ad.intl.xiaomi.com
 DOMAIN,service.2ti.st
 DOMAIN,shop.magpie.bond
-DOMAIN,telemetry.1passwordservices.com
+
 DOMAIN,tls.http.rw
 DOMAIN,upkit.qianji.app
 DOMAIN,wiki.magpie.bond
