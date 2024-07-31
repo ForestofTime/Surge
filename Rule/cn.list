@@ -1,12 +1,13 @@
-#个人
+# 个人
 DOMAIN-SUFFIX,shuyz.com // Added for:日历订阅
+# QQ
 DOMAIN-SUFFIX,qq.com // Added for: wspeed.qq.com:443
-DOMAIN,www.nodeseek.com // Added for: nodeseek论坛
 DOMAIN,sessions.bugsnag.com
+# 小米
 DOMAIN-KEYWORD,xiaomi
 DOMAIN-SUFFIX,mi.com
-DOMAIN-SUFFIX, mipay.com
-#来自老刘
+DOMAIN-SUFFIX,mipay.com
+# 来自老刘
 # China Apps
 USER-AGENT,MicroMessenger Client
 USER-AGENT,WeChat*
