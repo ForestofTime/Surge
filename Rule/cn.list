@@ -10,7 +10,15 @@ DOMAIN-SUFFIX,mipay.com
 # 来自老刘
 # China Apps
 USER-AGENT,MicroMessenger Client
+# wechat
 USER-AGENT,WeChat*
+IP-ASN,132203,no-resolve
+DOMAIN-SUFFIX,wechat.com
+DOMAIN-SUFFIX,weixin.com
+DOMAIN-SUFFIX,tenpay.com
+DOMAIN-SUFFIX,wechatos.net
+DOMAIN-SUFFIX,wechatpay.com
+
 USER-AGENT,MApi* // Dianping
 # Ali
 DOMAIN-KEYWORD,alipay
