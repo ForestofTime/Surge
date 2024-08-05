@@ -34,10 +34,9 @@ DOMAIN,c.apple.news
 DOMAIN-SUFFIX,linux.do 
 # cloudflare
 DOMAIN-SUFFIX,cloudflare-dns.com
-DOMAIN,mozilla.cloudflare-dns.com
 # 1password
+DOMAIN-KEYWORD,1password
 DOMAIN-SUFFIX,1passwordservices.com
-DOMAIN,marketing.1password.co
 # sms接码平台
 DOMAIN-SUFFIX,sms-activate
 # emby
