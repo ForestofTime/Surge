@@ -13,6 +13,10 @@ DOMAIN-SUFFIX,miui.com
 # China Apps
 USER-AGENT,MicroMessenger Client
 # wechat
+# 腾讯 WeChat ASN
+IP-ASN,132203
+IP-ASN,56040
+IP-ASN,45090
 USER-AGENT,WeChat*
 IP-ASN,132203,no-resolve
 DOMAIN-SUFFIX,wechat.com
