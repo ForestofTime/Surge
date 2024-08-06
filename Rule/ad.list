@@ -5,3 +5,5 @@ DOMAIN-SUFFIX,gwp.xiaojukeji.com
 IP-CIDR,139.199.240.12/32,no-resolve
 IP-CIDR,139.199.240.15/32,no-resolve
 DOMAIN, img-ys011.didistatic.com
+# Safari 访问防跳转 App
+DOMAIN,app-site-association.cdn-apple.com
