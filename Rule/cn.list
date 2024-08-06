@@ -1,7 +1,7 @@
 # 个人
 DOMAIN-SUFFIX,shuyz.com // Added for:日历订阅
 # QQ
-DOMAIN-SUFFIX,qq.com // Added for: wspeed.qq.com:443
+DOMAIN-SUFFIX,wspeed.qq.com // Added for: wspeed.qq.com:443
 DOMAIN,sessions.bugsnag.com
 # 小米
 DOMAIN-KEYWORD,xiaomi
@@ -12,19 +12,11 @@ DOMAIN-SUFFIX,miui.com
 # 来自老刘
 # China Apps
 USER-AGENT,MicroMessenger Client
-# wechat
+
 # 腾讯 WeChat ASN
 IP-ASN,132203
 IP-ASN,56040
 IP-ASN,45090
-USER-AGENT,WeChat*
-IP-ASN,132203,no-resolve
-DOMAIN-SUFFIX,wechat.com
-DOMAIN-SUFFIX,weixin.com
-DOMAIN-SUFFIX,tenpay.com
-DOMAIN-SUFFIX,wechatos.net
-DOMAIN-SUFFIX,wechatpay.com
-DOMAIN-SUFFIX,tencent.com
 
 USER-AGENT,MApi* // Dianping
 # Ali
