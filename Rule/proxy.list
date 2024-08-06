@@ -1,53 +1,48 @@
-#老刘
-DOMAIN-SUFFIX,tw
+# DOMAIN-KEYWORD 规则
 DOMAIN-KEYWORD,google
-DOMAIN-SUFFIX,gstatic.com
-DOMAIN-SUFFIX,ampproject.org
 DOMAIN-KEYWORD,gmail
 DOMAIN-KEYWORD,youtube
 DOMAIN-KEYWORD,facebook
-DOMAIN-SUFFIX,fb.me
-DOMAIN-SUFFIX,fbcdn.net
 DOMAIN-KEYWORD,twitter
 DOMAIN-KEYWORD,instagram
 DOMAIN-KEYWORD,dropbox
-DOMAIN-SUFFIX,twimg.com
+DOMAIN-KEYWORD,whatsapp
+DOMAIN-KEYWORD,1password
+DOMAIN-KEYWORD,github
+DOMAIN-KEYWORD,gitlab
 DOMAIN-KEYWORD,blogspot
+
+# DOMAIN-SUFFIX 规则
+DOMAIN-SUFFIX,tw
+DOMAIN-SUFFIX,gstatic.com
+DOMAIN-SUFFIX,ampproject.org
+DOMAIN-SUFFIX,twimg.com
 DOMAIN-SUFFIX,youtu.be
 DOMAIN-SUFFIX,oculuscdn.com
 DOMAIN-SUFFIX,oculus.com
-DOMAIN-KEYWORD,whatsapp
 DOMAIN-SUFFIX,letsencrypt.org
 DOMAIN-SUFFIX,android.com
 DOMAIN-SUFFIX,ytimg.com
-DOMAIN-SUFFIX,githubusercontent.com
-
-
-# github
-DOMAIN-KEYWORD,github 
-# surge
-DOMAIN,www.surge-activation.com 
-# apple
-DOMAIN-SUFFIX,apps.apple.com
-DOMAIN,c.apple.news
-# linux论坛
-DOMAIN-SUFFIX,linux.do 
-# cloudflare
-DOMAIN-SUFFIX,cloudflare-dns.com
-# 1password
-DOMAIN-KEYWORD,1password
-DOMAIN-SUFFIX,1passwordservices.com
-# sms接码平台
-DOMAIN-SUFFIX,sms-activate
-# emby
-DOMAIN-SUFFIX,charont.com  
-# 哪吒探针
-DOMAIN,nazha.linghan.shop
-# nodeseek论坛
+DOMAIN-SUFFIX,linux.do
+DOMAIN-SUFFIX,sms-activate.com
 DOMAIN-SUFFIX,nodeseek.com
-
 DOMAIN-SUFFIX,pstatp.com
 DOMAIN-SUFFIX,fastly-edge.com
+DOMAIN-SUFFIX,apple-studies.com
+DOMAIN-SUFFIX,checktrustworthiness.com
+DOMAIN-SUFFIX,cloudflare-dns.com
+DOMAIN-SUFFIX,cloudflare.com
+DOMAIN-SUFFIX,digicert.com
+DOMAIN-SUFFIX,godaddy.com
+DOMAIN-SUFFIX,ohttp-relay1.fastly-edge.com
+DOMAIN-SUFFIX,sentry.io
+
+
+
+# DOMAIN 规则
+DOMAIN,www.surge-activation.com
+DOMAIN,c.apple.news
+DOMAIN,nazha.linghan.shop
 DOMAIN,cache.agilebits.com
 DOMAIN,cloud.mfpud.com
 DOMAIN,code-ya.jivosite.com
@@ -67,4 +62,3 @@ DOMAIN,wiki.magpie.bond
 DOMAIN,www.cloudns.net
 DOMAIN,www.wangchao.info
 DOMAIN,zhujiwiki.com
-

@@ -7,6 +7,8 @@ DOMAIN,sessions.bugsnag.com
 DOMAIN-KEYWORD,xiaomi
 DOMAIN-SUFFIX,mi.com
 DOMAIN-SUFFIX,mipay.com
+DOMAIN-SUFFIX,mijia.tech
+DOMAIN-SUFFIX,miui.com
 # 来自老刘
 # China Apps
 USER-AGENT,MicroMessenger Client
@@ -18,6 +20,7 @@ DOMAIN-SUFFIX,weixin.com
 DOMAIN-SUFFIX,tenpay.com
 DOMAIN-SUFFIX,wechatos.net
 DOMAIN-SUFFIX,wechatpay.com
+DOMAIN-SUFFIX,tencent.com
 
 USER-AGENT,MApi* // Dianping
 # Ali
@@ -37,3 +40,52 @@ DOMAIN-KEYWORD,baidu
 DOMAIN-SUFFIX,ls.apple.com
 # > Apple Store Online
 DOMAIN-SUFFIX,store.apple.com
+
+
+DOMAIN,app-analytics-services.com
+DOMAIN,app-measurement.com
+DOMAIN,caiyunapp.com
+DOMAIN,easytomessage.com
+DOMAIN,miot-spec.org
+DOMAIN-SUFFIX,163.com
+DOMAIN-SUFFIX,95516.com
+DOMAIN-SUFFIX,alibabachengdun.com
+DOMAIN-SUFFIX,amap.com
+DOMAIN-SUFFIX,amemv.com
+DOMAIN-SUFFIX,baike.com
+DOMAIN-SUFFIX,bytednsdoc.com
+DOMAIN-SUFFIX,callmekeji.com
+DOMAIN-SUFFIX,coolapk.com
+DOMAIN-SUFFIX,cyapi.cn
+DOMAIN-SUFFIX,damai.cn
+DOMAIN-SUFFIX,didialift.com
+DOMAIN-SUFFIX,didistatic.com
+DOMAIN-SUFFIX,diditaxi.com.cn
+DOMAIN-SUFFIX,douyinpic.com
+DOMAIN-SUFFIX,douyinstatic.com
+DOMAIN-SUFFIX,douyinvod.com
+DOMAIN-SUFFIX,ecombdapi.com
+DOMAIN-SUFFIX,ecombdpage.com
+DOMAIN-SUFFIX,fengkongcloud.com
+DOMAIN-SUFFIX,gepush.com
+DOMAIN-SUFFIX,getui.net
+DOMAIN-SUFFIX,hzshudian.com
+DOMAIN-SUFFIX,iturrit.com
+DOMAIN-SUFFIX,jd.com
+DOMAIN-SUFFIX,jpush.cn
+DOMAIN-SUFFIX,kuaidadi.com
+DOMAIN-SUFFIX,mob.com
+DOMAIN-SUFFIX,myqcloud.com
+DOMAIN-SUFFIX,pinduoduo.com
+DOMAIN-SUFFIX,pstatp.com
+DOMAIN-SUFFIX,qcloud.com
+DOMAIN-SUFFIX,qianjiapp.com
+DOMAIN-SUFFIX,qidian.com
+DOMAIN-SUFFIX,smzdm.com
+DOMAIN-SUFFIX,uc.cn
+DOMAIN-SUFFIX,udache.com
+DOMAIN-SUFFIX,xhscdn.com
+DOMAIN-SUFFIX,xiaohongshu.com
+DOMAIN-SUFFIX,xiaojukeji.com
+DOMAIN-SUFFIX,xycdn.com
+DOMAIN-SUFFIX,yuewen.com
