@@ -11,6 +11,7 @@ DOMAIN-KEYWORD,1password
 DOMAIN-KEYWORD,github
 DOMAIN-KEYWORD,gitlab
 DOMAIN-KEYWORD,blogspot
+DOMAIN-KEYWORD,amazonaws
 
 # DOMAIN-SUFFIX 规则
 DOMAIN-SUFFIX,tw
@@ -42,6 +43,7 @@ DOMAIN-SUFFIX,lencr.org
 DOMAIN-SUFFIX,skk.moe
 DOMAIN-SUFFIX,tanhuatv.site
 DOMAIN-SUFFIX,yyyue.xyz
+DOMAIN-SUFFIX,v2ex.com 
 
 
 # DOMAIN 规则
@@ -68,4 +70,23 @@ DOMAIN,www.cloudns.net
 DOMAIN,www.wangchao.info
 DOMAIN,zhujiwiki.com
 
-
+#2024-08-09
+DOMAIN,a.disquscdn.com 
+DOMAIN,api.mixpanel.com 
+DOMAIN,api.wd-blue.com 
+DOMAIN,blog.ioskuka.com 
+DOMAIN,c.disquscdn.com 
+DOMAIN,crt.usertrust.com 
+DOMAIN,disqus.com 
+DOMAIN,diy.czkeji.xyz 
+DOMAIN,elmagnifico-1.disqus.com 
+DOMAIN,esign.yyyue.xyz 
+DOMAIN,glitter.services.disqus.com 
+DOMAIN,i.v2ex.co 
+DOMAIN,ka.ioskuka.com 
+DOMAIN,lottery.67696769.xyz 
+DOMAIN,pan.iosxm.top 
+DOMAIN,status.rapidssl.com 
+DOMAIN,tmxios.top 
+DOMAIN,udid.ioskuka.com 
+DOMAIN,www.nameless13.com
