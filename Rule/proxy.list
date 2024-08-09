@@ -36,7 +36,12 @@ DOMAIN-SUFFIX,digicert.com
 DOMAIN-SUFFIX,godaddy.com
 DOMAIN-SUFFIX,ohttp-relay1.fastly-edge.com
 DOMAIN-SUFFIX,sentry.io
-
+#2024-08-09
+DOMAIN-SUFFIX,amazonaws.com
+DOMAIN-SUFFIX,lencr.org
+DOMAIN-SUFFIX,skk.moe
+DOMAIN-SUFFIX,tanhuatv.site
+DOMAIN-SUFFIX,yyyue.xyz
 
 
 # DOMAIN 规则
@@ -62,3 +67,5 @@ DOMAIN,wiki.magpie.bond
 DOMAIN,www.cloudns.net
 DOMAIN,www.wangchao.info
 DOMAIN,zhujiwiki.com
+
+
