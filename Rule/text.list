@@ -26,3 +26,5 @@ IP-CIDR,180.97.42.54/32,REJECT,no-resolve // Added for: 180.97.42.54:443
 IP-CIDR,180.163.214.155/32,REJECT,no-resolve // Added for: 180.163.214.155:443
 IP-CIDR,81.69.116.33/32,REJECT,no-resolve // Added for: 81.69.116.33:443 (m.pinduoduo.net)
 IP-CIDR,114.110.96.6/32,REJECT,no-resolve // Added for: http://114.110.96.6/d4?appid=1&os=2&clientVersion=7.21.0&scene=3&front=1&titanId=seOjLNiA&type=ADDRS
+
+

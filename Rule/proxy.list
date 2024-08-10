@@ -12,6 +12,7 @@ DOMAIN-KEYWORD,github
 DOMAIN-KEYWORD,gitlab
 DOMAIN-KEYWORD,blogspot
 DOMAIN-KEYWORD,amazonaws
+DOMAIN-KEYWORD,tiktok
 
 # DOMAIN-SUFFIX 规则
 DOMAIN-SUFFIX,tw
@@ -44,6 +45,9 @@ DOMAIN-SUFFIX,skk.moe
 DOMAIN-SUFFIX,tanhuatv.site
 DOMAIN-SUFFIX,yyyue.xyz
 DOMAIN-SUFFIX,v2ex.com 
+# 2024-08-10
+DOMAIN-SUFFIX,snapkit.com
+
 
 
 # DOMAIN 规则
@@ -90,3 +94,12 @@ DOMAIN,status.rapidssl.com
 DOMAIN,tmxios.top 
 DOMAIN,udid.ioskuka.com 
 DOMAIN,www.nameless13.com
+
+#2024-08-10
+DOMAIN,afs.ampaeservices.com //Apple
+DOMAIN,shengpotian.net
+
+
+
+
+
