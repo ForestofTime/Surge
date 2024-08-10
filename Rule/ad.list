@@ -7,3 +7,37 @@ IP-CIDR,139.199.240.15/32,no-resolve
 DOMAIN, img-ys011.didistatic.com
 # Safari 访问防跳转 App
 DOMAIN,app-site-association.cdn-apple.com
+
+#拼多多去广告
+# Sorted IP-CIDR with no-resolve
+IP-CIDR,49.235.102.100/32,no-resolve
+IP-CIDR,49.235.102.190/32,no-resolve
+IP-CIDR,81.69.104.17/32,no-resolve
+IP-CIDR,81.69.105.47/32,no-resolve
+IP-CIDR,81.69.105.56/32,no-resolve
+IP-CIDR,81.69.116.33/32,no-resolve
+IP-CIDR,81.69.130.131/32,no-resolve
+IP-CIDR,81.69.130.131/32,no-resolve
+IP-CIDR,81.69.204.21/32,no-resolve
+IP-CIDR,81.69.208.23/32,no-resolve
+IP-CIDR,101.226.46.38/32,no-resolve
+IP-CIDR,101.226.152.31/32,no-resolve
+IP-CIDR,101.226.152.59/32,no-resolve
+IP-CIDR,114.110.96.6/32,no-resolve
+IP-CIDR,114.110.97.18/32,no-resolve
+IP-CIDR,114.110.98.2/32,no-resolve
+IP-CIDR,114.110.98.3/32,no-resolve
+IP-CIDR,121.5.84.85/32,no-resolve
+IP-CIDR,121.5.84.85/32,no-resolve
+IP-CIDR,175.24.144.100/32,no-resolve
+IP-CIDR,175.24.144.100/32,no-resolve
+IP-CIDR,180.97.42.43/32,no-resolve
+IP-CIDR,180.97.42.54/32,no-resolve
+IP-CIDR,180.97.42.55/32,no-resolve
+IP-CIDR,180.163.214.155/32,no-resolve
+# Sorted DOMAIN
+DOMAIN,savatar.pddpic.com
+DOMAIN,th-a.pinduoduo.com
+# Sorted URL-REGEX
+URL-REGEX,^https:\/\/api\.pinduoduo\.com\/api\/luther\/user\/status\/update\?pdduid=5092675856$
+
