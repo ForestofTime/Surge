@@ -21,6 +21,7 @@ IP-ASN,45090
 USER-AGENT,MApi* // Dianping
 # Ali
 DOMAIN-KEYWORD,alipay
+DOMAIN-KEYWORD,alibaba
 DOMAIN-KEYWORD,taobao
 DOMAIN-KEYWORD,alicdn
 DOMAIN-KEYWORD,aliyun
@@ -110,3 +111,27 @@ DOMAIN-SUFFIX,tanx.com
 DOMAIN-SUFFIX,ucweb.com
 DOMAIN-SUFFIX,volces.com
 DOMAIN-SUFFIX,zdmimg.com
+
+DOMAIN,911tg3rs.com
+DOMAIN-SUFFIX,126.net
+DOMAIN-SUFFIX,25mao.com
+DOMAIN-SUFFIX,300hu.com
+DOMAIN-SUFFIX,babytreeimg.com
+DOMAIN-SUFFIX,bilibili.com
+DOMAIN-SUFFIX,cibfintech.com
+DOMAIN-SUFFIX,crashlytics.com
+DOMAIN-SUFFIX,dataoke.com
+DOMAIN-SUFFIX,goofish.com
+DOMAIN-SUFFIX,huya.com
+DOMAIN-SUFFIX,kdeascloud.com
+DOMAIN-SUFFIX,manmanbuy.com
+DOMAIN-SUFFIX,meitun.com
+DOMAIN-SUFFIX,netease.im
+DOMAIN-SUFFIX,pddugc.com
+DOMAIN-SUFFIX,sf-express.com
+DOMAIN-SUFFIX,tencent-cloud.net
+DOMAIN-SUFFIX,tencent.com
+DOMAIN-SUFFIX,vegslb.com
+DOMAIN-SUFFIX,weilayun.com
+DOMAIN-SUFFIX,yangkeduo.com
+DOMAIN-SUFFIX,yunzhijia.comk
