@@ -38,6 +38,12 @@ IP-CIDR,180.163.214.155/32,no-resolve
 # Sorted DOMAIN
 DOMAIN,savatar.pddpic.com
 DOMAIN,th-a.pinduoduo.com
+DOMAIN,ta-a.pinduoduo.com 
+DOMAIN,meta.pinduoduo.com 
+DOMAIN,titan.pinduoduo.com 
+DOMAIN,abtk.pinduoduo.com 
+DOMAIN,m.pinduoduo.net 
+
 # Sorted URL-REGEX
 URL-REGEX,^https:\/\/api\.pinduoduo\.com\/api\/luther\/user\/status\/update\?pdduid=5092675856$
 # 拦截HTTPDNS
