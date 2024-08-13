@@ -93,13 +93,16 @@ DOMAIN,pan.iosxm.top
 DOMAIN,status.rapidssl.com 
 DOMAIN,tmxios.top 
 DOMAIN,udid.ioskuka.com 
-DOMAIN,www.nameless13.com
 
 #2024-08-10
 DOMAIN,afs.ampaeservices.com //Apple
 DOMAIN,shengpotian.net
 
-
+DOMAIN-SUFFIX,fbcdn.net
+DOMAIN-SUFFIX,getrocketapp.io
+DOMAIN-SUFFIX,nameless13.com
+DOMAIN-SUFFIX,wd-blue.com
+DOMAIN-SUFFIX,xiaoshuo629.top
 
 
 
