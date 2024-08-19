@@ -50,7 +50,7 @@ DOMAIN,abtk.pinduoduo.com
 DOMAIN,m.pinduoduo.net 
 
 # Sorted URL-REGEX
-# URL-REGEX,^https:\/\/api\.pinduoduo\.com\/api\/luther\/user\/status\/update\?pdduid=5092675856$
+URL-REGEX,^https:\/\/api\.pinduoduo\.com\/api\/luther\/user\/status\/update\?pdduid=5092675856$
 # 拦截HTTPDNS
 # AND, ((URL-REGEX, ^http:\/\/((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/d), (USER-AGENT, *com.xunmeng.pinduoduo*))
 
