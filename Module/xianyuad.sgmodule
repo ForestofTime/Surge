@@ -1,3 +1,6 @@
+#!name=闲鱼净化
+#!desc=去闲鱼banner广告
+
 [Script]
 # 去除闲鱼指定广告图片
 闲鱼去广告 = type=http-response,pattern=https:\/\/acs\.m\.goofish\.com\/gw\/mtop\.taobao\.idlehome\.home\.nextfresh\/.*?,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/xianyu_ads.js
