@@ -41,6 +41,13 @@ IP-CIDR,180.97.42.43/32,no-resolve
 IP-CIDR,180.97.42.54/32,no-resolve
 IP-CIDR,180.97.42.55/32,no-resolve
 IP-CIDR,180.163.214.155/32,no-resolve
+IP-CIDR,36.152.46.15/32,no-resolve 
+IP-CIDR,117.185.242.150/32,no-resolve 
+IP-CIDR,36.152.46.3/32,no-resolve
+IP-CIDR,117.185.244.145/32,no-resolve
+IP-CIDR,36.152.46.13/32,no-resolve 
+
+
 # Sorted DOMAIN
 DOMAIN,savatar.pddpic.com
 DOMAIN,th-a.pinduoduo.com
@@ -49,6 +56,9 @@ DOMAIN,meta.pinduoduo.com
 DOMAIN,titan.pinduoduo.com 
 DOMAIN,abtk.pinduoduo.com 
 DOMAIN,m.pinduoduo.net 
+DOMAIN,apm-a.pinduoduo.com
+DOMAIN,img-1.pddpic.com 
+DOMAIN,img-2.pddpic.com
 
 # Sorted URL-REGEX
 URL-REGEX,^https:\/\/api\.pinduoduo\.com\/api\/luther\/user\/status\/update\?pdduid=5092675856$
