@@ -46,8 +46,8 @@ IP-CIDR,117.185.242.150/32,no-resolve
 IP-CIDR,36.152.46.3/32,no-resolve
 IP-CIDR,117.185.244.145/32,no-resolve
 IP-CIDR,36.152.46.13/32,no-resolve 
-
-
+IP-CIDR,117.185.242.187/32,no-resolve 
+IP-CIDR,114.110.97.30/32,no-resolve 
 # Sorted DOMAIN
 DOMAIN,savatar.pddpic.com
 DOMAIN,th-a.pinduoduo.com
