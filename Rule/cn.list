@@ -37,6 +37,12 @@ DOMAIN-KEYWORD,baidu
 DOMAIN-SUFFIX,ls.apple.com
 # > Apple Store Online
 DOMAIN-SUFFIX,store.apple.com
+# Baidu
+DOMAIN-KEYWORD,baidu
+DOMAIN-KEYWORD,tieba
+DOMAIN-SUFFIX,baidu.com
+DOMAIN-SUFFIX,bdstatic.com
+DOMAIN-SUFFIX,bdimg.com
 
 
 DOMAIN,app-analytics-services.com
