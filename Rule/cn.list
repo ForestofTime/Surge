@@ -1,23 +1,71 @@
 # 个人
 DOMAIN-SUFFIX,shuyz.com // Added for:日历订阅
-# QQ
-DOMAIN-SUFFIX,wspeed.qq.com // Added for: wspeed.qq.com:443
-DOMAIN,sessions.bugsnag.com
+# Tencent (腾讯)
+DOMAIN-KEYWORD,qq
+DOMAIN-KEYWORD,qq.com
+DOMAIN-KEYWORD,tenpay
+DOMAIN-KEYWORD,tenpay.com
+DOMAIN-KEYWORD,game.qq
+DOMAIN-KEYWORD,qzone
+DOMAIN-KEYWORD,gtimg
+DOMAIN-SUFFIX,qq.com
+DOMAIN-SUFFIX,gtimg.com
+DOMAIN-SUFFIX,qpic.cn
+DOMAIN-SUFFIX,tencent.com
+USER-AGENT,QQMusic*
+USER-AGENT,com.tencent.*
+IP-CIDR,203.205.128.0/18,no-resolve
+IP-CIDR,182.254.0.0/16,no-resolve
+# 腾讯 WeChat ASN
+IP-ASN,132203
+IP-ASN,56040
+IP-ASN,45090
+
 # 小米
 DOMAIN-KEYWORD,xiaomi
 DOMAIN-SUFFIX,mi.com
 DOMAIN-SUFFIX,mipay.com
 DOMAIN-SUFFIX,mijia.tech
 DOMAIN-SUFFIX,miui.com
+
+# JD (京东)
+DOMAIN-KEYWORD,jd
+DOMAIN-KEYWORD,jd.com
+DOMAIN-KEYWORD,360buy
+DOMAIN-SUFFIX,jd.com
+DOMAIN-SUFFIX,360buyimg.com
+USER-AGENT,JDMall*
+USER-AGENT,JDApp*
+IP-CIDR,123.125.158.0/24,no-resolve
+IP-CIDR,101.227.160.0/20,no-resolve
+
+# Xiaohongshu (小红书)
+DOMAIN-KEYWORD,xiaohongshu
+DOMAIN-KEYWORD,redbook
+DOMAIN-SUFFIX,xiaohongshu.com
+DOMAIN-SUFFIX,xiaohongshu.com.cn
+USER-AGENT,XiaoHongShu*
+IP-CIDR,118.178.0.0/16,no-resolve
+
+# ByteDance (字节跳动)
+DOMAIN-KEYWORD,toutiao
+DOMAIN-KEYWORD,bytedance
+DOMAIN-KEYWORD,pstatp
+DOMAIN-KEYWORD,douyin
+DOMAIN-KEYWORD,xigua
+DOMAIN-SUFFIX,toutiao.com
+DOMAIN-SUFFIX,douyin.com
+DOMAIN-SUFFIX,ixigua.com
+DOMAIN-SUFFIX,bytedance.com
+DOMAIN-SUFFIX,pstatp.com
+USER-AGENT,Toutiao*
+USER-AGENT,Douyin*
+IP-CIDR,39.105.0.0/16,no-resolve
+IP-CIDR,47.94.0.0/16,no-resolve
+
 # 来自老刘
 # China Apps
 USER-AGENT,MicroMessenger Client
-
-# 腾讯 WeChat ASN
-IP-ASN,132203
-IP-ASN,56040
-IP-ASN,45090
-
 USER-AGENT,MApi* // Dianping
 # Ali
 DOMAIN-KEYWORD,alipay
@@ -31,19 +79,18 @@ IP-CIDR,198.11.136.0/24,no-resolve
 USER-AGENT,%E6%89%8B%E6%9C%BA%E6%B7%98%E5%AE%9D*
 # China
 DOMAIN-SUFFIX,CN
-DOMAIN-KEYWORD,baidu
 # Apple
 # > Apple Maps
 DOMAIN-SUFFIX,ls.apple.com
 # > Apple Store Online
 DOMAIN-SUFFIX,store.apple.com
+
 # Baidu
 DOMAIN-KEYWORD,baidu
 DOMAIN-KEYWORD,tieba
 DOMAIN-SUFFIX,baidu.com
 DOMAIN-SUFFIX,bdstatic.com
 DOMAIN-SUFFIX,bdimg.com
-
 
 DOMAIN,app-analytics-services.com
 DOMAIN,app-measurement.com
@@ -64,9 +111,6 @@ DOMAIN-SUFFIX,damai.cn
 DOMAIN-SUFFIX,didialift.com
 DOMAIN-SUFFIX,didistatic.com
 DOMAIN-SUFFIX,diditaxi.com.cn
-DOMAIN-SUFFIX,douyinpic.com
-DOMAIN-SUFFIX,douyinstatic.com
-DOMAIN-SUFFIX,douyinvod.com
 DOMAIN-SUFFIX,ecombdapi.com
 DOMAIN-SUFFIX,ecombdpage.com
 DOMAIN-SUFFIX,fengkongcloud.com
@@ -94,7 +138,6 @@ DOMAIN-SUFFIX,xycdn.com
 DOMAIN-SUFFIX,yuewen.com
 
 #24-08-09
-DOMAIN,doh.pub
 DOMAIN-SUFFIX,10010.com
 DOMAIN-SUFFIX,360buyimg.com
 DOMAIN-SUFFIX,aliapp.org
@@ -112,7 +155,6 @@ DOMAIN-SUFFIX,mi-img.com
 DOMAIN-SUFFIX,mmstat.com
 DOMAIN-SUFFIX,pddpic.com
 DOMAIN-SUFFIX,puata.info
-DOMAIN-SUFFIX,qq.com
 DOMAIN-SUFFIX,tanx.com
 DOMAIN-SUFFIX,ucweb.com
 DOMAIN-SUFFIX,volces.com
@@ -135,8 +177,6 @@ DOMAIN-SUFFIX,meitun.com
 DOMAIN-SUFFIX,netease.im
 DOMAIN-SUFFIX,pddugc.com
 DOMAIN-SUFFIX,sf-express.com
-DOMAIN-SUFFIX,tencent-cloud.net
-DOMAIN-SUFFIX,tencent.com
 DOMAIN-SUFFIX,vegslb.com
 DOMAIN-SUFFIX,weilayun.com
 DOMAIN-SUFFIX,yangkeduo.com
