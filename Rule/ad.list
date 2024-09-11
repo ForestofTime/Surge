@@ -15,7 +15,7 @@ IP-CIDR,117.51.169.4/32,no-resolve
 IP-CIDR,117.51.169.11/32,no-resolve 
 IP-CIDR,117.51.168.7/32,no-resolve
 IP-CIDR,117.51.168.17/32,no-resolve 
-AND,((OR,((IP-ASN,63646,no-resolve), (IP-ASN,45090,no-resolve))), (DEST-PORT,25641), (PROTOCOL,TCP))
+#AND,((OR,((IP-ASN,63646,no-resolve), (IP-ASN,45090,no-resolve))), (DEST-PORT,25641), (PROTOCOL,TCP))
 DOMAIN, img-ys011.didistatic.com
 DOMAIN, img-hxy021.didistatic.com
 DOMAIN,omgup.xiaojukeji.com 
