@@ -70,4 +70,3 @@ DOMAIN,youku-acs.m.taobao.com,REJECT
 
 [MITM]
 hostname = %APPEND% cn-acs.m.cainiao.com, guide-acs.m.taobao.com
-a
