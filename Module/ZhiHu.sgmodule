@@ -89,4 +89,3 @@ IP-CIDR6,2402:4e00:1200:ed00:0:9089:6dac:96b6/128,REJECT,no-resolve
 
 [MITM]
 hostname = %APPEND% *.zhihu.com
-a
