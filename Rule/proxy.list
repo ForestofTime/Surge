@@ -14,6 +14,7 @@ DOMAIN-KEYWORD,blogspot
 DOMAIN-KEYWORD,amazonaws
 DOMAIN-KEYWORD,tiktok
 
+
 # DOMAIN-SUFFIX 规则
 DOMAIN-SUFFIX,tw
 DOMAIN-SUFFIX,gstatic.com
@@ -52,6 +53,7 @@ DOMAIN-SUFFIX,notion.so
 
 
 # DOMAIN 规则
+DOMAIN,z-library.sk 
 DOMAIN,www.surge-activation.com
 DOMAIN,c.apple.news
 DOMAIN,nazha.linghan.shop
