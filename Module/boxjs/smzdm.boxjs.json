@@ -1,0 +1,37 @@
+{
+    "id": "com.smzdm",
+    "name": "什么值得买",
+    "author": "YourName",
+    "keys": ["SMZDM_COOKIE", "SMZDM_HOST", "SMZDM_CLIENT_ID", "SMZDM_SECRET"],
+    "settings": [
+      {
+        "id": "SMZDM_COOKIE",
+        "name": "SMZDM Cookie",
+        "val": "",
+        "type": "text",
+        "desc": "请输入您的 SMZDM Cookie"
+      },
+      {
+        "id": "SMZDM_HOST",
+        "name": "青龙面板地址",
+        "val": "",
+        "type": "text",
+        "desc": "请输入青龙面板的地址，例如：http://localhost:5700"
+      },
+      {
+        "id": "SMZDM_CLIENT_ID",
+        "name": "青龙 Client ID",
+        "val": "",
+        "type": "text",
+        "desc": "请输入青龙的 Client ID"
+      },
+      {
+        "id": "SMZDM_SECRET",
+        "name": "青龙 Secret",
+        "val": "",
+        "type": "text",
+        "desc": "请输入青龙的 Secret"
+      }
+    ]
+  }
+  
