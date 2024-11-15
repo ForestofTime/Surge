@@ -1,14 +1,28 @@
 {
     "id": "com.smzdm",
     "name": "什么值得买",
+    "description": "什么值得买签到脚本的 BoxJs 配置",
     "author": "YourName",
-    "settings": [
+    "icon": "https://example.com/icon.png",
+    "repo": "https://github.com/YourUsername/YourRepo",
+    "apps": [
       {
-        "id": "SMZDM_COOKIE",
-        "name": "SMZDM Cookie",
-        "val": "",
-        "type": "text",
-        "desc": "请输入您的 SMZDM Cookie"
+        "id": "smzdm",
+        "name": "什么值得买",
+        "keys": ["SMZDM_COOKIE"],
+        "settings": [
+          {
+            "id": "SMZDM_COOKIE",
+            "name": "SMZDM Cookie",
+            "val": "",
+            "type": "text",
+            "desc": "请输入您的 SMZDM Cookie"
+          }
+        ],
+        "script": "https://raw.githubusercontent.com/YourUsername/YourRepo/main/smzdm.js",
+        "author": "YourName",
+        "repo": "https://github.com/YourUsername/YourRepo",
+        "icons": ["https://example.com/icon.png"]
       }
     ]
   }
