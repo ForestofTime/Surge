@@ -4,6 +4,8 @@ IP-CIDR,0.0.0.0/32,no-resolve
 # Safari 访问防跳转 App
 DOMAIN,app-site-association.cdn-apple.com
 
+IP-CIDR,149.88.82.119/32,no-resolve
+
 # 滴滴去广告
 DOMAIN-SUFFIX,gwp.xiaojukeji.com
 IP-CIDR,139.199.240.12/32,no-resolve
