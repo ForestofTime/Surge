@@ -1,1 +1,6 @@
 
+# ZABANK 规则集
+DOMAIN-SUFFIX,zajourney.com
+DOMAIN-SUFFIX,zafinsvc.com
+DOMAIN-SUFFIX,za.group
+DOMAIN,cdn.zaticdn.com
