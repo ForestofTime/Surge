@@ -1,0 +1,18 @@
+#!name=建行生活广告净化
+#!desc=去除建行生活及美团外卖内嵌广告，含首页弹窗、横幅广告等
+#!author=ForestofTime
+#!update=2025-07-23
+
+[Script]
+# 建行生活首页广告净化
+建行生活.js = type=http-response, pattern=^https:\/\/yunbusiness\.ccb\.com\/clp_service|basic_service\/txCtrl\?txcode=, requires-body=true, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/jhsh.js, timeout=20
+
+[Map Local]
+# 美团外卖弹窗广告 - 返回空字典
+https://i.waimai.meituan.com/tsp/open/openh5/home/rcmd?set data-type=json data="{}"
+
+# 美团外卖横幅广告 - 返回空字典
+https://i.waimai.meituan.com/openh5/homepage/dsp/resource? data-type=json data="{}"
+
+[MITM]
+hostname = %APPEND% yunbusiness.ccb.com, i.waimai.meituan.com
