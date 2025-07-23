@@ -1,0 +1,11 @@
+#!name=易捷加油广告拦截
+#!desc=屏蔽易捷加油小程序底部横幅广告
+#!author=ForestofTime
+#!update=2025-07-23
+
+[Map Local]
+# 拦截横幅广告请求并返回空 JSON 避免卡顿
+https:\/\/ocrifs\.ejoy\.sinopec\.com\/advertitfs\/advert\/findAdvertInfo data-type=json data="{}"
+
+[MITM]
+hostname = %APPEND% ocrifs.ejoy.sinopec.com
