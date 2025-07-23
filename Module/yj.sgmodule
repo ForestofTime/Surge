@@ -1,11 +1,15 @@
 #!name=易捷加油广告拦截
-#!desc=屏蔽易捷加油小程序底部横幅广告
+#!desc=屏蔽易捷加油小程序开屏广告、弹窗广告、横幅广告等
 #!author=ForestofTime
 #!update=2025-07-23
 
+[Script]
+# 易捷加油开屏广告、弹窗广告、横幅广告清理
+易捷加油去广告 = type=http-response, pattern=^https:\/\/a\.sinopecsales\.com\/app\/cms\/AppCmsPage\.json, requires-body=true, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/yjjy.js, timeout=10
+
 [Map Local]
-# 拦截横幅广告请求并返回空 JSON 避免卡顿
+# 拦截底部横幅广告，返回空字典避免卡顿
 https:\/\/ocrifs\.ejoy\.sinopec\.com\/advertitfs\/advert\/findAdvertInfo data-type=json data="{}"
 
 [MITM]
-hostname = %APPEND% ocrifs.ejoy.sinopec.com
+hostname = %APPEND% a.sinopecsales.com, ocrifs.ejoy.sinopec.com
