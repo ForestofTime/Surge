@@ -1,0 +1,15 @@
+#!name=京粉广告拦截
+#!desc=屏蔽京粉开屏广告和首页横幅广告弹窗
+#!author=ForestofTime
+#!update=2025-07-22
+
+[Script]
+# 首页横幅广告脚本处理
+京粉-首页横幅广告 = type=http-response,pattern=^https:\/\/api\.m\.jd\.com\/\?functionId=union_exhibition_bff&client=apple&clientVer,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/jf.js,timeout=10
+
+[URL Rewrite]
+# 拒绝开屏广告弹窗接口
+^https:\/\/api\.m\.jd\.com\/api\?functionId=union_exhibition_bff reject-dict
+
+[MITM]
+hostname = %APPEND% api.m.jd.com
