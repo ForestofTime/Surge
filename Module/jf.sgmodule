@@ -4,12 +4,12 @@
 #!update=2025-07-22
 
 [Script]
-# 首页横幅广告脚本处理
+# 处理首页横幅广告的响应内容（保留正常响应结构，清除广告）
 京粉-首页横幅广告 = type=http-response,pattern=^https:\/\/api\.m\.jd\.com\/\?functionId=union_exhibition_bff&client=apple&clientVer,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/jf.js,timeout=10
 
-[URL Rewrite]
-# 拒绝开屏广告弹窗接口
-^https:\/\/api\.m\.jd\.com\/api\?functionId=union_exhibition_bff reject-dict
+[Map Local]
+# 拦截京粉开屏广告并返回空 JSON，避免页面卡顿
+^https:\/\/api\.m\.jd\.com\/api\?functionId=union_exhibition_bff data-type=json data="{}"
 
 [MITM]
 hostname = %APPEND% api.m.jd.com
