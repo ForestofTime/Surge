@@ -2,6 +2,7 @@
 #!desc=屏蔽兴业生活 App 开屏广告、弹窗广告、横幅广告等
 #!author=ForestofTime
 #!category=GitHub
+#!update=2026-01-07
 
 [URL Rewrite]
 # 拦截开屏广告
