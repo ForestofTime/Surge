@@ -1,0 +1,18 @@
+#!name=兴业生活去广告
+#!desc=屏蔽兴业生活 App 开屏广告、弹窗广告、横幅广告等
+#!author=ForestofTime
+#!category=GitHub
+
+[URL Rewrite]
+# 拦截开屏广告
+^https?:\/\/.*\.cib\.com\.cn\/.*\/ad - reject
+^https?:\/\/.*\.cib\.com\.cn\/.*\/splash - reject
+^https?:\/\/.*\.cib\.com\.cn\/.*\/banner - reject
+
+[Map Local]
+# 拦截广告接口，返回空数据
+^https?:\/\/.*\.cib\.com\.cn\/.*\/advertisement data-type=json data="{}"
+^https?:\/\/.*\.cib\.com\.cn\/.*\/advert data-type=json data="{}"
+
+[MITM]
+hostname = %APPEND% *.cib.com.cn
