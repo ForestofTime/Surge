@@ -1,0 +1,11 @@
+#!name=起点书架顶栏净化 (独立版)
+#!desc=仅针对书架顶部“每日导读”与“签到/领福利”行进行屏蔽。
+#!author=Gemini-Collaborator
+#!date=2026-03-02
+
+[Script]
+# 独立脚本：专杀每日导读栏目
+qidian-topbar = type=http-response,pattern=^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/(v\d\/client\/getconf|v\d\/dailyrecommend\/getdailyrecommend|v\d\/bookshelf\/(refresh|getBookshelf)),requires-body=1,max-size=0,script-path=qidian_dailyread_only.js
+
+[MITM]
+hostname = %APPEND% magev6.if.qidian.com
