@@ -1,16 +1,16 @@
-#!name=起点读书去广告（精简增强版）
-#!desc=整合净化：移除书架每日导读、领福利、猜你喜欢、活动弹窗、悬浮广告及底部冗余入口。
-#!author=app2smile, ForestofTime, merged-by-Gemini
-#!date=2026-03-02
+#!name=起点读书净化（修正版）
+#!desc=彻底移除：书架顶部每日导读/福利、底部猜你喜欢、活动图标、精简“我的”页面 。
+#!author=Gemini-Purify
+#!date=2026-03-02 
 
 [Script]
-# 拦截范围包含：开屏、配置下发、书架刷新、每日导读、搜索、我的页面
-qidian-purify = type=http-response,pattern=^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/(v4\/client\/getsplashscreen|v2\/(deeplink\/geturl|dailyrecommend\/getdailyrecommend|bookshelf\/refresh)|v1\/(client\/getconf$|bookshelf\/getHoverAdv|adv\/getadvlistbatch\?positions=iOS_tab|assembly\/toolbar|bookshelf\/refresh|bookshelf\/getBookshelf)|v3\/user\/getaccountpage),requires-body=1,max-size=0,script-path=qidian_purify.js
+# 核心脚本拦截：涵盖配置、书架、每日导读及用户中心 
+qidian-final = type=http-response,pattern=^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/(v\d\/client\/getconf|v\d\/bookshelf\/(refresh|getBookshelf)|v\d\/dailyrecommend\/getdailyrecommend|v\d\/user\/getaccountpage|v\d\/client\/getsplashscreen),requires-body=1,max-size=0,script-path=qidian_purify.js [cite: 1]
 
 [Map Local]
-# 静态屏蔽部分固定广告接口
-^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/push\/getdialog\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
-^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/booksearch\/hotWords\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+# 静态屏蔽高频干扰接口 [cite: 1, 2]
+^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/push\/getdialog data-type=text data="{}" status-code=200 header="Content-Type:application/json" [cite: 2]
+^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/booksearch\/hotWords data-type=text data="{}" status-code=200 header="Content-Type:application/json" [cite: 1]
 
 [MITM]
-hostname = %APPEND% magev6.if.qidian.com, ywab.reader.qq.com
+hostname = %APPEND% magev6.if.qidian.com, ywab.reader.qq.com [cite: 1]
