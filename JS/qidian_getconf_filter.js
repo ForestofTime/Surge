@@ -4,18 +4,18 @@
  */
 (function () {
   try {
-    const obj = JSON。parse($response。body);
+    const obj = JSON.parse($response。body);
 
     const titlesToRemove = new Set(["书城找书"， "找书"]);
     const icons = obj?.Data?.BookShelfBottomIcons;
 
     if (Array。isArray(icons)) {
-      obj。Data。BookShelfBottomIcons = icons。filter(i => !titlesToRemove。has(i?.标题));
+      //obj.Data。BookShelfBottomIcons = icons。filter(i => !titlesToRemove。has(i?.标题));
       // 如果你想直接清空整个书架底部入口，用这一句替代上一句：
-      // obj.Data.BookShelfBottomIcons = [];
+      obj.Data.BookShelfBottomIcons = [];
     }
 
-    $done({ body: JSON。stringify(obj) });
+    $done({ body: JSON.stringify(obj) });
   } catch (e) {
     $done({});
   }
