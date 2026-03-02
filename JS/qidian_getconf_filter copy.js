@@ -1,10 +1,10 @@
 /**
- * Qidian Purify Script
- * 修复目标：书架顶部每日导读行、底部猜你喜欢模块
+ * 起点净化脚本 - 终极修正版
+ * 处理目标：书架顶栏、底部推荐、我的页面失效问题
  */
 
 (function () {
-  const url = $request?.url || "";
+  const url = $request.url;
   if (!$response || typeof $response.body !== "string") return $done({});
 
   let body;
@@ -16,62 +16,62 @@
 
   if (!body || !body.Data) return $done({});
 
-  // 扩展关键词：增加“猜你喜欢”和“领福利”
-  const PURGE_RE = /(每日导读|签到|领福利|福利中心|猜你喜欢)/;
+  // 扩展清理关键词
+  const BLACKLIST_RE = /(每日导读|签到|福利|猜你喜欢|推荐)/;
 
-  function deepClean(node) {
+  // 深度递归清理函数
+  function cleanNode(node) {
     if (!node || typeof node !== "object") return;
+    
     if (Array.isArray(node)) {
       for (let i = node.length - 1; i >= 0; i--) {
-        if (JSON.stringify(node[i]).match(PURGE_RE)) {
+        const itemStr = JSON.stringify(node[i]);
+        if (BLACKLIST_RE.test(itemStr)) {
           node.splice(i, 1);
         } else {
-          deepClean(node[i]);
+          cleanNode(node[i]);
         }
       }
     } else {
       for (const key in node) {
-        if (typeof node[key] === "object") deepClean(node[key]);
+        if (typeof node[key] === "object") cleanNode(node[key]);
       }
     }
   }
 
   try {
-    // 1. 处理书架主数据：刷新及获取列表
-    if (url.includes("bookshelf/refresh") || url.includes("bookshelf/getBookshelf")) {
-      // 彻底移除顶部模块布局（每日导读/福利入口）
+    // 1. 修复：书架数据（顶部导读 + 底部猜你喜欢） [cite: 1, 4]
+    if (url.indexOf("bookshelf/refresh") !== -1 || url.indexOf("bookshelf/getBookshelf") !== -1) {
+      // 抹除顶部布局块 
       if (Array.isArray(body.Data.TopModules)) {
-        body.Data.TopModules = body.Data.TopModules.filter(m => !JSON.stringify(m).match(PURGE_RE));
+        body.Data.TopModules = body.Data.TopModules.filter(m => !BLACKLIST_RE.test(JSON.stringify(m)));
       }
-      // 移除安全区和运营位
+      // 深度清理包含“猜你喜欢”或其他推荐的数据 
+      cleanNode(body.Data);
+      // 额外处理安全区
       if (body.Data.SafetyArea) body.Data.SafetyArea = null;
-      // 深度递归移除“猜你喜欢”等卡片
-      deepClean(body.Data);
     }
 
-    // 2. 配置下发：关闭功能开关
-    if (url.includes("argus/api/v1/client/getconf")) {
-      body.Data.DailyRecommendGray = 0; // 强制关闭每日导读入口 
-      body.Data.ActivityPopup = null;   // 活动弹窗 
-      if (body.Data.ActivityIcon) body.Data.ActivityIcon = null; // 悬浮图标 
-      
-      // 移除书架底部冗余按钮 
-      if (Array.isArray(body.Data.BookShelfBottomIcons)) {
-        body.Data.BookShelfBottomIcons = [];
-      }
-    }
-
-    // 3. 每日导读数据置空 
-    if (url.includes("dailyrecommend/getdailyrecommend")) {
-      if (body.Data.Items) body.Data.Items = [];
-    }
-
-    // 4. “我的”页面精简 
-    if (url.includes("user/getaccountpage")) {
-      body.Data.BenefitButtonList = [];
-      body.Data.FunctionButtonList = [];
-      body.Data.BottomButtonList = [];
+    // 2. 修复：我的页面屏蔽失效问题 
+    if (url.indexOf("user/getaccountpage") !== -1) {
+      body.Data.BenefitButtonList = []; // 福利中心 
+      body.Data.FunctionButtonList = []; // 我发布的 
+      body.Data.BottomButtonList = []; // 客服帮助 
       body.Data.Member = null;
+      if (body.Data.AccountBalance) body.Data.AccountBalance.Hints = []; [cite: 1]
+    }
+
+    // 3. 配置下发：关闭灰度开关 
+    if (url.indexOf("client/getconf") !== -1) {
+      body.Data.DailyRecommendGray = 0; // 每日导读开关 
+      body.Data.ActivityPopup = null; // 弹窗 
+      body.Data.ActivityIcon = null; // 悬浮窗 
+      body.Data.BookShelfBottomIcons = []; // 书架底部找书入口 
+    }
+
+    // 4. 每日导读内容置空 
+    if (url.indexOf("dailyrecommend/getdailyrecommend") !== -1) {
+      if (body.Data.Items) body.Data.Items = []; [cite: 1]
     }
 
     $done({ body: JSON.stringify(body) });
