@@ -1,0 +1,34 @@
+#!name=BankAppCleaner Ultra
+#!desc=金融银行类App通用广告净化
+#!author=Custom
+#!category=NoAd
+#!ref=https://nssurge.com/llms.txt
+
+[Script]
+
+# 建设银行
+建行生活净化 = type=http-response,pattern=^https?:\/\/yunbusiness\.ccb\.com\/,requires-body=true,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/BankAppCleanerUltra.js,timeout=20
+
+# 招商银行
+招商银行净化 = type=http-response,pattern=^https?:\/\/mobile\.cmbchina\.com\/,requires-body=true,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/BankAppCleanerUltra.js,timeout=20
+
+# 工商银行
+工商银行净化 = type=http-response,pattern=^https?:\/\/m\.icbc\.com\.cn\/,requires-body=true,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/BankAppCleanerUltra.js,timeout=20
+
+# 农业银行
+农业银行净化 = type=http-response,pattern=^https?:\/\/app\.abchina\.com\/,requires-body=true,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/BankAppCleanerUltra.js,timeout=20
+
+# 交通银行
+交通银行净化 = type=http-response,pattern=^https?:\/\/m\.bankcomm\.com\/,requires-body=true,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/BankAppCleanerUltra.js,timeout=20
+
+# 广发银行
+广发银行净化 = type=http-response,pattern=^https?:\/\/m\.cgbchina\.com\.cn\/,requires-body=true,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/BankAppCleanerUltra.js,timeout=20
+
+# 平安银行
+平安银行净化 = type=http-response,pattern=^https?:\/\/ma\.pingan\.com\/,requires-body=true,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/BankAppCleanerUltra.js,timeout=20
+
+# 邮储银行
+邮储银行净化 = type=http-response,pattern=^https?:\/\/psbc\.com\/,requires-body=true,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/BankAppCleanerUltra.js,timeout=20
+
+[MITM]
+hostname = %APPEND% yunbusiness.ccb.com, mobile.cmbchina.com, m.icbc.com.cn, app.abchina.com, m.bankcomm.com, m.cgbchina.com.cn, ma.pingan.com, psbc.com
