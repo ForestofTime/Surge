@@ -9,7 +9,7 @@ true  = 屏蔽本地优惠
 false = 保留本地优惠
 */
 
-const BLOCK_LOCAL_BENEFIT = true;
+const BLOCK_LOCAL_BENEFIT = false;
 
 
 /* ========= 脚本主体 ========= */
