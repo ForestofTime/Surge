@@ -12,5 +12,6 @@
 # 开屏广告替换为1px图
 ^https?:\/\/res\.yunbusiness\.ccb\.com\/service\/resource\/mng\/adMng\/ data="image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j6XkAAAAASUVORK5CYII="
 
+
 [MITM]
 hostname = %APPEND% yunbusiness.ccb.com, res.yunbusiness.ccb.com
