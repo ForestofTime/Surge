@@ -5,7 +5,7 @@
 #!ref=https://nssurge.com/llms.txt
 
 [Script]
-建行生活净化 = type=http-response,pattern=^https?:\/\/yunbusiness\.ccb\.com\/(basic_service|clp_service)\/txCtrl\?txcode=A3341AB0(3|5|8),requires-body=true,script-path=你的脚本地址,timeout=20
+建行生活净化 = type=http-response,pattern=^https?:\/\/yunbusiness\.ccb\.com\/(basic_service|clp_service)\/txCtrl\?txcode=A3341AB0(3|5|8),requires-body=true,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/BankAppCleaner.js,timeout=20
 
 [MITM]
 hostname = %APPEND% yunbusiness.ccb.com
