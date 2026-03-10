@@ -31,7 +31,7 @@ try {
     "MYSELF_ENTRANCE_AD",      // 我的页面入口广告
     "MEBCT_AD_INFO",           // 个人中心广告
     "THROUGH_COLUMN_INFO",     // 金融页面广告
-    "PREFERENCE_AD_INFO",      // 本地优惠广告
+    // "PREFERENCE_AD_INFO",      // 本地优惠广告
     "DAY_BEST_AD_SECOND",      // 精选推荐广告
     "DAY_BEST_AD_FOURTH",      // 养老金广告
     "DAY_BEST_AD_THIRD",       // 互动广场广告
