@@ -5,9 +5,9 @@
 #!category=AdBlock
 
 [Rule]
-# 核心广告获取
-IP-CIDR,203.107.33.92/32,REJECT-DROP
-DOMAIN,ad.seeyouyima.com,REJECT-DROP
+# 核心广告获取（返回 200 空响应，避免客户端超时）
+IP-CIDR,203.107.33.92/32,REJECT
+DOMAIN,ad.seeyouyima.com,REJECT
 # 广告与曝光日志
 DOMAIN,ad-logs.seeyouyima.com,REJECT-DROP
 DOMAIN,trace.seeyouyima.com,REJECT-DROP
