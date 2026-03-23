@@ -11,10 +11,6 @@ DOMAIN,ad.seeyouyima.com,REJECT-DROP
 # 广告与曝光日志
 DOMAIN,ad-logs.seeyouyima.com,REJECT-DROP
 DOMAIN,trace.seeyouyima.com,REJECT-DROP
-# 埋点/曝光（信息流广告埋点）
-DOMAIN,mgo.seeyouyima.com,REJECT-DROP
-# 统计渠道（可选，如遇误杀可注释）
-DOMAIN,ga.seeyouyima.com,REJECT
 
 [URL Rewrite]
 # 开屏 / 信息流广告获取接口
@@ -22,12 +18,6 @@ DOMAIN,ga.seeyouyima.com,REJECT
 # 广告启动/曝光统计
 ^https?:\\/\\/ad\\.seeyouyima\\.com\\/statistics\\/.* - reject-dict
 ^https?:\\/\\/ad-logs\\.seeyouyima\\.com\\/log\\/.* - reject-dict
-# 埋点/曝光
-^https?:\\/\\/mgo\\.seeyouyima\\.com\\/(event|dialog)\\/.* - reject-dict
-
-[Script]
-# 兜底：若 feed/list 接口含广告字段，清空后返回
-MeiYou-StripAds = type=http-response,pattern=^https?:\\/\\/[^\\/]*seeyouyima\\.com\\/.*(feed|list|timeline|post).*,requires-body=true,max-size=-1,script-path=/Users/huangyinan/Documents/open\\ claw/surge/meiyou-strip-ads.js
 
 [MITM]
-hostname = %APPEND% 203.107.33.92,ad.seeyouyima.com,ad-logs.seeyouyima.com,mgo.seeyouyima.com,trace.seeyouyima.com,ga.seeyouyima.com
+hostname = %APPEND% 203.107.33.92,ad.seeyouyima.com,ad-logs.seeyouyima.com,trace.seeyouyima.com
