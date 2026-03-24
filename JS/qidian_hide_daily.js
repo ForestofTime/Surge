@@ -1,5 +1,5 @@
 // Surge script: hide Qidian daily guide/check-in cards even when cached
-// Last modified: 2026-03-24 09:45 CST
+// Last modified: 2026-03-24 11:10 CST
 // Targets responses from getconf/bookshelf/ checkin/dailyrecommend
 
 function wipe(obj) {
@@ -32,6 +32,18 @@ function wipe(obj) {
         touched = true;
         continue;
       }
+      // generic list cleanup
+      if (Array.isArray(val) && /(modules?|items?|list)/i.test(k)) {
+        o[k] = val.filter(
+          (item) =>
+            !(
+              item &&
+              typeof item === 'object' &&
+              /每日|导读|签到|checkin|daily|welfare|福利/i.test(JSON.stringify(item))
+            ),
+        );
+        if (o[k].length !== val.length) touched = true;
+      }
       recurse(val);
     }
   }
@@ -43,8 +55,14 @@ function wipe(obj) {
     obj.Data.HasCheckIn = 1;
     obj.Data.BtnType = 0;
     obj.Data.BtnTypeV2 = 0;
+    obj.Data.BtnTypeTxt = '';
+    obj.Data.BtnTypeTxtV2 = '';
+    obj.Data.ActionUrl = '';
     touched = true;
   }
+  obj.Code = 0;
+  obj.Message = obj.Message || '';
+  touched = true;
   return touched;
 }
 
