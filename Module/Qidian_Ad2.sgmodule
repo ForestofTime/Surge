@@ -1,7 +1,7 @@
 #!name=起点读书去广告（iOS 修复版）
 #!desc=修复 iOS Surge 中每日导读无法屏蔽的问题。整合去开屏/每日导读/活动弹窗/悬浮广告/tab广告/章末模块/搜索热词等，并精简"我的"页面；移除书架底部"书城找书/找书"入口。
 #!author=app2smile, luestr(可莉🅥), ForestofTime, iOS-fixed
-#!date=2026-03-24 09:45 CST
+#!date=2026-03-24 11:10 CST
 #!category=AdBlock
 
 [Script]
@@ -24,9 +24,9 @@ qidian-hide-daily = type=http-response,pattern=^https:\/\/magev6\.if\.qidian\.co
 ^https:\/\/ywab\.reader\.qq\.com\/user\/experiments\/v2\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 # 签到信息（可能影响签到展示，介意可自行注释）
-^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/checkin\/simpleinfo\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/checkin\/simpleinfo\? data-type=text data="{\"Code\":0,\"Message\":\"\",\"Data\":{\"IsHidden\":1,\"HasCheckIn\":1}}" status-code=200 header="Content-Type:application/json"
 # 新签到（bookshelf 每日导读入口）
-^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v2\/checkin\/simpleinfo\? data-type=text data="{\"Data\":{\"IsHidden\":1,\"HasCheckIn\":1,\"BtnType\":0,\"BtnTypeV2\":0,\"BtnTypeTxt\":\"\",\"BtnTypeTxtV2\":\"\",\"ActionUrl\":\"\",\"BtnUnCheckInTxt\":\"\",\"BtnAlreadyCheckInTxt\":\"\",\"BtnCheckInOverTxt\":\"\",\"BtnMemberAutoCheckInTxt\":\"\"}}" status-code=200 header="Content-Type:application/json"
+^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v2\/checkin\/simpleinfo\? data-type=text data="{\"Code\":0,\"Message\":\"\",\"Data\":{\"IsHidden\":1,\"HasCheckIn\":1,\"BtnType\":0,\"BtnTypeV2\":0,\"BtnTypeTxt\":\"\",\"BtnTypeTxtV2\":\"\",\"ActionUrl\":\"\",\"BtnUnCheckInTxt\":\"\",\"BtnAlreadyCheckInTxt\":\"\",\"BtnCheckInOverTxt\":\"\",\"BtnMemberAutoCheckInTxt\":\"\"}}" status-code=200 header="Content-Type:application/json"
 
 # 弹窗/对话框
 ^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/push\/getdialog\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
@@ -40,7 +40,7 @@ qidian-hide-daily = type=http-response,pattern=^https:\/\/magev6\.if\.qidian\.co
 ^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/maintain\/playstrip$ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 # 书架「猜你喜欢」
-^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/dailyrecommend\/recommendBook\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/dailyrecommend\/recommendBook\? data-type=text data="{\"Code\":0,\"Message\":\"\",\"Data\":{\"Items\":[]}}" status-code=200 header="Content-Type:application/json"
 
 # 新手书架按钮
 ^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/freshman\/bookshelfbtn$ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
@@ -58,9 +58,9 @@ qidian-hide-daily = type=http-response,pattern=^https:\/\/magev6\.if\.qidian\.co
 ^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/young\/getconf$ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 # 每日导读接口兜底（iOS 关键）
-^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v2\/dailyrecommend\/getdailyrecommend data-type=text data="{\"Data\":{\"Items\":[],\"IsHidden\":1}}" status-code=200 header="Content-Type:application/json"
+^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v2\/dailyrecommend\/getdailyrecommend data-type=text data="{\"Code\":0,\"Message\":\"\",\"Data\":{\"Items\":[],\"IsHidden\":1}}" status-code=200 header="Content-Type:application/json"
 # 兼容旧版每日导读
-^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/dailyrecommend\/getdailyrecommend data-type=text data="{\"Data\":{\"Items\":[],\"IsHidden\":1}}" status-code=200 header="Content-Type:application/json"
+^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/dailyrecommend\/getdailyrecommend data-type=text data="{\"Code\":0,\"Message\":\"\",\"Data\":{\"Items\":[],\"IsHidden\":1}}" status-code=200 header="Content-Type:application/json"
 
 # 书架刷新接口兜底
 ^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/bookshelf\/refresh data-type=text data="{\"Data\":{}}" status-code=200 header="Content-Type:application/json"
