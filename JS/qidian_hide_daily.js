@@ -1,4 +1,5 @@
 // Surge script: hide Qidian daily guide/check-in cards even when cached
+// Last modified: 2026-03-24 09:45 CST
 // Targets responses from getconf/bookshelf/ checkin/dailyrecommend
 
 function wipe(obj) {

@@ -1,7 +1,8 @@
 #!name=起点读书去广告（iOS 修复版）
 #!desc=修复 iOS Surge 中每日导读无法屏蔽的问题。整合去开屏/每日导读/活动弹窗/悬浮广告/tab广告/章末模块/搜索热词等，并精简"我的"页面；移除书架底部"书城找书/找书"入口。
 #!author=app2smile, luestr(可莉🅥), ForestofTime, iOS-fixed
-#!date=2026-03-16
+#!date=2026-03-24 09:45 CST
+#!category=AdBlock
 
 [Script]
 # 修复后的脚本 - 增强 iOS 兼容性
