@@ -56,9 +56,14 @@ qidian-merged-fixed = type=http-response,pattern=^https:\/\/magev6\.if\.qidian\.
 
 # 每日导读接口兜底（iOS 关键）
 ^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v2\/dailyrecommend\/getdailyrecommend data-type=text data="{\"Data\":{\"Items\":[],\"IsHidden\":1}}" status-code=200 header="Content-Type:application/json"
+# 兼容旧版每日导读
+^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/dailyrecommend\/getdailyrecommend data-type=text data="{\"Data\":{\"Items\":[],\"IsHidden\":1}}" status-code=200 header="Content-Type:application/json"
 
 # 书架刷新接口兜底
 ^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/bookshelf\/refresh data-type=text data="{\"Data\":{}}" status-code=200 header="Content-Type:application/json"
 
+# 每日导读卡片背景图（透明占位）
+^https:\/\/qdclient-resources-1252317822\.image\.myqcloud\.com\/images\/checkin\/.*\.png data-type=text data="" status-code=200 header="Content-Type:image/png"
+
 [MITM]
-hostname = %APPEND% magev6.if.qidian.com, ywab.reader.qq.com
+hostname = %APPEND% magev6.if.qidian.com, ywab.reader.qq.com, qdclient-resources-1252317822.image.myqcloud.com
