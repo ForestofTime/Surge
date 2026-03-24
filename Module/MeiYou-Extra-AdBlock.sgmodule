@@ -1,7 +1,7 @@
 #!name=MeiYou Extra AdBlock (HAR-based)
 #!desc=补充拦截美柚开屏/信息流广告与埋点（基于 2026-03-18 抓包）
 #!author=codex
-#!date=2026-03-24 09:45 CST
+#!date=2026-03-24 10:30 CST
 #!category=AdBlock
 
 [Rule]
@@ -27,7 +27,7 @@ DOMAIN,ga.seeyouyima.com,REJECT
 
 [Script]
 # 兜底：若 feed/list 接口含广告字段，清空后返回
-MeiYou-StripAds = type=http-response,pattern=^https?:\\/\\/[^\\/]*seeyouyima\\.com\\/.*(feed|list|timeline|post).*,requires-body=true,max-size=-1,script-path=/Users/huangyinan/Documents/open\\ claw/surge/meiyou-strip-ads.js
+MeiYou-StripAds = type=http-response,pattern=^https?:\\/\\/[^\\/]*seeyouyima\\.com\\/.*(feed|list|timeline|post).*,requires-body=true,max-size=-1,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/js/meiyou-strip-ads.js
 
 [MITM]
 hostname = %APPEND% 203.107.33.92,ad.seeyouyima.com,ad-logs.seeyouyima.com,mgo.seeyouyima.com,trace.seeyouyima.com,ga.seeyouyima.com
