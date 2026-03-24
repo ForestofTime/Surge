@@ -14,15 +14,21 @@ qidian-merged-fixed = type=http-response,pattern=^https:\/\/magev6\.if\.qidian\.
 
 # v1/adv/ 广告接口（兜底）
 ^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/adv\/ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+# iOS 广告聚合
+^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/client\/iosad data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 # AB/实验
 ^https:\/\/ywab\.reader\.qq\.com\/user\/experiments\/v2\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 # 签到信息（可能影响签到展示，介意可自行注释）
 ^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/checkin\/simpleinfo\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+# 新签到（bookshelf 每日导读入口）
+^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v2\/checkin\/simpleinfo\? data-type=text data="{\"Data\":{\"IsHidden\":1,\"HasCheckIn\":1,\"BtnType\":0,\"BtnTypeV2\":0,\"BtnTypeTxt\":\"\",\"BtnTypeTxtV2\":\"\",\"ActionUrl\":\"\",\"BtnUnCheckInTxt\":\"\",\"BtnAlreadyCheckInTxt\":\"\",\"BtnCheckInOverTxt\":\"\",\"BtnMemberAutoCheckInTxt\":\"\"}}" status-code=200 header="Content-Type:application/json"
 
 # 弹窗/对话框
 ^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/push\/getdialog\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+# 新手/浮层弹窗
+^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/freshman\/freshmanGuidePopup\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 # 推送消息列表
 ^https:\/\/magev6\.if\.qidian\.com\/argus\/api\/v1\/message\/getpushedmessagelist$ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
