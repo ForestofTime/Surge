@@ -1,7 +1,7 @@
 #!name=MeiYou Extra AdBlock (HAR-based)
-#!desc=补充拦截美柚开屏/信息流广告与埋点（基于 2026-03-18 抓包）
+#!desc=补充拦截美柚开屏/信息流广告与埋点（综合 ddgksf2013 方案与 2026-03-18 抓包）
 #!author=codex
-#!date=2026-03-24 10:30 CST
+#!date=2026-03-27 09:20 CST
 #!category=AdBlock
 
 [Rule]
@@ -15,19 +15,33 @@ DOMAIN,trace.seeyouyima.com,REJECT-DROP
 DOMAIN,mgo.seeyouyima.com,REJECT-DROP
 # 统计渠道（可选，如遇误杀可注释）
 DOMAIN,ga.seeyouyima.com,REJECT
+# ddgksf2013 方案中的补充域名
+DOMAIN,jingqi.youzibuy.com,REJECT
+DOMAIN,circle.seeyouyima.com,REJECT
+DOMAIN,ab.seeyouyima.com,REJECT
+
+[URL Rewrite]
+# 拦截配置数据
+^https?:\/\/common\.seeyouyima\.com\/v\d\/conf_list - reject
 
 [Map Local]
 # 为开屏/信息流广告接口返回快速空响应，避免等待超时
-^https?:\\/\\/(203\\.107\\.33\\.92|ad\\.seeyouyima\\.com)\\/v1\\/getad data-type=text data="{\"code\":0,\"data\":[]}" status-code=200
+^https?:\/\/(203\.107\.33\.92|ad\.seeyouyima\.com)\/v1\/getad data-type=text data="{\"code\":0,\"data\":[]}" status-code=200
 # 广告曝光/日志接口返回 204，防止客户端阻塞
-^https?:\\/\\/ad\\.seeyouyima\\.com\\/statistics\\/.* data-type=text data="" status-code=204
-^https?:\\/\\/ad-logs\\.seeyouyima\\.com\\/log\\/.* data-type=text data="" status-code=204
+^https?:\/\/ad\.seeyouyima\.com\/statistics\/.* data-type=text data="" status-code=204
+^https?:\/\/ad-logs\.seeyouyima\.com\/log\/.* data-type=text data="" status-code=204
 # 埋点/曝光事件直接吃掉
-^https?:\\/\\/mgo\\.seeyouyima\\.com\\/(event|dialog)\\/.* data-type=text data="" status-code=204
+^https?:\/\/mgo\.seeyouyima\.com\/(event|dialog)\/.* data-type=text data="" status-code=204
+# 配置服务返回空数据
+^https?:\/\/config-service\.seeyouyima\.com\/api\/configs\/batch data-type=text data=" " status-code=200
 
 [Script]
 # 兜底：若 feed/list 接口含广告字段，清空后返回
-MeiYou-StripAds = type=http-response,pattern=^https?:\\/\\/[^\\/]*seeyouyima\\.com\\/.*(feed|list|timeline|post).*,requires-body=true,max-size=-1,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/meiyou-strip-ads.js
+MeiYou-StripAds = type=http-response,pattern=^https?:\/\/[^\/]*seeyouyima\.com\/.*(feed|list|timeline|post).*,requires-body=true,max-size=-1,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/meiyou-strip-ads.js
+# body rewrite：VIP 卡片/圈子广告等
+MeiYou-SubVIP-Cleaner = type=http-response,pattern=^https?:\/\/sub\.seeyouyima\.com\/v\d\/sub\/my_vip,requires-body=true,max-size=-1,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/meiyou-body-clean.js
+MeiYou-UserCircle-Trim = type=http-response,pattern=^https?:\/\/users\.seeyouyima\.com\/v\d\/wo\?,requires-body=true,max-size=-1,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/meiyou-body-clean.js
+MeiYou-FeedsRecommend-Trim = type=http-response,pattern=^https?:\/\/circle\.xmseeyouyima\.com\/v\d\/feeds_recommend\?,requires-body=true,max-size=-1,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/meiyou-body-clean.js
 
 [MITM]
-hostname = %APPEND% 203.107.33.92,ad.seeyouyima.com,ad-logs.seeyouyima.com,mgo.seeyouyima.com,trace.seeyouyima.com,ga.seeyouyima.com
+hostname = %APPEND% 203.107.33.92,ad.seeyouyima.com,ad-logs.seeyouyima.com,mgo.seeyouyima.com,trace.seeyouyima.com,ga.seeyouyima.com,jingqi.youzibuy.com,circle.seeyouyima.com,ab.seeyouyima.com,common.seeyouyima.com,sub.seeyouyima.com,users.seeyouyima.com,circle.xmseeyouyima.com,config-service.seeyouyima.com
