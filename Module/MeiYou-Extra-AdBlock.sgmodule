@@ -1,7 +1,7 @@
 #!name=MeiYou Extra AdBlock (HAR-based)
-#!desc=补充拦截美柚开屏/信息流广告与埋点（综合 ddgksf2013 方案与 2026-03-18 抓包）
+#!desc=补充拦截美柚开屏/信息流广告与埋点（综合 ddgksf2013 方案与 2026-03-26 抓包）
 #!author=codex
-#!date=2026-03-27 09:20 CST
+#!date=2026-03-26 14:50 CST
 #!category=AdBlock
 
 [Rule]
