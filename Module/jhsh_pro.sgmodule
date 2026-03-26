@@ -4,19 +4,7 @@
 #!category=NoAd
 #!ref=https://nssurge.com/llms.txt
 
-#!arguments
-block_winnow_v3_festival=true
-block_hpbanner_ad_info=true
-block_hpbanner_ad_info_first=true
-block_hpbanner_ad_info_second=true
-block_hpbanner_ad_info_third=true
-block_tag_ad_info=true
-block_tag_ad_info0=true
-block_tag_ad_info1=true
-block_tag_ad_info2=true
-block_myself_entrance_ad=true
-block_mebct_ad_info=true
-block_through_column_info=true
+#!arguments = block_winnow_v3_festival:true,block_hpbanner_ad_info:true,block_hpbanner_ad_info_first:true,block_hpbanner_ad_info_second:true,block_hpbanner_ad_info_third:true,block_tag_ad_info:true,block_tag_ad_info0:true,block_tag_ad_info1:true,block_tag_ad_info2:true,block_myself_entrance_ad:true,block_mebct_ad_info:true,block_through_column_info:true
 # 参数说明
 # block_winnow_v3_festival 节日活动广告
 # block_hpbanner_ad_info 首页精选大横幅
