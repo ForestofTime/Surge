@@ -16,14 +16,14 @@ DOMAIN,mgo.seeyouyima.com,REJECT-DROP
 # 统计渠道（可选，如遇误杀可注释）
 DOMAIN,ga.seeyouyima.com,REJECT
 
-[URL Rewrite]
-# 开屏 / 信息流广告获取接口
-^https?:\\/\\/(203\\.107\\.33\\.92|ad\\.seeyouyima\\.com)\\/v1\\/getad - reject-dict
-# 广告启动/曝光统计
-^https?:\\/\\/ad\\.seeyouyima\\.com\\/statistics\\/.* - reject-dict
-^https?:\\/\\/ad-logs\\.seeyouyima\\.com\\/log\\/.* - reject-dict
-# 埋点/曝光
-^https?:\\/\\/mgo\\.seeyouyima\\.com\\/(event|dialog)\\/.* - reject-dict
+[Map Local]
+# 为开屏/信息流广告接口返回快速空响应，避免等待超时
+^https?:\\/\\/(203\\.107\\.33\\.92|ad\\.seeyouyima\\.com)\\/v1\\/getad data-type=text data="{\"code\":0,\"data\":[]}" status-code=200
+# 广告曝光/日志接口返回 204，防止客户端阻塞
+^https?:\\/\\/ad\\.seeyouyima\\.com\\/statistics\\/.* data-type=text data="" status-code=204
+^https?:\\/\\/ad-logs\\.seeyouyima\\.com\\/log\\/.* data-type=text data="" status-code=204
+# 埋点/曝光事件直接吃掉
+^https?:\\/\\/mgo\\.seeyouyima\\.com\\/(event|dialog)\\/.* data-type=text data="" status-code=204
 
 [Script]
 # 兜底：若 feed/list 接口含广告字段，清空后返回
