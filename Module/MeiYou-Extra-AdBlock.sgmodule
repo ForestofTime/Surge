@@ -27,7 +27,7 @@ DOMAIN,ga.seeyouyima.com,REJECT
 
 [Script]
 # 兜底：若 feed/list 接口含广告字段，清空后返回
-MeiYou-StripAds = type=http-response,pattern=^https?:\\/\\/[^\\/]*seeyouyima\\.com\\/.*(feed|list|timeline|post).*,requires-body=true,max-size=-1,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/js/meiyou-strip-ads.js
+MeiYou-StripAds = type=http-response,pattern=^https?:\\/\\/[^\\/]*seeyouyima\\.com\\/.*(feed|list|timeline|post).*,requires-body=true,max-size=-1,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/meiyou-strip-ads.js
 
 [MITM]
 hostname = %APPEND% 203.107.33.92,ad.seeyouyima.com,ad-logs.seeyouyima.com,mgo.seeyouyima.com,trace.seeyouyima.com,ga.seeyouyima.com
