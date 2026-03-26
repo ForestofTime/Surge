@@ -15,14 +15,8 @@ DOMAIN,trace.seeyouyima.com,REJECT-DROP
 DOMAIN,mgo.seeyouyima.com,REJECT-DROP
 # 统计渠道（可选，如遇误杀可注释）
 DOMAIN,ga.seeyouyima.com,REJECT
-# ddgksf2013 方案中的补充域名
+# ddgksf2013 方案中的补充域名（保留跳转域拦截）
 DOMAIN,jingqi.youzibuy.com,REJECT
-DOMAIN,circle.seeyouyima.com,REJECT
-DOMAIN,ab.seeyouyima.com,REJECT
-
-[URL Rewrite]
-# 拦截配置数据
-^https?:\/\/common\.seeyouyima\.com\/v\d\/conf_list - reject
 
 [Map Local]
 # 为开屏/信息流广告接口返回快速空响应，避免等待超时
@@ -32,8 +26,6 @@ DOMAIN,ab.seeyouyima.com,REJECT
 ^https?:\/\/ad-logs\.seeyouyima\.com\/log\/.* data-type=text data="" status-code=204
 # 埋点/曝光事件直接吃掉
 ^https?:\/\/mgo\.seeyouyima\.com\/(event|dialog)\/.* data-type=text data="" status-code=204
-# 配置服务返回空数据
-^https?:\/\/config-service\.seeyouyima\.com\/api\/configs\/batch data-type=text data=" " status-code=200
 
 [Script]
 # 兜底：若 feed/list 接口含广告字段，清空后返回
@@ -44,4 +36,4 @@ MeiYou-UserCircle-Trim = type=http-response,pattern=^https?:\/\/users\.seeyouyim
 MeiYou-FeedsRecommend-Trim = type=http-response,pattern=^https?:\/\/circle\.xmseeyouyima\.com\/v\d\/feeds_recommend\?,requires-body=true,max-size=-1,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/meiyou-body-clean.js
 
 [MITM]
-hostname = %APPEND% 203.107.33.92,ad.seeyouyima.com,ad-logs.seeyouyima.com,mgo.seeyouyima.com,trace.seeyouyima.com,ga.seeyouyima.com,jingqi.youzibuy.com,circle.seeyouyima.com,ab.seeyouyima.com,common.seeyouyima.com,sub.seeyouyima.com,users.seeyouyima.com,circle.xmseeyouyima.com,config-service.seeyouyima.com
+hostname = %APPEND% 203.107.33.92,ad.seeyouyima.com,ad-logs.seeyouyima.com,mgo.seeyouyima.com,trace.seeyouyima.com,ga.seeyouyima.com,jingqi.youzibuy.com,sub.seeyouyima.com,users.seeyouyima.com,circle.xmseeyouyima.com
