@@ -1,29 +1,41 @@
 // Surge script: 清理美柚 feed/list 接口内的广告字段
 // 兼容 JSON 响应，若未发现广告字段则透传
 
-function strip(obj) {
-  const keys = ['ad', 'ads', 'advert', 'ad_list', 'creative', 'banners', 'slots'];
+const AD_KEYS = ['ad', 'ads', 'advert', 'ad_list', 'creative', 'banners', 'slots'];
+
+function stripAdsDeep(node) {
+  if (!node) return false;
+
   let touched = false;
-  keys.forEach((k) => {
-    if (Array.isArray(obj[k])) {
-      obj[k] = [];
-      touched = true;
-    }
-    if (obj.data && Array.isArray(obj.data[k])) {
-      obj.data[k] = [];
-      touched = true;
-    }
-  });
+
+  if (Array.isArray(node)) {
+    node.forEach((item) => {
+      if (stripAdsDeep(item)) touched = true;
+    });
+    return touched;
+  }
+
+  if (typeof node === 'object') {
+    Object.keys(node).forEach((key) => {
+      const value = node[key];
+      if (AD_KEYS.includes(key) && Array.isArray(value)) {
+        node[key] = [];
+        touched = true;
+        return;
+      }
+      if (stripAdsDeep(value)) touched = true;
+    });
+  }
+
   return touched;
 }
 
 try {
   const body = $response.body || '';
   const json = JSON.parse(body);
-  const changed = strip(json);
+  const changed = stripAdsDeep(json);
   if (changed) {
-    // 返回 204 以减少客户端广告处理
-    $done({ status: 204, body: JSON.stringify(json) });
+    $done({ body: JSON.stringify(json) });
   } else {
     $done({});
   }
