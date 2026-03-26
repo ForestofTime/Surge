@@ -4,8 +4,22 @@
 #!category=NoAd
 #!ref=https://nssurge.com/llms.txt
 
+#!arguments
+block_winnow_v3_festival=true # 节日活动广告
+block_hpbanner_ad_info=true # 首页精选大横幅
+block_hpbanner_ad_info_first=true # 精选横幅1
+block_hpbanner_ad_info_second=true # 精选横幅2
+block_hpbanner_ad_info_third=true # 精选横幅3
+block_tag_ad_info=true # 首页悬浮广告（jhsh.js 注释）
+block_tag_ad_info0=true # 首页标签广告0
+block_tag_ad_info1=true # 首页标签广告1
+block_tag_ad_info2=true # 首页标签广告2
+block_myself_entrance_ad=true # 我的页面入口广告（jhsh.js 注释）
+block_mebct_ad_info=true # 个人中心广告（jhsh.js 注释）
+block_through_column_info=true # 金融页面广告（jhsh.js 注释）
+
 [Script]
-建行生活接口净化 = type=http-response,pattern=^https?:\/\/yunbusiness\.ccb\.com\/(basic_service|clp_service)\/txCtrl,requires-body=true,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/JHSH_PRO.js,timeout=20
+建行生活接口净化 = type=http-response,pattern=^https?:\/\/yunbusiness\.ccb\.com\/(basic_service|clp_service)\/txCtrl,requires-body=true,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/JHSH_PRO.js,timeout=20,script-arguments="block_winnow_v3_festival=%block_winnow_v3_festival&block_hpbanner_ad_info=%block_hpbanner_ad_info&block_hpbanner_ad_info_first=%block_hpbanner_ad_info_first&block_hpbanner_ad_info_second=%block_hpbanner_ad_info_second&block_hpbanner_ad_info_third=%block_hpbanner_ad_info_third&block_tag_ad_info=%block_tag_ad_info&block_tag_ad_info0=%block_tag_ad_info0&block_tag_ad_info1=%block_tag_ad_info1&block_tag_ad_info2=%block_tag_ad_info2&block_myself_entrance_ad=%block_myself_entrance_ad&block_mebct_ad_info=%block_mebct_ad_info&block_through_column_info=%block_through_column_info"
 
 
 [Map Local]

@@ -11,6 +11,54 @@ false = 保留本地优惠
 
 const BLOCK_LOCAL_BENEFIT = false;
 
+const AD_BLOCK_DEFAULTS = {
+  WINNOW_V3_FESTIVAL: true,
+  HPBANNER_AD_INFO_SECOND: true,
+  HPBANNER_AD_INFO: true,
+  HPBANNER_AD_INFO_FIRST: true,
+  HPBANNER_AD_INFO_THIRD: true,
+  TAG_AD_INFO: true,
+  TAG_AD_INFO0: true,
+  TAG_AD_INFO1: true,
+  TAG_AD_INFO2: true,
+  MYSELF_ENTRANCE_AD: true,
+  MEBCT_AD_INFO: true,
+  THROUGH_COLUMN_INFO: true
+};
+
+const LOGGED_INVALID_BLOCK_ARGS = new Set();
+
+function parseBooleanArgument(argName, defaultValue) {
+
+  const rawValue = $argument?.[argName];
+  if (rawValue === undefined || rawValue === null) {
+    return defaultValue;
+  }
+
+  const normalized = String(rawValue).trim().toLowerCase();
+  if (normalized === "true") {
+    return true;
+  }
+  if (normalized === "false") {
+    return false;
+  }
+
+  if (!LOGGED_INVALID_BLOCK_ARGS.has(argName)) {
+    LOGGED_INVALID_BLOCK_ARGS.add(argName);
+    const defaultText = defaultValue ? "true" : "false";
+    console.log(`jhsh_pro: 参数 ${argName}=${rawValue} 非法，使用默认 ${defaultText}`);
+  }
+
+  return defaultValue;
+}
+
+const BLOCK_KEY_MAP = Object.fromEntries(
+  Object.entries(AD_BLOCK_DEFAULTS).map(([key, value]) => [
+    key,
+    parseBooleanArgument(`block_${key.toLowerCase()}`, value)
+  ])
+);
+
 
 /* ========= 脚本主体 ========= */
 
@@ -28,20 +76,11 @@ const KEEP_KEYS = new Set([
 "NOTICE_AD_INFO"
 ]);
 
-const DELETE_EXACT_KEYS = new Set([
-"WINNOW_V3_FESTIVAL",
-"HPBANNER_AD_INFO_SECOND",
-"HPBANNER_AD_INFO",
-"HPBANNER_AD_INFO_FIRST",
-"HPBANNER_AD_INFO_THIRD",
-"TAG_AD_INFO",
-"TAG_AD_INFO0",
-"TAG_AD_INFO1",
-"TAG_AD_INFO2",
-"MYSELF_ENTRANCE_AD",
-"MEBCT_AD_INFO",
-"THROUGH_COLUMN_INFO"
-]);
+const DELETE_EXACT_KEYS = new Set(
+  Object.entries(BLOCK_KEY_MAP)
+    .filter(([, enabled]) => enabled)
+    .map(([key]) => key)
+);
 
 const BAN_STOREY_NAME_PAT = /(种草推荐|小编推荐|分期好生活)/;
 const BAN_LOCAL_STOREY_TYPES = new Set(["273",273]);
@@ -210,16 +249,19 @@ return true;
 
 for(const k of Object.keys(data)){
 
-if(KEEP_KEYS.has(k)) continue;
+  if(KEEP_KEYS.has(k)) continue;
 
-if(DELETE_EXACT_KEYS.has(k)){
-delete data[k];
-continue;
-}
+  const blockToggle = BLOCK_KEY_MAP[k];
+  if(blockToggle === false) continue;
 
-if(shouldDeleteKeyByName(k)){
-delete data[k];
-}
+  if(DELETE_EXACT_KEYS.has(k)){
+    delete data[k];
+    continue;
+  }
+
+  if(shouldDeleteKeyByName(k)){
+    delete data[k];
+  }
 
 }
 
