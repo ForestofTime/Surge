@@ -1,23 +1,16 @@
-#!name=滴滴开屏与弹窗去广告
-#!desc=粗粒度屏蔽滴滴（乘客/车主）App 的开屏与弹窗广告接口与素材。包含通用规则与 JSON 空响应降级，尽量不影响正常功能；如出现功能异常，请临时关闭本模块或反馈被误杀的 URL 以便细化。
+#!name=滴滴开屏/弹窗去广告（精简版）
+#!desc=仅拦截滴滴乘客/车主 App 的“开屏/弹窗”相关接口与素材；不拦截上报/SDK/统计等其它请求，尽量降低副作用。
 #!author=@lingyun_29 · 小龙虾
-#!version=2026.03.27
+#!version=2026.03.27-1
 
 [URL Rewrite]
-# 说明：
-# - 针对疑似广告/开屏/弹窗相关接口返回，优先用 reject-dict（返回 {}），避免客户端解析报错
-# - 对明显的图片/视频素材走 reject-200
-# - 规则尽量保守，仅命中包含典型关键词的路径；若仍有漏网/误杀，请反馈具体 URL
+# 仅匹配“开屏/弹窗”关键词；返回 JSON 用 reject-dict，素材用 reject-200
+# 接口类（JSON）→ 空字典
+^https?:\/\/([a-z0-9-]+\.)*(xiaojukeji\.com|diditaxi\.com\.cn)\/.+\b(splash|startup|launch|interstitial|popup|openad|openscreen|launchscreen)\b.*$  reject-dict
 
-# API / 配置类（返回 JSON）→ 空字典
-^https?:\/\/([a-z0-9-]+\.)*(xiaojukeji\.com|diditaxi\.com\.cn)\/.+\b(ad|ads|adver|advert|adconfig|splash|startup|launch|interstitial|popup|pop|openad)\b.*$  reject-dict
-
-# 素材类（图片/视频）→ 200 空响应（节省流量 + 不阻塞）
-^https?:\/\/res\.(xiaojukeji|diditaxi)\.(com|com\.cn)\/.*\b(splash|startup|launch|interstitial|popup|advert|ad)\b.*\.(png|jpe?g|gif|webp|mp4|mov)$  reject-200
-
-# 常见广告上报 / SDK 拉取 → 空字典
-^https?:\/\/([a-z0-9-]+\.)*(xiaojukeji\.com|diditaxi\.com\.cn)\/(sdk|ad|ads|track|report)\b.*$  reject-dict
+# 素材类（图片/视频）→ 200 空响应
+^https?:\/\/([a-z0-9-]+\.)*(xiaojukeji\.com|diditaxi\.com\.cn)\/.*\b(splash|startup|launch|interstitial|popup|openad|openscreen|launchscreen)\b.*\.(png|jpe?g|gif|webp|mp4|mov)$  reject-200
 
 [MITM]
-# 说明：开启 HTTPS 解密以应用 URL 重写（Surge > Settings > HTTPS Decryption，安装证书并信任）
+# HTTPS 解密，用于 URL 重写生效（Surge > Settings > HTTPS Decryption）
 hostname = *.xiaojukeji.com, *.diditaxi.com.cn
