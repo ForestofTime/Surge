@@ -1,0 +1,26 @@
+#!name=滴滴出行去广告｜顺风车车主端
+#!desc=移除开屏/弹窗/营销卡片，保留核心入口
+#!author=可莉🅥 & Codex
+#!category=BetaModule
+#!version=2026.03.27
+[Rule]
+DOMAIN,gwp.xiaojukeji.com,REJECT,extended-matching,pre-matching
+AND,((IP-ASN,45090,no-resolve),(DEST-PORT,25641),(PROTOCOL,TCP)),REJECT
+AND,((IP-ASN,55990,no-resolve),(DEST-PORT,25641),(PROTOCOL,TCP)),REJECT
+AND,((IP-ASN,63646,no-resolve),(DEST-PORT,25641),(PROTOCOL,TCP)),REJECT
+[Map Local]
+^https:\/\/res\.xiaojukeji\.com\/resapi\/activity\/mget data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/lion\.didialift\.com\/broker\/\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/ct\.xiaojukeji\.com\/agent\/v3\/feeds\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/conf\.diditaxi\.com\.cn\/dynamic\/conf data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/poi\.map\.xiaojukeji\.com\/mapapi\/recommend\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+[Script]
+首页核心布局 = type=http-response,requires-body=true,pattern=^https:\/\/conf\.diditaxi\.com\.cn\/homepage\/v1\/core,script-path=JS/didi_carowner.js
+首页快速卡片 = type=http-response,requires-body=true,pattern=^https:\/\/conf\.diditaxi\.com\.cn\/homepage\/v1\/(other\/fast|other\/slow),script-path=JS/didi_carowner.js
+顺风车布局 = type=http-response,requires-body=true,pattern=^https:\/\/api\.udache\.com\/gulfstream\/porsche\/v1\/(dache_homepage_layout|pSFCHomePage|SfcGlobalConfig),script-path=JS/didi_carowner.js
+我的页面布局 = type=http-response,requires-body=true,pattern=^https:\/\/common\.diditaxi\.com\.cn\/common\/v5\/usercenter\/layout,script-path=JS/didi_carowner.js
+跨城模块 = type=http-response,requires-body=true,pattern=^https:\/\/api\.udache\.com\/intercity\/ticket\/api\/v1\/core\/getFullPageInfoLayout,script-path=JS/didi_carowner.js
+代驾骑行模块 = type=http-response,requires-body=true,pattern=^https:\/\/(daijia\.kuaidadi\.com|htwkop\.xiaojukeji\.com):443\/gateway,script-path=JS/didi_carowner.js
+活动接口兜底 = type=http-response,requires-body=true,pattern=^https:\/\/as\.xiaojukeji\.com\/ep\/as\/toggles,script-path=JS/didi_carowner.js
+[MITM]
+hostname = %APPEND% as.xiaojukeji.com, common.diditaxi.com.cn, conf.diditaxi.com.cn, lion.didialift.com, api.udache.com, ct.xiaojukeji.com, res.xiaojukeji.com, daijia.kuaidadi.com, htwkop.xiaojukeji.com, poi.map.xiaojukeji.com
