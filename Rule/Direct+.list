@@ -3,3 +3,5 @@
 DOMAIN-SUFFIX,sntp.me // SNTP 时间同步服务，直连访问
 DOMAIN,wx.qlogo.cn // 腾讯微信头像资源域名，直连访问
 IP-CIDR,43.129.254.146/32,no-resolve // wx.qlogo.cn 对应的指定 IP，直连访问
+DOMAIN-SUFFIX,9867361.xyz // 私有域名，直连访问
+IP-CIDR,129.150.35.245/32,no-resolve // Oracle Cloud 新加坡实例，直连访问
