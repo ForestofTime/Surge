@@ -1,0 +1,4 @@
+# Reject+ 规则集
+# 截图中原策略为 REJECT 的规则统一归入此处。
+DOMAIN,app-analytics-services.com // 腾讯系应用内置广告服务，拦截请求
+DOMAIN,msmp.abchina.com.cn // 中国农业银行防代理检测服务，拦截请求
