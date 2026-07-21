@@ -1,0 +1,63 @@
+#!name=朴朴超市(抓包修正版)
+#!desc=基于 2026-07-21 抓包修正：补全 MITM 子域、删除损坏规则、放宽版本锁。注意：某些APP要清除缓存或者重新安装拦截广告才会生效！
+#!author=奶思(原) / WorkBuddy 修正
+#!category=奶思的模块
+#!homepage=https://github.com/fmz200/wool_scripts
+#!raw-url=https://github.com/fmz200/wool_scripts/raw/main/Surge/module/split/partP/PuPuSupermarket.sgmodule
+#!tg-channel=https://t.me/inaisi
+#!arguments=pupuicui_enable:true
+
+[URL Rewrite]
+# 广告下发(httpdns)。注意：抓包显示 54.222.159.138:8053 完成握手未被 reject，
+# 说明 app 大概率走直连 socket 做 httpdns，URL Rewrite reject 对直连 socket 不生效，这几条可能无效。
+^http:\/\/139\.196\.12\.179:8053\/httpdns\/ - reject
+^http:\/\/106\.55\.220\.18:8053\/httpdns\/ - reject
+^http:\/\/54\.222\.159\.138:8053\/httpdns\/ - reject
+^http:\/\/101\.42\.130\.147\/httpdns\/resolve\/ - reject
+# 主页实惠卡横幅
+^https:\/\/j1\.pupuapi\.com\/client\/member_card\/index\/my - reject
+
+[Body Rewrite]
+http-response-jq ^https:\/\/j1\.pupuapi\.com\/client\/notification\/message_center\/unread_number '.data = []'
+
+[Map Local]
+# 搜索框页面热榜
+^https:\/\/j1\.pupuapi\.com\/client\/marketing\/advertisement\/search_input_ranking data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+# 朴朴超市订单待收货页右下角悬浮广告
+^https:\/\/j1\.pupuapi\.com\/client\/assets\/discount\/order data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+# 购物车页去换购推荐
+^https:\/\/j1\.pupuapi\.com\/client\/marketing\/channel\/global_redeem\/top_tip\/v2 data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+# 各种页面的商品推荐
+^https:\/\/j1\.pupuapi\.com\/client\/recommendation\/hub\/interests\/products\/v2 data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+# 个人主页会员标识
+^https:\/\/j1\.pupuapi\.com\/client\/member_card\/premium\/user_center data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+[Script]
+# 搜索热词(放宽版本锁, 去掉 /v3)
+朴朴超市 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/search\/hot_keywords, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
+
+# 原模块此处有一条损坏规则: ^https:\/\/j1\.pupuapi\.com\/client\/a朴朴超市, (含中文与逗号, 永不匹配, 已删除)
+# 若你知道开屏广告的真实端点, 可在此补回一条正确规则。
+
+# 广告 v1(放宽版本锁, 去掉 /v1; 由脚本内部 /advertisement 匹配任意版本)
+朴朴超市 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/marketing\/advertisement, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
+
+# 搜索结果页信息流横幅广告(放宽版本锁, 去掉 /v6)
+朴朴超市 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/search\/hub\/search_box\/products, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
+
+# 下单页实惠卡开通推荐
+朴朴超市 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/order_settlement\/detail, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
+
+# 订单列表骑手反馈问题推荐(放宽版本锁, 去掉 /v4)
+朴朴超市 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/order\/orders\/list, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
+
+# 补全脚本里存在但原模块遗漏的端点(原脚本有 /resource_preload/list_h5_resource 分支, 却无对应规则)
+朴朴超市 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/resource_preload\/list_h5_resource, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
+
+[MITM]
+# 抓包显示 app 还连了以下子域并已被 MITM, 一并纳入以便后续规则可拦截
+hostname = %APPEND% j1.pupuapi.com, owl.pupuapi.com, pwy.pupuapi.com, push.pupuapi.com, product-files.pupumall.com
