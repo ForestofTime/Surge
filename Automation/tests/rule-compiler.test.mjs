@@ -63,6 +63,14 @@ test('parses ICANN, PRIVATE, wildcard and exception PSL rules', () => {
   assert.equal(psl.getRegistrableDomain('github.io'), null);
 });
 
+test('accepts PSL special-use entries while rejecting them as learned domains', () => {
+  const specialUse = new PublicSuffixList(parsePublicSuffixList('home.arpa\nlocal\n'));
+  assert.equal(specialUse.exact.has('home.arpa'), true);
+  assert.equal(specialUse.exact.has('local'), true);
+  assert.throws(() => normalizeDomain('router.home.arpa'));
+  assert.throws(() => normalizeDomain('printer.local'));
+});
+
 test('reverse domain trie finds suffix and exact coverage', () => {
   const trie = new ReverseDomainTrie();
   trie.insert({ type: 'DOMAIN-SUFFIX', target: 'example.com' });
