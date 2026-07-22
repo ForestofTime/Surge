@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "ready": false,
+  "source": "https://publicsuffix.org/list/public_suffix_list.dat",
+  "source_repository": "https://github.com/publicsuffix/list",
+  "commit": null,
+  "sha256": null,
+  "sections": ["ICANN", "PRIVATE"],
+  "license": "MPL-2.0",
+  "update_policy": {
+    "manual_review_required": true,
+    "workflow_may_open_pr": true,
+    "workflow_may_publish_without_review": false,
+    "max_age_days": 30
+  }
+}

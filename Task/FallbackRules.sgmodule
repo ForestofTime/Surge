@@ -1,0 +1,23 @@
+#!name=兜底规则学习
+#!desc=记录显式兜底命中的域名或 IP，并在每天 02:00 投递到私有 GitHub inbox
+#!category=工具
+
+# 该模块只声明脚本，避免模块规则插入主规则顶部后改变原有策略顺序。
+# min.conf 已包含以下两行；其他主配置请把它们放到 [Rule] 正式规则末尾：
+# SCRIPT,fallback-capture,Proxy
+# FINAL,Proxy,dns-failed
+
+[Script]
+
+# 热路径只做规范化、分片和每日 presence 去重，超时 1 秒。
+fallback-capture = type=rule,timeout=1,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/fallback-capture.js
+
+# 每日 02:00 旋转 live queue，上传 immutable batch，并只在 intake run 成功后清理。
+fallback-upload = type=cron,cronexp=0 2 * * *,timeout=30,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/fallback-upload.js
+
+# 网络变化只检查到期重试，不绕过退避时间。
+fallback-upload-network = type=event,event-name=network-changed,timeout=30,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/fallback-upload.js
+
+# 首次配置或 kill switch。手动执行时传入：
+# owner=OWNER&repo=Surge-Rule-Inbox&token=github_pat_...
+fallback-setup = type=generic,timeout=10,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/fallback-setup.js
