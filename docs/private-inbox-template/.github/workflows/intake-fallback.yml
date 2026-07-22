@@ -1,0 +1,87 @@
+name: intake fallback observations
+
+on:
+  workflow_dispatch:
+    inputs:
+      payload:
+        description: Compact array payload from Surge
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: fallback-intake
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: 22.14.0
+
+jobs:
+  validate:
+    name: validate without persistence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout inbox code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Set up exact Node runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.14.0'
+          check-latest: false
+      - name: Validate event from GitHub event file
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: node Automation/validate-intake-event.mjs
+
+  persist:
+    name: persist normalized observation state
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout inbox code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Set up exact Node runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.14.0'
+          check-latest: false
+      - name: Revalidate event before write
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          MODE: persist
+        run: node Automation/validate-intake-event.mjs
+      - name: Check state paths and diff allowlist
+        run: |
+          git diff --check
+          git diff --name-only > "$RUNNER_TEMP/changed-paths"
+          node --input-type=module - "$RUNNER_TEMP/changed-paths" <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const paths = readFileSync(process.argv[2], 'utf8').split(/\r?\n/).filter(Boolean);
+          const allowed = /^(Inbox\/(observations\/[0-9a-f]{2}\.json|batches\/[a-z0-9][a-z0-9._-]{0,95}\.json))$/;
+          if (paths.some((path) => !allowed.test(path))) process.exit(1);
+          NODE
+      - name: Commit private observation state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- Inbox/observations Inbox/batches
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m 'chore(inbox): persist normalized fallback observations'
+          git -c "http.extraheader=AUTHORIZATION: Bearer ${GH_TOKEN}" push origin HEAD:main

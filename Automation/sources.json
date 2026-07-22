@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "generated_by": "fallback-rule-learning",
+  "sources": [
+    {
+      "source_id": "bm7-proxy-domain",
+      "family_id": "bm7-proxy",
+      "repo": "blackmatrix7/ios_rule_script",
+      "path": "rule/Surge/Proxy/Proxy_Domain.list",
+      "url": "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/{commit}/rule/Surge/Proxy/Proxy_Domain.list",
+      "license": "GPL-2.0",
+      "allowed_rule_types": ["DOMAIN", "DOMAIN-SUFFIX", "DOMAIN-KEYWORD"],
+      "allowed_policies": ["PROXY"],
+      "authoritative": false,
+      "max_bytes": 5000000,
+      "max_entry_delta_ratio": 0.15,
+      "redirect_policy": "manual",
+      "enabled": true
+    },
+    {
+      "source_id": "bm7-direct",
+      "family_id": "bm7-direct",
+      "repo": "blackmatrix7/ios_rule_script",
+      "path": "rule/Surge/Direct/Direct.list",
+      "url": "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/{commit}/rule/Surge/Direct/Direct.list",
+      "license": "GPL-2.0",
+      "allowed_rule_types": ["DOMAIN", "DOMAIN-SUFFIX", "DOMAIN-KEYWORD"],
+      "allowed_policies": ["DIRECT"],
+      "authoritative": false,
+      "max_bytes": 5000000,
+      "max_entry_delta_ratio": 0.15,
+      "redirect_policy": "manual",
+      "enabled": true
+    }
+  ]
+}
