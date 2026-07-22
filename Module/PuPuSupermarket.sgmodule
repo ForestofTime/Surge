@@ -15,35 +15,37 @@
 ^http:\/\/54\.222\.159\.138:8053\/httpdns\/ - reject
 ^http:\/\/101\.42\.130\.147\/httpdns\/resolve\/ - reject
 
-# 开屏广告素材精确拦截（基于 2026-07-21/22 抓包）。
-# 教训：不能按"容器 uuid"或"文件格式"兜底拦截，因为同一个素材池会同时用于开屏和首页活动位，导致主页空白。
-# 以下仅拦截已观察到确实用于开屏广告的具体文件，并在扩展名后兼容 ?x-oss-process=... 等 OSS 参数。
+# v8 修正：app 在同一个广告容器 uuid 下会更换子路径(如 89c0be43/b735、12cdc95e/b4ca)，
+# 精确文件级规则永远在打地鼠。改为对 4 个纯广告容器做容器级 302 透明占位，覆盖任意子路径。
+# 019cc0d9 容器内同时混有首页小图标(1927/1ef7/7669)，故仍只精确处理已确认的广告文件 1ce7/04b5。
 
-# 2026-07-21 观察到的 5 条开屏素材
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/89c0be43a77a4204aceed273bffb5424\/b8cf\/32cf2c3936e0a1f26956fb3cff0ce7bb\.gif(\?.*)? - reject-img
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/31beb0ed84fc482ab443633b6f4866c2\/fd36\/5f91765bada58524efaf0432e8bfade3\.mp4 - reject-video
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/12cdc95e7dfb4eaa822914c9e7cb4264\/b85d\/13617fe8a09c77e41be574c346943e9a\.mp4 - reject-video
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/12cdc95e7dfb4eaa822914c9e7cb4264\/6e03\/d4d478d83b55bda5525215e14a651944\.mp4 - reject-video
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/c635cc92742040c6b16a85d8e9efbaeb\/3f6f\/2cd39f29b69945288187f9462f2e82bf\.gif(\?.*)? - reject-img
-
-# 2026-07-22 观察到的 2 条开屏素材（app 把 png 用 OSS 转成 webp）。
-# v7 修正：Surge URL Rewrite 302 语法为 'pattern target 302'（目标在前、action 在后）。
-# 关键：这 2 条与首页活动位共用同一素材池，reject 会导致首页留白，故改用 302 透明占位图。
+# 019cc0d9: 开屏+首页共用素材 -> 302 透明占位(避免首页留白)
 ^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/019cc0d94ea573e79e38e471f3d79b83\/1ce7\/4ee39889093d7a6810380abcff659abf\.gif(\?.*)? https://raw.githubusercontent.com/ForestofTime/Surge/main/Assets/transparent.gif 302
 ^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/019cc0d94ea573e79e38e471f3d79b83\/04b5\/94fd53b8ded7886803ce20ade2213dcf\.png(\?.*)? https://raw.githubusercontent.com/ForestofTime/Surge/main/Assets/transparent.png 302
+
+# 89c0be43 / 31beb0ed / 12cdc95e / c635cc92: 广告容器 -> 容器级 302 透明占位(gif/mp4/png 全格式)
+^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/89c0be43a77a4204aceed273bffb5424\/[0-9a-f]+\/[0-9a-f]+\.(?:gif|mp4)(\?.*)? https://raw.githubusercontent.com/ForestofTime/Surge/main/Assets/transparent.gif 302
+^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/89c0be43a77a4204aceed273bffb5424\/[0-9a-f]+\/[0-9a-f]+\.(?:png|jpg|jpeg|webp)(\?.*)? https://raw.githubusercontent.com/ForestofTime/Surge/main/Assets/transparent.png 302
+
+^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/31beb0ed84fc482ab443633b6f4866c2\/[0-9a-f]+\/[0-9a-f]+\.(?:gif|mp4)(\?.*)? https://raw.githubusercontent.com/ForestofTime/Surge/main/Assets/transparent.gif 302
+^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/31beb0ed84fc482ab443633b6f4866c2\/[0-9a-f]+\/[0-9a-f]+\.(?:png|jpg|jpeg|webp)(\?.*)? https://raw.githubusercontent.com/ForestofTime/Surge/main/Assets/transparent.png 302
+
+^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/12cdc95e7dfb4eaa822914c9e7cb4264\/[0-9a-f]+\/[0-9a-f]+\.(?:gif|mp4)(\?.*)? https://raw.githubusercontent.com/ForestofTime/Surge/main/Assets/transparent.gif 302
+^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/12cdc95e7dfb4eaa822914c9e7cb4264\/[0-9a-f]+\/[0-9a-f]+\.(?:png|jpg|jpeg|webp)(\?.*)? https://raw.githubusercontent.com/ForestofTime/Surge/main/Assets/transparent.png 302
+
+^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/c635cc92742040c6b16a85d8e9efbaeb\/[0-9a-f]+\/[0-9a-f]+\.(?:gif|mp4)(\?.*)? https://raw.githubusercontent.com/ForestofTime/Surge/main/Assets/transparent.gif 302
+^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/c635cc92742040c6b16a85d8e9efbaeb\/[0-9a-f]+\/[0-9a-f]+\.(?:png|jpg|jpeg|webp)(\?.*)? https://raw.githubusercontent.com/ForestofTime/Surge/main/Assets/transparent.png 302
 
 # 主页实惠卡横幅
 ^https:\/\/j1\.pupuapi\.com\/client\/member_card\/index\/my - reject
 
 [Rule]
-# 开屏素材双重保险：URL Rewrite 若未命中，[Rule] 段再用 URL-REGEX 拦截一次。
-URL-REGEX,^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/89c0be43a77a4204aceed273bffb5424\/b8cf\/32cf2c3936e0a1f26956fb3cff0ce7bb\.gif(\?.*)?,REJECT
-URL-REGEX,^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/31beb0ed84fc482ab443633b6f4866c2\/fd36\/5f91765bada58524efaf0432e8bfade3\.mp4,REJECT
-URL-REGEX,^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/12cdc95e7dfb4eaa822914c9e7cb4264\/b85d\/13617fe8a09c77e41be574c346943e9a\.mp4,REJECT
-URL-REGEX,^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/12cdc95e7dfb4eaa822914c9e7cb4264\/6e03\/d4d478d83b55bda5525215e14a651944\.mp4,REJECT
-URL-REGEX,^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/c635cc92742040c6b16a85d8e9efbaeb\/3f6f\/2cd39f29b69945288187f9462f2e82bf\.gif(\?.*)?,REJECT
-# 019cc0d9/1ce7.gif 与 /04b5.png 为开屏+首页共用素材，已由 URL Rewrite 302 到透明占位图，
-# 此处不再 REJECT（否则首页对应位置会留白）。其余纯开屏素材仍保留 REJECT 双重保险。
+# v8 备份拦截：若 URL Rewrite 302 因某种原因未命中，对 4 个纯广告容器兜底 REJECT。
+# 019cc0d9 的 1ce7/04b5 与首页共用，此处不 REJECT，避免首页留白。
+URL-REGEX,^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/89c0be43a77a4204aceed273bffb5424\/,REJECT
+URL-REGEX,^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/31beb0ed84fc482ab443633b6f4866c2\/,REJECT
+URL-REGEX,^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/12cdc95e7dfb4eaa822914c9e7cb4264\/,REJECT
+URL-REGEX,^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/c635cc92742040c6b16a85d8e9efbaeb\/,REJECT
 
 [Body Rewrite]
 http-response-jq ^https:\/\/j1\.pupuapi\.com\/client\/notification\/message_center\/unread_number '.data = []'
@@ -86,11 +88,12 @@ http-response-jq ^https:\/\/j1\.pupuapi\.com\/client\/notification\/message_cent
 # 补全脚本里存在但原模块遗漏的端点(原脚本有 /resource_preload/list_h5_resource 分支, 却无对应规则)
 朴朴超市 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/resource_preload\/list_h5_resource, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
 
-# 2026-07-22 v6 修正：开屏/首页共用素材改用 302 透明占位图。
-# 019cc0d9/1ce7.gif 与 /04b5.png 在同一素材池里既用于开屏广告、也用于首页活动位。
-# 之前的 reject 会让首页那个位置变成"加载失败的破空白"；现改为 URL Rewrite 302 到
-# 仓库内的 1x1 透明图(Assets/transparent.gif|png)，开屏照样屏蔽、首页显示透明占位不再破空白。
-# 其余 5 个纯开屏素材仍用 reject-img/reject-video + URL-REGEX 双重保险，不受影响。
+# 2026-07-22 v8 修正：
+# 1) 对 89c0be43/31beb0ed/12cdc95e/c635cc92 这 4 个纯广告容器做容器级 302 透明占位，
+#    覆盖任意子路径，解决 app 在同一容器内更换子路径导致旧规则漏过的问题。
+# 2) 019cc0d9 容器仍混有首页小图标，只对已确认的 1ce7/04b5 做 302 透明占位。
+# 3) 开屏广告是「原生容器 + 背景图」结构，背景图透明后容器本身（跳过按钮/倒计时）仍会显示；
+#    若要彻底让开屏跳过，需把 1ce7/04b5 改回 reject，但会牺牲首页对应位置（留白）。
 
 [MITM]
 # 抓包显示 app 还连了以下子域并已被 MITM, 一并纳入以便后续规则可拦截
