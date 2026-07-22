@@ -54,7 +54,7 @@ function stripInlineComment(line) {
   return line.slice(0, end).trim();
 }
 
-export function normalizeDomain(value, { allowSingleLabel = false } = {}) {
+export function normalizeDomain(value, { allowSingleLabel = false, allowSpecialUse = false } = {}) {
   const input = assertString(value, 'domain').trim();
   if (!input || /[\u0000-\u0020\u007f]/u.test(input)) fail('invalid domain characters');
   const withoutDot = input.endsWith('.') ? input.slice(0, -1) : input;
@@ -64,7 +64,7 @@ export function normalizeDomain(value, { allowSingleLabel = false } = {}) {
   if (normalizeIp.maybe(ascii)) fail('IP literal is not a domain');
   const labels = ascii.split('.');
   if (!allowSingleLabel && labels.length < 2) fail('single-label domain is not supported');
-  if (labels.at(-1) === 'local' || (labels.length >= 2 && labels.slice(-2).join('.') === 'home.arpa')) fail('local domain is not supported');
+  if (!allowSpecialUse && (labels.at(-1) === 'local' || (labels.length >= 2 && labels.slice(-2).join('.') === 'home.arpa'))) fail('local domain is not supported');
   for (const label of labels) {
     if (label.length < 1 || label.length > 63 || !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/u.test(label)) {
       fail('invalid domain label');
@@ -253,13 +253,13 @@ export function parsePublicSuffixList(text) {
     const candidate = line.split(/\s+/u)[0].toLowerCase();
     if (!candidate) continue;
     if (candidate.startsWith('!')) {
-      const domain = normalizeDomain(candidate.slice(1), { allowSingleLabel: true });
+      const domain = normalizeDomain(candidate.slice(1), { allowSingleLabel: true, allowSpecialUse: true });
       exception.set(domain, section);
     } else if (candidate.startsWith('*.')) {
-      const domain = normalizeDomain(candidate.slice(2), { allowSingleLabel: true });
+      const domain = normalizeDomain(candidate.slice(2), { allowSingleLabel: true, allowSpecialUse: true });
       wildcard.set(domain, section);
     } else {
-      const domain = normalizeDomain(candidate, { allowSingleLabel: true });
+      const domain = normalizeDomain(candidate, { allowSingleLabel: true, allowSpecialUse: true });
       exact.set(domain, section);
     }
   }

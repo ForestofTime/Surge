@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
@@ -96,8 +97,14 @@ for (const configPath of ['Automation/manual-overrides.json', 'Automation/shadow
 }
 
 const psl = read('Automation/vendor/public_suffix_list.dat');
-assert.match(psl, /PSL_SNAPSHOT_STATUS=placeholder/);
-assert.match(psl, /sha256/i);
+const pslLock = readJson('Automation/vendor/public_suffix_list.lock.json');
+assert.equal(pslLock.schema_version, 1);
+assert.equal(pslLock.ready, true);
+assert.match(pslLock.commit, /^[0-9a-f]{40}$/);
+assert.match(pslLock.sha256, /^[0-9a-f]{64}$/);
+assert.match(psl, /===BEGIN ICANN DOMAINS===/);
+assert.match(psl, /===BEGIN PRIVATE DOMAINS===/);
+assert.equal(createHash('sha256').update(psl, 'utf8').digest('hex'), pslLock.sha256);
 
 const validEvent = resolve(root, 'Automation/tests/fixtures/valid-dispatch-event.json');
 const validRun = spawnSync(process.execPath, ['Automation/validate-workflow-event.mjs'], {
