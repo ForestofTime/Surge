@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "lock_format": 1,
+  "updated_at": "2026-07-22T04:35:38.933Z",
+  "sources": [
+    {
+      "source_id": "bm7-direct",
+      "family_id": "bm7-direct",
+      "commit": "a75313d36b049b8aca5b26beffafb1b0ec8c564d",
+      "content_sha256": "5d1d3198c0f525b167b1b3b1ccb7023fac55a696a8bb9d1b44e0028aed3d0f43",
+      "max_bytes": 5000000,
+      "max_entry_delta_ratio": 0.15,
+      "entry_count": 268,
+      "verified_at": "2026-07-22T04:35:38.932Z"
+    },
+    {
+      "source_id": "bm7-proxy-domain",
+      "family_id": "bm7-proxy",
+      "commit": "40ae51ca0186ee07bd48e1bdc22bdf10f3c66a5e",
+      "content_sha256": "8fb67cd14b7570936c5b0cbfb51080881219aa6a06276a0a584fb6425ec90f82",
+      "max_bytes": 5000000,
+      "max_entry_delta_ratio": 0.15,
+      "entry_count": 6760,
+      "verified_at": "2026-07-22T04:35:38.495Z"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "inputs": {
+    "proposal": "{\"schema_version\":1,\"proposal_id\":\"a977642351b56578b1aa7c940393593a24fd3df09acfbbdaca734a987edb69f0\",\"lock_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"rules\":[{\"policy\":\"PROXY\",\"type\":\"DOMAIN-SUFFIX\",\"value\":\"example.com\"}]}"
+  }
+}

@@ -1,0 +1,7 @@
+# PSL_SNAPSHOT_STATUS=placeholder
+# sha256=placeholder-until-reviewed
+#
+# This repository intentionally ships no active PSL snapshot yet. The source
+# lock workflow must replace this file with the Public Suffix List ICANN and
+# PRIVATE sections, record a SHA-256 digest, and set ready=true in the lock
+# file before any suffix expansion can publish.

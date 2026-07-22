@@ -1,0 +1,125 @@
+name: classify fallback observations
+
+on:
+  schedule:
+    - cron: '31 3 * * *'
+  workflow_run:
+    workflows: ['intake fallback observations']
+    types: [completed]
+
+permissions: {}
+
+concurrency:
+  group: fallback-classify
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: 22.14.0
+
+jobs:
+  classify:
+    if: ${{ github.event_name == 'schedule' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout private inbox code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: main
+          path: inbox
+          persist-credentials: false
+
+      - name: Set up exact Node runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.14.0'
+          check-latest: false
+
+      - name: Read reviewed classifier commit
+        id: classifier
+        working-directory: inbox
+        run: node Automation/read-classifier-config.mjs
+
+      - name: Checkout public classifier at fixed commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ${{ steps.classifier.outputs.repository }}
+          ref: ${{ steps.classifier.outputs.commit }}
+          path: public-classifier
+          persist-credentials: false
+
+      - name: Checkout generated rules at fixed branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ${{ steps.classifier.outputs.repository }}
+          ref: generated
+          path: public-generated
+          persist-credentials: false
+
+      - name: Verify checked out classifier commit
+        working-directory: public-classifier
+        run: |
+          actual="$(git rev-parse HEAD)"
+          expected="${{ steps.classifier.outputs.commit }}"
+          test "$actual" = "$expected"
+          test -f Automation/classify-fallback.mjs
+
+      - name: Run classifier without public token
+        working-directory: inbox
+        run: |
+          node ../public-classifier/Automation/classify-fallback.mjs \
+            --observations Inbox/observations \
+            --overrides Inbox/manual-overrides.json \
+            --sources ../public-classifier/Automation/sources.json \
+            --locks ../public-classifier/Automation/sources.lock.json \
+            --control-plane ../public-classifier/Automation/control-plane.json \
+            --existing-direct ../public-generated/Rule/Direct+.list \
+            --existing-proxy ../public-generated/Rule/Proxy+.list \
+            --existing-reject ../public-classifier/Rule/Reject+.list \
+            --psl ../public-classifier/Automation/vendor/public_suffix_list.dat \
+            --psl-lock ../public-classifier/Automation/vendor/public_suffix_list.lock.json \
+            --output-dir .work \
+            --review-dir Inbox/review \
+            --deferred-dir Inbox/deferred
+
+      - name: Check private diff allowlist and regular files
+        working-directory: inbox
+        run: |
+          git diff --check
+          git diff --name-only > "$RUNNER_TEMP/changed-paths"
+          node --input-type=module - "$RUNNER_TEMP/changed-paths" <<'NODE'
+          import { lstatSync, readFileSync } from 'node:fs';
+          const paths = readFileSync(process.argv[2], 'utf8').split(/\r?\n/).filter(Boolean);
+          const allowed = /^(Inbox\/(review|deferred)\/\d{4}-\d{2}-\d{2}\.json)$/;
+          if (paths.some((path) => !allowed.test(path))) process.exit(1);
+          for (const path of paths) {
+            const stat = lstatSync(path);
+            if (!stat.isFile() || stat.isSymbolicLink()) process.exit(1);
+          }
+          NODE
+
+      - name: Commit private review and deferred state
+        working-directory: inbox
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- Inbox/review Inbox/deferred
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m 'chore(inbox): classify fallback observations'
+          git -c "http.extraheader=AUTHORIZATION: Bearer ${GH_TOKEN}" push origin HEAD:main
+
+      - name: Dispatch public proposal as the final network step
+        if: ${{ steps.classifier.outputs.publish_enabled == 'true' }}
+        working-directory: inbox
+        env:
+          GH_TOKEN: ${{ secrets.PUBLIC_DISPATCH_TOKEN }}
+          PROPOSAL_PATH: .work/proposal.json
+          PUBLIC_REPOSITORY: ${{ steps.classifier.outputs.repository }}
+          PUBLISH_ENABLED: ${{ steps.classifier.outputs.publish_enabled }}
+        run: node Automation/dispatch-proposal.mjs

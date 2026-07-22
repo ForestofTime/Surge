@@ -1,3 +1,9 @@
-docs/
+docs/*
+!docs/plans/
+docs/plans/*
+!docs/plans/*.md
+!docs/private-inbox-template/
+!docs/private-inbox-template/**
+!docs/fallback-rule-learning-operation.md
+.work/
 .DS_Store
-
