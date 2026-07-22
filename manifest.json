@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "generator_version": "seed",
+  "generator_version": "1.0.0",
   "node_version": "v26.3.0",
-  "source_lock_sha256": null,
+  "source_lock_sha256": "c050fae04cf5215f13a1188314c66ec5cec220968639f272e88b117e05d1cdc2",
   "rules": {
     "Direct": {
       "count": 5,
@@ -13,7 +13,7 @@
         "IP-CIDR": 2,
         "IP-CIDR6": 0
       },
-      "sha256": "3380380829680fae64f0484a13f6473a52f372fde0b460eda81a883a4b012b5d"
+      "sha256": "fdf2cd5747074f642f85e9de9df0aa270f030297437f1f6acaf36cba80b13a40"
     },
     "Proxy": {
       "count": 7,
@@ -24,7 +24,7 @@
         "IP-CIDR": 0,
         "IP-CIDR6": 0
       },
-      "sha256": "bba034de20674e70ea173c80ad5f51297021a3928e22c7c037dd0a487aa1e12d"
+      "sha256": "89d35ee6f51e1a5c017a1fcf0d6088acbc5bc5b92e81cbc4622638a9c8697127"
     },
     "Reject": {
       "count": 0,
@@ -35,7 +35,7 @@
         "IP-CIDR": 0,
         "IP-CIDR6": 0
       },
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      "sha256": "61beff5221230fde38e0e23f1ec059d40cd7d706ca72541d630a1b69a020c1d3"
     }
   }
 }
