@@ -141,4 +141,5 @@ jobs:
             exit 0
           fi
           git commit -m "chore(generated): publish fallback proposal ${PROPOSAL_SHA256}"
-          git -c "http.extraheader=AUTHORIZATION: Bearer ${GH_TOKEN}" push origin HEAD:generated
+          AUTH_HEADER="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          git -c "http.extraheader=AUTHORIZATION: basic ${AUTH_HEADER}" push origin HEAD:generated
