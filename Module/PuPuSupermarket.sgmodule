@@ -27,9 +27,10 @@
 ^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/c635cc92742040c6b16a85d8e9efbaeb\/3f6f\/2cd39f29b69945288187f9462f2e82bf\.gif(\?.*)? - reject-img
 
 # 2026-07-22 观察到的 2 条开屏素材（app 把 png 用 OSS 转成 webp）。
+# v7 修正：Surge URL Rewrite 302 语法为 'pattern target 302'（目标在前、action 在后）。
 # 关键：这 2 条与首页活动位共用同一素材池，reject 会导致首页留白，故改用 302 透明占位图。
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/019cc0d94ea573e79e38e471f3d79b83\/1ce7\/4ee39889093d7a6810380abcff659abf\.gif(\?.*)? 302 https://raw.githubusercontent.com/ForestofTime/Surge/main/Assets/transparent.gif
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/019cc0d94ea573e79e38e471f3d79b83\/04b5\/94fd53b8ded7886803ce20ade2213dcf\.png(\?.*)? 302 https://raw.githubusercontent.com/ForestofTime/Surge/main/Assets/transparent.png
+^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/019cc0d94ea573e79e38e471f3d79b83\/1ce7\/4ee39889093d7a6810380abcff659abf\.gif(\?.*)? https://raw.githubusercontent.com/ForestofTime/Surge/main/Assets/transparent.gif 302
+^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/019cc0d94ea573e79e38e471f3d79b83\/04b5\/94fd53b8ded7886803ce20ade2213dcf\.png(\?.*)? https://raw.githubusercontent.com/ForestofTime/Surge/main/Assets/transparent.png 302
 
 # 主页实惠卡横幅
 ^https:\/\/j1\.pupuapi\.com\/client\/member_card\/index\/my - reject
