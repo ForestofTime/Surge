@@ -44,6 +44,8 @@ assertWorkflowSafety('.github/workflows/publish-fallback.yml', 'generated');
 assertWorkflowSafety('.github/workflows/update-source-locks.yml', 'main');
 
 for (const relativePath of [
+  '.github/workflows/publish-fallback.yml',
+  '.github/workflows/update-source-locks.yml',
   'docs/private-inbox-template/.github/workflows/intake-fallback.yml',
   'docs/private-inbox-template/.github/workflows/classify-fallback.yml',
 ]) {
@@ -53,6 +55,10 @@ for (const relativePath of [
   assert.doesNotMatch(workflow, /persist-credentials:\s*true/);
   assert.doesNotMatch(workflow, /\$\{\{\s*(?:inputs|github\.event\.inputs)\.[^}]+\}\}/);
   assert.match(workflow, /cancel-in-progress:\s*false/);
+  if (/git -c .*http\.extraheader/.test(workflow)) {
+    assert.match(workflow, /http\.extraheader=AUTHORIZATION: basic/);
+    assert.doesNotMatch(workflow, /http\.extraheader=AUTHORIZATION: Bearer/);
+  }
 }
 const classifyWorkflow = read('docs/private-inbox-template/.github/workflows/classify-fallback.yml');
 assert.match(classifyWorkflow, /classifier_commit|steps\.classifier\.outputs\.commit/);

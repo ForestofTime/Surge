@@ -112,7 +112,8 @@ jobs:
             exit 0
           fi
           git commit -m 'chore(inbox): classify fallback observations'
-          git -c "http.extraheader=AUTHORIZATION: Bearer ${GH_TOKEN}" push origin HEAD:main
+          AUTH_HEADER="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          git -c "http.extraheader=AUTHORIZATION: basic ${AUTH_HEADER}" push origin HEAD:main
 
       - name: Dispatch public proposal as the final network step
         if: ${{ steps.classifier.outputs.publish_enabled == 'true' }}
