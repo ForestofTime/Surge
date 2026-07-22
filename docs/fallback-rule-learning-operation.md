@@ -87,7 +87,7 @@ Inbox/deferred/
 
 ## 4. PSL 快照配置
 
-仓库当前的 `Automation/vendor/public_suffix_list.dat` 是占位文件，`public_suffix_list.lock.json` 中的 `ready` 为 `false`。在人工审核 PSL 前，所有自动 suffix 发布都会停止。
+仓库当前已固定一份同时包含 ICANN 和 PRIVATE 区段的 PSL 快照，`public_suffix_list.lock.json` 中的 `ready` 为 `true`。快照来源为官方 `publicsuffix.org`，对应 `publicsuffix/list` commit `ca355e4aadee94e349e1f9c86145618cf762249d`，SHA-256 为 `bc29842a9ffd0b804db0094ba649d2365224f6b65cd415271dc90fa6005f2856`。发布前仍会校验快照哈希，哈希不匹配时立即停止。
 
 操作步骤：
 
@@ -114,7 +114,7 @@ Inbox/deferred/
    }
    ```
 
-6. 通过 Pull Request 合并，保留人工审核记录。
+6. 通过 Pull Request 合并，保留人工审核记录。当前快照已经按上述流程固定。后续更新仍需重新核对版本、内容和 SHA-256。
 
 不要只修改 `ready`，必须同时核对快照内容、commit 和 SHA-256。
 
@@ -399,7 +399,7 @@ capture=false&upload=false
 - [ ] 公开 dispatch Token 只有公开仓库的 `Actions: write`
 - [ ] 原始 payload 没有进入 Git、日志、artifact 或 cache
 - [ ] 私有 intake、classify 和公开 publish 均通过安全测试
-- [ ] PSL 快照已人工审核，`ready=true` 且 SHA-256 匹配
+- [x] PSL 快照已人工审核，`ready=true` 且 SHA-256 匹配
 - [ ] generated 分支只包含允许产物
 - [ ] 已完成至少 7 天 dry-run
 - [ ] 已验证锁屏、断网、Surge 重启和 Token 轮换

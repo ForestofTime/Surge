@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "ready": false,
+  "ready": true,
   "source": "https://publicsuffix.org/list/public_suffix_list.dat",
   "source_repository": "https://github.com/publicsuffix/list",
-  "commit": null,
-  "sha256": null,
+  "commit": "ca355e4aadee94e349e1f9c86145618cf762249d",
+  "sha256": "bc29842a9ffd0b804db0094ba649d2365224f6b65cd415271dc90fa6005f2856",
   "sections": ["ICANN", "PRIVATE"],
   "license": "MPL-2.0",
   "update_policy": {
