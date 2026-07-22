@@ -1,0 +1,9 @@
+# Proxy+ 规则集
+# 截图中原策略为 Proxy、AIGC、PikPak 或 Cloud 的规则统一归入此处。
+DOMAIN-SUFFIX,ddgksf2013.top // 用户指定域名，使用代理访问
+DOMAIN-SUFFIX,cocoloop.cn // 用户指定域名，使用代理访问
+DOMAIN,gsp-e1-ssl.ls.apple.com // Apple“查找”设备定位服务，原使用 AIGC 策略
+DOMAIN-SUFFIX,keepshare.org // KeepShare 文件托管与分享服务，原使用 PikPak 策略
+DOMAIN,javdb.com // JAVDB 网站，使用代理访问
+DOMAIN-SUFFIX,sheerid.com // SheerID 身份与资格验证服务，原使用 Cloud 策略
+DOMAIN-SUFFIX,spankbang.com // SpankBang 视频网站，使用代理访问
