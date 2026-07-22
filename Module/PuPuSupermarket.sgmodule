@@ -84,9 +84,10 @@ http-response-jq ^https:\/\/j1\.pupuapi\.com\/client\/notification\/message_cent
 # 补全脚本里存在但原模块遗漏的端点(原脚本有 /resource_preload/list_h5_resource 分支, 却无对应规则)
 朴朴超市 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/resource_preload\/list_h5_resource, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
 
-# 2026-07-22 修正：http-request 脚本不再兜底拦截容器/格式，只按精确文件 uuid 列表阻断，避免误伤首页。
-# pattern 仅命中开屏素材所在的 5 个容器，脚本内部再精确到文件。
-朴朴开屏拦截 = type=http-request, pattern=^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/(89c0be43a77a4204aceed273bffb5424|31beb0ed84fc482ab443633b6f4866c2|12cdc95e7dfb4eaa822914c9e7cb4264|c635cc92742040c6b16a85d8e9efbaeb|019cc0d94ea573e79e38e471f3d79b83)\/, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashBlocker.js, requires-body=false, timeout=60
+# 2026-07-22 v5 修正：删除 http-request 容器级脚本。
+# 原因：URL Rewrite 与 [Rule] 的双重保险已足够；http-request 脚本的容器级 pattern 会误伤同一素材池
+# 中用于首页活动位的普通图片（如 89c0be43.../b735/...gif），导致主页空白。
+# 只保留 URL Rewrite + URL-REGEX 的精确文件级拦截。
 
 [MITM]
 # 抓包显示 app 还连了以下子域并已被 MITM, 一并纳入以便后续规则可拦截
