@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "enabled": true,
+  "inbox_repository": "OWNER/Surge-Rule-Inbox",
+  "public_repository": "ForestofTime/Surge",
+  "generated_branch": "generated",
+  "never_capture_hosts": [
+    "api.github.com",
+    "github.com",
+    "raw.githubusercontent.com",
+    "objects.githubusercontent.com",
+    "codeload.github.com",
+    "publicsuffix.org",
+    "surge.run"
+  ],
+  "source_hosts": [
+    "raw.githubusercontent.com",
+    "github.com",
+    "publicsuffix.org"
+  ],
+  "never_learn_suffixes": [
+    "github.io",
+    "pages.dev",
+    "appspot.com",
+    "netlify.app",
+    "vercel.app"
+  ],
+  "upload": {
+    "host": "api.github.com",
+    "path_prefix": "/repos/OWNER/Surge-Rule-Inbox/actions/workflows/",
+    "policy": "Proxy",
+    "max_redirects": 0,
+    "timeout_seconds": 8
+  },
+  "kill_switches": {
+    "capture_enabled": true,
+    "classify_enabled": false,
+    "publish_enabled": false
+  },
+  "psl": {
+    "snapshot_path": "Automation/vendor/public_suffix_list.dat",
+    "lock_path": "Automation/vendor/public_suffix_list.lock.json",
+    "require_ready_snapshot": true
+  }
+}

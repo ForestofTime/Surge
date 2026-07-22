@@ -1,0 +1,144 @@
+name: publish fallback rules
+
+on:
+  workflow_dispatch:
+    inputs:
+      proposal:
+        description: JSON proposal prepared by the private classify workflow
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: fallback-publish-generated
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: 22.14.0
+  GENERATED_BRANCH: generated
+
+jobs:
+  validate:
+    name: validate proposal
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout protected source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Set up exact Node runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.14.0'
+          check-latest: false
+
+      - name: Validate event from GitHub event file
+        id: event
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: node Automation/validate-workflow-event.mjs
+
+      - name: Validate publish kill switch
+        run: node Automation/check-kill-switch.mjs publish
+
+      - name: Enforce workflow queue limit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_FILE: publish-fallback.yml
+          MAX_QUEUE_DEPTH: '100'
+        run: node Automation/check-queue-depth.mjs
+
+  publish:
+    name: revalidate and publish generated branch
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Checkout protected source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: main
+          path: source-tree
+          persist-credentials: false
+
+      - name: Checkout generated branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: generated
+          path: generated-tree
+          persist-credentials: false
+
+      - name: Set up exact Node runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.14.0'
+          check-latest: false
+
+      - name: Revalidate event in write job
+        id: event
+        working-directory: source-tree
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: node Automation/validate-workflow-event.mjs
+
+      - name: Revalidate publish kill switch in write job
+        working-directory: source-tree
+        run: node Automation/check-kill-switch.mjs publish
+
+      - name: Verify source and control-plane locks
+        working-directory: source-tree
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const config = JSON.parse(readFileSync('Automation/control-plane.json', 'utf8'));
+          const locks = JSON.parse(readFileSync('Automation/sources.lock.json', 'utf8'));
+          const psl = JSON.parse(readFileSync('Automation/vendor/public_suffix_list.lock.json', 'utf8'));
+          if (config.schema_version !== 1 || locks.schema_version !== 1 || psl.schema_version !== 1) process.exit(1);
+          if (config.generated_branch !== 'generated' || config.psl.require_ready_snapshot !== true || psl.ready !== true) process.exit(1);
+          if (!locks.sources.every((source) => /^[0-9a-f]{40}$/.test(source.commit) && /^[0-9a-f]{64}$/.test(source.content_sha256))) process.exit(1);
+          NODE
+
+      - name: Generate into isolated generated tree
+        working-directory: source-tree
+        env:
+          PROPOSAL_PATH: .work/fallback-proposal.json
+          OUTPUT_ROOT: ../generated-tree
+        run: |
+          test -f "$PROPOSAL_PATH"
+          test -f Automation/generate-rules.mjs
+          node Automation/generate-rules.mjs --proposal-file "$PROPOSAL_PATH" --output-root "$OUTPUT_ROOT"
+
+      - name: Verify generated tree and diff allowlist
+        working-directory: generated-tree
+        run: |
+          # verify-generated-tree.mjs rejects symlink and non-regular entries.
+          node ../source-tree/Automation/verify-generated-tree.mjs --root .
+          node ../source-tree/Automation/verify-rules.mjs --rule-dir Rule --psl ../source-tree/Automation/vendor/public_suffix_list.dat --policies Direct,Proxy
+          git diff --name-only --exit-code -- . ':!Source/Auto/Direct+.list' ':!Source/Auto/Proxy+.list' ':!Rule/Direct+.list' ':!Rule/Proxy+.list' ':!manifest.json' ':!proposals/processed.json' ':!README.md'
+          git diff --name-only | node ../source-tree/Automation/check-generated-diff.mjs
+
+      - name: Commit generated branch only
+        working-directory: generated-tree
+        env:
+          PROPOSAL_SHA256: ${{ steps.event.outputs.proposal_sha256 }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- Source/Auto/Direct+.list Source/Auto/Proxy+.list Rule/Direct+.list Rule/Proxy+.list manifest.json proposals/processed.json README.md
+          git diff --cached --name-only | node ../source-tree/Automation/check-generated-diff.mjs
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore(generated): publish fallback proposal ${PROPOSAL_SHA256}"
+          git -c "http.extraheader=AUTHORIZATION: Bearer ${GH_TOKEN}" push origin HEAD:generated

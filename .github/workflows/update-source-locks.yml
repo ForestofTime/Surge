@@ -1,0 +1,90 @@
+name: update locked rule sources
+
+on:
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch: {}
+
+permissions: {}
+
+concurrency:
+  group: fallback-source-locks
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: 22.14.0
+  GENERATED_BRANCH: generated
+
+jobs:
+  update:
+    name: inspect source updates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout protected source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Set up exact Node runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.14.0'
+          check-latest: false
+
+      - name: Validate event file when manually dispatched
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+          if (event?.inputs && Object.keys(event.inputs).length !== 0) process.exit(1);
+          NODE
+
+      - name: Validate source-update kill switch and config
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const config = JSON.parse(readFileSync('Automation/control-plane.json', 'utf8'));
+          if (config.schema_version !== 1 || config.enabled !== true) process.exit(1);
+          if (config.generated_branch !== 'generated') process.exit(1);
+          NODE
+
+      - name: Prepare reviewed lock changes
+        id: update
+        run: node Automation/update-source-locks.mjs
+
+      - name: Validate changed paths
+        run: |
+          # A regular-file check prevents symlink or path substitution attacks.
+          # The lock allowlist contains only Automation/sources.lock.json.
+          git diff --check
+          git diff --name-only > "$RUNNER_TEMP/changed-paths"
+          node --input-type=module - "$RUNNER_TEMP/changed-paths" <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const paths = readFileSync(process.argv[2], 'utf8').split(/\r?\n/).filter(Boolean);
+          const allowed = new Set(['Automation/sources.lock.json']);
+          if (paths.some((path) => !allowed.has(path))) process.exit(1);
+          NODE
+
+      - name: Open a source-lock review branch and pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          if git diff --quiet -- Automation/sources.lock.json; then
+            exit 0
+          fi
+          branch="automation/source-locks-${RUN_ID}"
+          git switch --create "$branch"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- Automation/sources.lock.json
+          git commit -m 'chore(automation): update reviewed source locks'
+          git -c "http.extraheader=AUTHORIZATION: Bearer ${GH_TOKEN}" push --set-upstream origin "$branch"
+          gh pr create --base main --head "$branch" --title 'chore(automation): update reviewed source locks' --body 'Source lock changes require human review before publish.'
