@@ -1,4 +1,4 @@
-#!name=朴朴超市(抓包修正版)
+#!name=朴朴超市(响应体改写去广告版 v11)
 #!desc=基于 2026-07-21/22/23 多次抓包修正：整容器拦截已确认的开屏广告素材池（与首页 banner 共用），覆盖子路径变化；补全 MITM 子域、删除损坏规则、放宽版本锁。注意：某些APP要清除缓存或者重新安装拦截广告才会生效！
 #!author=奶思(原) / WorkBuddy 修正
 #!category=奶思的模块
@@ -10,46 +10,18 @@
 [URL Rewrite]
 # 广告下发(httpdns)。注意：抓包显示 54.222.159.138:8053 完成握手未被 reject，
 # 说明 app 大概率走直连 socket 做 httpdns，URL Rewrite reject 对直连 socket 不生效，这几条可能无效。
+
+# v11 策略变更：不再拦截 CDN 图片(会误伤首页 banner 导致留白)。
+# 改为在 [Script] 段拦截 /marketing/advertisement 与 /marketing/banner 接口响应体，
+# 从配置源头让 app 不渲染开屏与首页 banner。详见 [Script] 段与 JS/PuPuSupermarket.js。
 ^http:\/\/139\.196\.12\.179:8053\/httpdns\/ - reject
 ^http:\/\/106\.55\.220\.18:8053\/httpdns\/ - reject
 ^http:\/\/54\.222\.159\.138:8053\/httpdns\/ - reject
 ^http:\/\/101\.42\.130\.147\/httpdns\/resolve\/ - reject
 
-# v10 修正：用户选 reject 版。广告容器（开屏与首页 banner 共用同一素材池）整容器 reject，
-# 覆盖任意子路径，解决 app 换子路径漏过问题；019cc0d9 的 1ce7/04b5 也按同样策略处理。
-# 代价：首页对应 banner/活动位会留白。这是网络层无法区分「开屏用」还是「首页用」导致的取舍。
-
-# 019cc0d9: 开屏+首页共用素材 -> reject(开屏彻底跳过，代价首页留白)
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/019cc0d94ea573e79e38e471f3d79b83\/1ce7\/4ee39889093d7a6810380abcff659abf\.gif(\?.*)? - reject
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/019cc0d94ea573e79e38e471f3d79b83\/04b5\/94fd53b8ded7886803ce20ade2213dcf\.png(\?.*)? - reject
-
-# 89c0be43 / 31beb0ed / 12cdc95e / c635cc92 / 0876bb9f / 7edc759f: 广告容器 -> 容器级 reject(gif/mp4/png/jpg/webp 全格式)
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/89c0be43a77a4204aceed273bffb5424\/[0-9a-f]+\/[0-9a-f]+\.(?:gif|mp4|png|jpg|jpeg|webp)(\?.*)? - reject
-
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/31beb0ed84fc482ab443633b6f4866c2\/[0-9a-f]+\/[0-9a-f]+\.(?:gif|mp4|png|jpg|jpeg|webp)(\?.*)? - reject
-
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/12cdc95e7dfb4eaa822914c9e7cb4264\/[0-9a-f]+\/[0-9a-f]+\.(?:gif|mp4|png|jpg|jpeg|webp)(\?.*)? - reject
-
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/c635cc92742040c6b16a85d8e9efbaeb\/[0-9a-f]+\/[0-9a-f]+\.(?:gif|mp4|png|jpg|jpeg|webp)(\?.*)? - reject
-
-# 2026-07-23 新增：大暑节气新 campaign 容器（抓包 154123.har）
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/0876bb9f23bd4d2789adae816be7cdcd\/[0-9a-f]+\/[0-9a-f]+\.(?:gif|mp4|png|jpg|jpeg|webp)(\?.*)? - reject
-
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/7edc759f51f8452db7a8432387b3b214\/[0-9a-f]+\/[0-9a-f]+\.(?:gif|mp4|png|jpg|jpeg|webp)(\?.*)? - reject
-
-# 主页实惠卡横幅
-^https:\/\/j1\.pupuapi\.com\/client\/member_card\/index\/my - reject
 
 [Rule]
-# v10 备份拦截：若 URL Rewrite 未命中，对所有已知广告容器兜底 REJECT。
-# 这些容器与首页 banner 共用素材池，reject 会导致首页部分位置留白。
-URL-REGEX,^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/019cc0d94ea573e79e38e471f3d79b83\/(1ce7|04b5)\/,REJECT
-URL-REGEX,^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/89c0be43a77a4204aceed273bffb5424\/,REJECT
-URL-REGEX,^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/31beb0ed84fc482ab443633b6f4866c2\/,REJECT
-URL-REGEX,^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/12cdc95e7dfb4eaa822914c9e7cb4264\/,REJECT
-URL-REGEX,^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/c635cc92742040c6b16a85d8e9efbaeb\/,REJECT
-URL-REGEX,^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/0876bb9f23bd4d2789adae816be7cdcd\/,REJECT
-URL-REGEX,^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/7edc759f51f8452db7a8432387b3b214\/,REJECT
+# v11：广告改为接口响应体改写([Script])，此处不再对素材 URL 做 REJECT，避免首页留白。
 
 [Body Rewrite]
 http-response-jq ^https:\/\/j1\.pupuapi\.com\/client\/notification\/message_center\/unread_number '.data = []'
@@ -80,6 +52,9 @@ http-response-jq ^https:\/\/j1\.pupuapi\.com\/client\/notification\/message_cent
 # 广告 v1(放宽版本锁, 去掉 /v1; 由脚本内部 /advertisement 匹配任意版本)
 朴朴超市 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/marketing\/advertisement, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
 
+# 2026-07-23 v11 新增：首页 banner 广告(社区验证 position_type 320/710/50)
+朴朴超市 = type=http-response, pattern=^https?:\/\/j1\.pupuapi\.com\/client\/marketing\/banner\/v\d\?position, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, max-size=-1, timeout=60
+
 # 搜索结果页信息流横幅广告(放宽版本锁, 去掉 /v6)
 朴朴超市 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/search\/hub\/search_box\/products, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
 
@@ -92,12 +67,13 @@ http-response-jq ^https:\/\/j1\.pupuapi\.com\/client\/notification\/message_cent
 # 补全脚本里存在但原模块遗漏的端点(原脚本有 /resource_preload/list_h5_resource 分支, 却无对应规则)
 朴朴超市 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/resource_preload\/list_h5_resource, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
 
-# 2026-07-23 v10 修正（用户选 reject 版）：
-# 1) 6 个广告容器整容器 reject(覆盖任意子路径) + 019cc0d9/1ce7/04b5 按文件级 reject。
-# 2) 2026-07-23 新增大暑 campaign 容器 0876bb9f、7edc759f（抓包 154123.har）。
-# 3) 目的：让开屏广告背景图加载失败 -> app 跳过整个开屏(含按钮/倒计时)。
-# 4) 代价：这些容器与首页 banner/活动位共用素材池，reject 会导致首页对应位置留白。
-# 5) 开屏广告是「原生容器 + 背景图」，reject 背景图即可让 app 放弃开屏。只要 app 继续复用首页 banner 图做开屏，这个取舍就 unavoidable。
+# 2026-07-23 v11 重大策略修正（参考社区 mieqq / ddgksf2013 朴朴去广告脚本）：
+# 1) 放弃「拦 CDN 图片」(v5-v10 的做法)——它误伤首页 banner 共用图，导致主页留白，且 app 换 campaign uuid 就要补规则。
+# 2) 改为接口响应体改写：/marketing/advertisement 把 launch_time_close 推到 2022(活动已结束 -> app 跳过开屏)；
+#    /marketing/banner 过滤 position_type 320/710/50 去掉首页 banner。app 自己不渲染广告，图片不再被请求 -> 无留白。
+# 3) 删除全部 STORE_PRODUCT 图片拦截规则与对应 [Rule] 兜底。
+# 4) 这两个接口需要 MITM(j1.pupuapi.com 已在 MITM 段)，脚本见 JS/PuPuSupermarket.js。
+# 5) 验证局限：历次抓包均为 app 温启动，未捕获到 /marketing/advertisement、/marketing/banner 请求；建议冷启动(杀后台重开)后验证。
 
 [MITM]
 # 抓包显示 app 还连了以下子域并已被 MITM, 一并纳入以便后续规则可拦截
