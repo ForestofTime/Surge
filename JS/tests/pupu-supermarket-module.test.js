@@ -8,8 +8,14 @@ const modulePath = path.resolve(__dirname, '../../Module/PuPuSupermarket.sgmodul
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const scriptPath = path.resolve(__dirname, '../PuPuSupermarket.js');
 const scriptText = fs.readFileSync(scriptPath, 'utf8');
+const splashScriptPath = path.resolve(__dirname, '../PuPuSplashImage.js');
+const splashScriptText = fs.existsSync(splashScriptPath)
+  ? fs.readFileSync(splashScriptPath, 'utf8')
+  : '';
 const surgeScript =
   'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js';
+const surgeSplashScript =
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js';
 
 function sectionLines(sectionName) {
   const section = moduleText.match(
@@ -24,30 +30,32 @@ function sectionLines(sectionName) {
     .filter((line) => line && !line.startsWith('#'));
 }
 
-test('contains no concrete PuPu creative or CDN interception', () => {
-  assert.doesNotMatch(moduleText, /product-files\.pupumall\.com/);
-  assert.doesNotMatch(moduleText, /STORE_PRODUCT/);
-  assert.doesNotMatch(moduleText, /\.(?:jpg|jpeg|png|gif|webp|mp4)(?:\\|\?|\s)/i);
+test('contains no concrete PuPu creative identifiers', () => {
+  assert.doesNotMatch(moduleText, /92bd7b325d08448a225231962b32a780/);
+  assert.doesNotMatch(moduleText, /37704a60ca16a6741da4db6d4df9184e/);
+  assert.doesNotMatch(moduleText, /0876bb9f23bd4d2789adae816be7cdcd/);
+  assert.doesNotMatch(moduleText, /7edc759f51f8452db7a8432387b3b214/);
 });
 
 test('converts all QX response mutations to version-compatible Surge scripts', () => {
   const scriptLines = sectionLines('Script');
-  const expectedPatterns = [
+  const expectedJsonPatterns = [
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/notification\\/message_center\\/unread_number',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/search\\/hot_keywords\\/v3',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/app_resource\\/resource_preload\\/list_h5_resource',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/marketing\\/advertisement\\/v1',
+    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/marketing\\/banner\\/v\\d+\\?position',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/search\\/hub\\/search_box\\/products\\/v6',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/order_settlement\\/detail',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/order\\/orders\\/list\\/v4',
   ];
 
-  assert.equal(scriptLines.length, expectedPatterns.length);
+  assert.equal(scriptLines.length, expectedJsonPatterns.length + 1);
 
   const names = scriptLines.map((line) => line.split('=')[0].trim());
   assert.equal(new Set(names).size, names.length, 'Surge script names must be unique');
 
-  for (const pattern of expectedPatterns) {
+  for (const pattern of expectedJsonPatterns) {
     const matchingLines = scriptLines.filter((line) =>
       line.includes(`pattern=${pattern},`)
     );
@@ -60,6 +68,19 @@ test('converts all QX response mutations to version-compatible Surge scripts', (
 
   assert.doesNotMatch(moduleText, /\[Body Rewrite\]/);
   assert.doesNotMatch(moduleText, /http-response-jq/);
+});
+
+test('adds a generic cached-splash fallback without asset hashes', () => {
+  const splashLine = sectionLines('Script').find((line) =>
+    line.includes('product-files\\.pupumall\\.com\\/STORE_PRODUCT')
+  );
+
+  assert.ok(splashLine, 'the current cached splash delivery host must be covered');
+  assert.ok(splashLine.includes('(?:jpe?g|png)'));
+  assert.ok(splashLine.includes(`script-path=${surgeSplashScript}`));
+  assert.ok(splashLine.includes('requires-body=true'));
+  assert.ok(splashLine.includes('binary-body-mode=true'));
+  assert.ok(splashLine.includes('max-size=1048576'));
 });
 
 test('converts QX reject and reject-dict rules without omissions', () => {
@@ -81,9 +102,9 @@ test('converts QX reject and reject-dict rules without omissions', () => {
 
 });
 
-test('limits MITM to the QX API hostname', () => {
+test('limits MITM to the API and generic splash delivery hosts', () => {
   assert.deepEqual(sectionLines('MITM'), [
-    'hostname = %APPEND% j1.pupuapi.com',
+    'hostname = %APPEND% j1.pupuapi.com, product-files.pupumall.com',
   ]);
 });
 
@@ -126,6 +147,23 @@ test('ports the QX source-level advertisement filters exactly', () => {
       { region_code: 7, positions: [] },
     ],
   });
+});
+
+test('restores the legacy QX banner source filter', () => {
+  assert.deepEqual(
+    runScript(
+      'https://j1.pupuapi.com/client/marketing/banner/v7?position_types=2%2C50&store_id=test',
+      {
+        data: {
+          splash: { position_type: 50 },
+          home: { position_type: 320 },
+          legacy: { position_type: 710 },
+          keep: { position_type: 2 },
+        },
+      }
+    ),
+    { data: [{ position_type: 2 }] }
+  );
 });
 
 test('ports the remaining QX response mutations exactly', () => {
@@ -181,4 +219,45 @@ test('ports the remaining QX response mutations exactly', () => {
     ),
     { data: [{ keep: true }] }
   );
+});
+
+function makeWebpVp8x(width, height) {
+  const bytes = Buffer.alloc(30);
+  bytes.write('RIFF', 0, 'ascii');
+  bytes.writeUInt32LE(22, 4);
+  bytes.write('WEBP', 8, 'ascii');
+  bytes.write('VP8X', 12, 'ascii');
+  bytes.writeUInt32LE(10, 16);
+  bytes.writeUIntLE(width - 1, 24, 3);
+  bytes.writeUIntLE(height - 1, 27, 3);
+  return new Uint8Array(bytes);
+}
+
+function runSplashScript(width, height) {
+  const doneCalls = [];
+
+  vm.runInNewContext(splashScriptText, {
+    $request: {
+      url: 'https://product-files.pupumall.com/STORE_PRODUCT/campaign/path/creative.jpg?x-oss-process=image/format,webp',
+    },
+    $response: { body: makeWebpVp8x(width, height) },
+    $done: (value) => doneCalls.push(value),
+    Uint8Array,
+    console: { log() {} },
+  });
+
+  assert.equal(doneCalls.length, 1, 'the binary response script must finish once');
+  return doneCalls[0];
+}
+
+test('blocks the HAR-confirmed 1080x2240 splash dimensions generically', () => {
+  const result = runSplashScript(1080, 2240);
+
+  assert.equal(result.status, 404);
+  assert.equal(result.body.length, 0);
+});
+
+test('passes through ordinary product image dimensions', () => {
+  assert.deepEqual(runSplashScript(800, 800), {});
+  assert.deepEqual(runSplashScript(1242, 900), {});
 });
