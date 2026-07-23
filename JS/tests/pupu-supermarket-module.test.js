@@ -13,9 +13,9 @@ const splashScriptText = fs.existsSync(splashScriptPath)
   ? fs.readFileSync(splashScriptPath, 'utf8')
   : '';
 const surgeScript =
-  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=22';
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=23';
 const surgeSplashScript =
-  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=22';
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=23';
 
 function sectionLines(sectionName) {
   const section = moduleText.match(
@@ -39,8 +39,8 @@ test('contains no concrete PuPu creative identifiers', () => {
   assert.doesNotMatch(sourceText, /7edc759f51f8452db7a8432387b3b214/);
 });
 
-test('declares the v22 QX conversion with explicit reject responses', () => {
-  assert.match(moduleText, /^#!desc=.*v22$/m);
+test('declares the v23 QX conversion with current cached-asset fallbacks', () => {
+  assert.match(moduleText, /^#!desc=.*v23$/m);
 });
 
 test('routes every QX response mutation through one Surge response script', () => {
@@ -49,7 +49,7 @@ test('routes every QX response mutation through one Surge response script', () =
     line.includes(`script-path=${surgeScript}`)
   );
 
-  assert.equal(scriptLines.length, 2);
+  assert.equal(scriptLines.length, 3);
   assert.equal(apiLines.length, 1);
   assert.ok(apiLines[0].includes('type=http-response'));
   assert.ok(
@@ -72,12 +72,25 @@ test('adds a generic cached-splash fallback without asset hashes', () => {
   );
 
   assert.ok(splashLine, 'the current cached splash delivery host must be covered');
-  assert.ok(splashLine.includes('jpe?g'));
-  assert.doesNotMatch(splashLine, /\|png/);
+  assert.ok(splashLine.includes('(?:png|jpe?g)'));
   assert.ok(splashLine.includes(`script-path=${surgeSplashScript}`));
   assert.ok(splashLine.includes('requires-body=true'));
   assert.ok(splashLine.includes('binary-body-mode=true'));
   assert.ok(splashLine.includes('max-size=1048576'));
+});
+
+test('restores the current personal-ad category while preserving the QX entry', () => {
+  const personalAdLine = sectionLines('Script').find((line) =>
+    line.includes(
+      'banner-files\\.pupumall\\.com\\/ADVERTISING_INTERNAL\\/'
+    )
+  );
+
+  assert.ok(personalAdLine, 'the current personal-ad category must be covered');
+  assert.ok(personalAdLine.includes(`script-path=${surgeSplashScript}`));
+  assert.ok(personalAdLine.includes('requires-body=true'));
+  assert.ok(personalAdLine.includes('binary-body-mode=true'));
+  assert.ok(personalAdLine.includes('max-size=1048576'));
 });
 
 test('reproduces QX reject as an explicit empty HTTP 404 response', () => {
@@ -99,7 +112,7 @@ test('reproduces QX reject as an explicit empty HTTP 404 response', () => {
 
 test('limits MITM to the API and generic filtered asset hosts', () => {
   assert.deepEqual(sectionLines('MITM'), [
-    'hostname = %APPEND% j1.pupuapi.com, product-files.pupumall.com',
+    'hostname = %APPEND% j1.pupuapi.com, product-files.pupumall.com, banner-files.pupumall.com',
   ]);
 });
 
@@ -334,14 +347,15 @@ test('passes through ordinary product image dimensions', () => {
   assert.equal(Object.keys(runImageScript(url, 1242, 900)).length, 0);
 });
 
-test('does not classify personal-page assets by host or dimensions', () => {
+test('blocks the personal-ad category while preserving the QX live entry', () => {
   const url =
     'https://banner-files.pupumall.com/ADVERTISING_INTERNAL/campaign/path/creative.png?x-oss-process=image/format,webp';
 
-  assert.equal(Object.keys(runImageScript(url, 90, 60)).length, 0);
+  assert.equal(runImageScript(url, 90, 60).status, 404);
+  assert.equal(runImageScript(url, 375, 200, 'VP8X').status, 404);
+  assert.equal(Object.keys(runImageScript(url, 228, 228)).length, 0);
   assert.equal(
-    Object.keys(runImageScript(url, 375, 200, 'VP8X')).length,
+    Object.keys(runImageScript(url, 228, 228, 'VP8X')).length,
     0
   );
-  assert.equal(Object.keys(runImageScript(url, 228, 228)).length, 0);
 });
