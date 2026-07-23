@@ -233,14 +233,31 @@ function makeWebpVp8x(width, height) {
   return new Uint8Array(bytes);
 }
 
-function runSplashScript(width, height) {
+function makeWebpVp8(width, height) {
+  const bytes = Buffer.alloc(30);
+  bytes.write('RIFF', 0, 'ascii');
+  bytes.writeUInt32LE(22, 4);
+  bytes.write('WEBP', 8, 'ascii');
+  bytes.write('VP8 ', 12, 'ascii');
+  bytes.writeUInt32LE(10, 16);
+  bytes.set([0, 0, 0, 0x9d, 0x01, 0x2a], 20);
+  bytes.writeUInt16LE(width, 26);
+  bytes.writeUInt16LE(height, 28);
+  return new Uint8Array(bytes);
+}
+
+function runSplashScript(width, height, format = 'VP8') {
   const doneCalls = [];
+  const body =
+    format === 'VP8X'
+      ? makeWebpVp8x(width, height)
+      : makeWebpVp8(width, height);
 
   vm.runInNewContext(splashScriptText, {
     $request: {
       url: 'https://product-files.pupumall.com/STORE_PRODUCT/campaign/path/creative.jpg?x-oss-process=image/format,webp',
     },
-    $response: { body: makeWebpVp8x(width, height) },
+    $response: { body },
     $done: (value) => doneCalls.push(value),
     Uint8Array,
     console: { log() {} },
@@ -251,10 +268,13 @@ function runSplashScript(width, height) {
 }
 
 test('blocks the HAR-confirmed 1080x2240 splash dimensions generically', () => {
-  const result = runSplashScript(1080, 2240);
+  const result = runSplashScript(1080, 2240, 'VP8');
 
   assert.equal(result.status, 404);
   assert.equal(result.body.length, 0);
+
+  const vp8xResult = runSplashScript(1080, 2240, 'VP8X');
+  assert.equal(vp8xResult.status, 404);
 });
 
 test('passes through ordinary product image dimensions', () => {
