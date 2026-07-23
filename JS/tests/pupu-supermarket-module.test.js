@@ -8,20 +8,14 @@ const modulePath = path.resolve(__dirname, '../../Module/PuPuSupermarket.sgmodul
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const scriptPath = path.resolve(__dirname, '../PuPuSupermarket.js');
 const scriptText = fs.readFileSync(scriptPath, 'utf8');
-const personalScriptPath = path.resolve(__dirname, '../PuPuPersonalPage.js');
-const personalScriptText = fs.existsSync(personalScriptPath)
-  ? fs.readFileSync(personalScriptPath, 'utf8')
-  : '';
 const splashScriptPath = path.resolve(__dirname, '../PuPuSplashImage.js');
 const splashScriptText = fs.existsSync(splashScriptPath)
   ? fs.readFileSync(splashScriptPath, 'utf8')
   : '';
 const surgeScript =
-  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=19';
-const surgePersonalScript =
-  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuPersonalPage.js?v=19';
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=20';
 const surgeSplashScript =
-  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=19';
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=20';
 
 function sectionLines(sectionName) {
   const section = moduleText.match(
@@ -43,67 +37,31 @@ test('contains no concrete PuPu creative identifiers', () => {
   assert.doesNotMatch(moduleText, /7edc759f51f8452db7a8432387b3b214/);
 });
 
-test('declares the v19 request-stage personal-page fix', () => {
-  assert.match(moduleText, /^#!desc=.*v19$/m);
+test('declares the v20 exact QX response conversion', () => {
+  assert.match(moduleText, /^#!desc=.*v20$/m);
 });
 
-test('converts all QX response mutations to version-compatible Surge scripts', () => {
+test('routes every QX response mutation through one Surge response script', () => {
   const scriptLines = sectionLines('Script');
-  const expectedJsonPatterns = [
-    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/search\\/hot_keywords\\/v3',
-    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/app_resource\\/resource_preload\\/list_h5_resource',
-    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/marketing\\/advertisement\\/v1',
-    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/marketing\\/banner\\/v\\d+\\?position',
-    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/search\\/hub\\/search_box\\/products\\/v6',
-    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/order_settlement\\/detail',
-    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/order\\/orders\\/list\\/v4',
-  ];
+  const apiLines = scriptLines.filter((line) =>
+    line.includes(`script-path=${surgeScript}`)
+  );
 
-  assert.equal(scriptLines.length, expectedJsonPatterns.length + 2);
+  assert.equal(scriptLines.length, 2);
+  assert.equal(apiLines.length, 1);
+  assert.ok(apiLines[0].includes('type=http-response'));
+  assert.ok(
+    apiLines[0].includes(
+      'pattern=^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/'
+    )
+  );
+  assert.ok(apiLines[0].includes('requires-body=true'));
+  assert.ok(apiLines[0].includes('max-size=1048576'));
 
-  const names = scriptLines.map((line) => line.split('=')[0].trim());
-  assert.equal(new Set(names).size, names.length, 'Surge script names must be unique');
-
-  for (const pattern of expectedJsonPatterns) {
-    const matchingLines = scriptLines.filter((line) =>
-      line.includes(`pattern=${pattern},`)
-    );
-
-    assert.equal(matchingLines.length, 1, `${pattern} must be converted exactly once`);
-    assert.ok(matchingLines[0].includes(`script-path=${surgeScript}`));
-    assert.ok(matchingLines[0].includes('requires-body=true'));
-    assert.ok(matchingLines[0].includes('max-size=1048576'));
-  }
-
+  assert.doesNotMatch(moduleText, /type=http-request/);
+  assert.doesNotMatch(moduleText, /PuPuPersonalPage/);
   assert.doesNotMatch(moduleText, /\[Body Rewrite\]/);
   assert.doesNotMatch(moduleText, /http-response-jq/);
-});
-
-test('handles personal-page sources before the request reaches the server', () => {
-  const requestLine = sectionLines('Script').find((line) =>
-    line.includes('type=http-request')
-  );
-
-  assert.ok(requestLine, 'a request-stage personal-page script must exist');
-  assert.ok(requestLine.includes('member_card\\/(?:index\\/my|premium\\/user_center)'));
-  assert.ok(requestLine.includes('marketing\\/advertisement\\/v1'));
-  assert.ok(
-    requestLine.includes(
-      'order\\/orders\\/order_status_preview\\/person_page\\/v3'
-    )
-  );
-  assert.ok(
-    requestLine.includes(
-      'user_behavior\\/comments\\/v3\\/user\\/unfinished\\/count'
-    )
-  );
-  assert.ok(
-    requestLine.includes(
-      'notification\\/message_center\\/unread_number'
-    )
-  );
-  assert.ok(requestLine.includes(`script-path=${surgePersonalScript}`));
-  assert.doesNotMatch(requestLine, /requires-body=true/);
 });
 
 test('adds a generic cached-splash fallback without asset hashes', () => {
@@ -126,6 +84,7 @@ test('converts QX reject and reject-dict rules without omissions', () => {
     '^http:\\/\\/106\\.55\\.220\\.18:8053\\/httpdns\\/ _ reject',
     '^http:\\/\\/54\\.222\\.159\\.138:8053\\/httpdns\\/ _ reject',
     '^http:\\/\\/101\\.42\\.130\\.147\\/httpdns\\/resolve\\/ _ reject',
+    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/member_card\\/index\\/my _ reject',
   ]);
 
   assert.deepEqual(sectionLines('Map Local'), [
@@ -133,6 +92,7 @@ test('converts QX reject and reject-dict rules without omissions', () => {
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/assets\\/discount\\/order data-type=text data="{}" status-code=200 header="Content-Type:application/json"',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/marketing\\/channel\\/global_redeem\\/top_tip\\/v2 data-type=text data="{}" status-code=200 header="Content-Type:application/json"',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/recommendation\\/hub\\/interests\\/products\\/v2 data-type=text data="{}" status-code=200 header="Content-Type:application/json"',
+    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/member_card\\/premium\\/user_center data-type=text data="{}" status-code=200 header="Content-Type:application/json"',
   ]);
 
 });
@@ -188,20 +148,37 @@ test('ports the QX source-level advertisement filters exactly', () => {
   });
 });
 
-test('keeps a response-stage personal-page fallback for advertisement data', () => {
+test('preserves QX functional personal-page regions while removing ad regions', () => {
   assert.deepEqual(
     runScript(
       'https://j1.pupuapi.com/client/marketing/advertisement/v1',
       {
         errcode: 0,
         errmsg: '',
-        data: [{ region_code: 2400, positions: [{ component_code: 2400 }] }],
+        data: [
+          { region_code: 30, positions: [{ component_code: 30 }] },
+          { region_code: 2400, positions: [{ component_code: 2400 }] },
+          {
+            region_code: 2,
+            positions: [
+              { component_code: 60 },
+              { component_code: 560 },
+            ],
+          },
+        ],
       },
       {
         'pp-page-name': 'personal_page',
       }
     ),
-    { errcode: 0, errmsg: '', data: [] }
+    {
+      errcode: 0,
+      errmsg: '',
+      data: [
+        { region_code: 2400, positions: [{ component_code: 2400 }] },
+        { region_code: 2, positions: [{ component_code: 560 }] },
+      ],
+    }
   );
 });
 
@@ -223,6 +200,14 @@ test('restores the legacy QX banner source filter', () => {
 });
 
 test('ports the remaining QX response mutations exactly', () => {
+  assert.deepEqual(
+    runScript(
+      'https://j1.pupuapi.com/client/notification/message_center/unread_number',
+      { data: [{ id: 1 }] }
+    ),
+    { data: [] }
+  );
+
   assert.deepEqual(
     runScript(
       'https://j1.pupuapi.com/client/search/hot_keywords/v3',
@@ -269,114 +254,13 @@ test('ports the remaining QX response mutations exactly', () => {
   );
 });
 
-function runPersonalRequest(url, headers = {}) {
-  const doneCalls = [];
-
-  vm.runInNewContext(
-    personalScriptText,
-    {
-      $request: { url, headers },
-      $done: (value) => doneCalls.push(value),
-      console: { log() {} },
-    },
-    { filename: personalScriptPath }
-  );
-
-  assert.equal(doneCalls.length, 1, 'a request script must finish once');
-  return doneCalls[0];
-}
-
-function responseData(result) {
-  assert.equal(result.response.status, 200);
-  assert.equal(result.response.headers['Content-Type'], 'application/json');
-  return JSON.parse(result.response.body);
-}
-
-test('returns successful empty personal-page responses at request time', () => {
+test('passes unhandled client responses through unchanged', () => {
   assert.deepEqual(
-    responseData(
-      runPersonalRequest(
-        'https://j1.pupuapi.com/client/member_card/index/my'
-      )
+    runScript(
+      'https://j1.pupuapi.com/client/bv/c/v3',
+      { errcode: 0, errmsg: '', data: { keep: true } }
     ),
-    { errcode: 0, errmsg: '', data: {} }
-  );
-
-  assert.deepEqual(
-    responseData(
-      runPersonalRequest(
-        'https://j1.pupuapi.com/client/member_card/premium/user_center/v3'
-      )
-    ),
-    { errcode: 0, errmsg: '', data: {} }
-  );
-
-  assert.deepEqual(
-    responseData(
-      runPersonalRequest(
-        'https://j1.pupuapi.com/client/order/orders/order_status_preview/person_page/v3'
-      )
-    ),
-    { errcode: 0, errmsg: '', data: [] }
-  );
-
-  assert.deepEqual(
-    responseData(
-      runPersonalRequest(
-        'https://j1.pupuapi.com/client/user_behavior/comments/v3/user/unfinished/count'
-      )
-    ),
-    { errcode: 0, errmsg: '', data: 0 }
-  );
-
-  assert.deepEqual(
-    responseData(
-      runPersonalRequest(
-        'https://j1.pupuapi.com/client/notification/message_center/unread_number'
-      )
-    ),
-    { errcode: 0, errmsg: '', data: [] }
-  );
-});
-
-test('short-circuits advertisement only for the personal page', () => {
-  assert.deepEqual(
-    responseData(
-      runPersonalRequest(
-        'https://j1.pupuapi.com/client/marketing/advertisement/v1',
-        { PP_CURRENT_PAGE_NAME: 'personal_page' }
-      )
-    ),
-    { errcode: 0, errmsg: '', data: [] }
-  );
-
-  assert.equal(
-    Object.keys(
-      runPersonalRequest(
-        'https://j1.pupuapi.com/client/marketing/advertisement/v1',
-        { pp_current_page_name: 'start_page' }
-      )
-    ).length,
-    0
-  );
-
-  assert.deepEqual(
-    responseData(
-      runPersonalRequest(
-        'https://j1.pupuapi.com/client/marketing/advertisement/v1',
-        { 'pp-page-name': 'personal_page' }
-      )
-    ),
-    { errcode: 0, errmsg: '', data: [] }
-  );
-
-  assert.equal(
-    Object.keys(
-      runPersonalRequest(
-        'https://j1.pupuapi.com/client/app_resource/app_config'
-      )
-    ).length,
-    0
+    { errcode: 0, errmsg: '', data: { keep: true } }
   );
 });
 
