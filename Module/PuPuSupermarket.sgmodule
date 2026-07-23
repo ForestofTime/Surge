@@ -1,5 +1,5 @@
 #!name=朴朴超市去广告
-#!desc=移除开屏广告、首页 banner、搜索热词、消息红点及各页面推荐位。v12
+#!desc=移除开屏广告、首页 banner、搜索热词、消息红点及各页面推荐位。v13
 #!author=奶思(原) / WorkBuddy 修正
 #!category=奶思的模块
 #!homepage=https://github.com/fmz200/wool_scripts
@@ -13,6 +13,9 @@
 ^http:\/\/106\.55\.220\.18:8053\/httpdns\/ - reject
 ^http:\/\/54\.222\.159\.138:8053\/httpdns\/ - reject
 ^http:\/\/101\.42\.130\.147\/httpdns\/resolve\/ - reject
+
+# 2026-07-23 HAR 确认的缓存开屏视频，仅拦截精确素材文件
+^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/7edc759f51f8452db7a8432387b3b214\/1129\/1eb887ee920b0eceb646b517582fea86\.mp4(\?.*)? - reject
 
 [Body Rewrite]
 # 清除消息中心未读红点
@@ -57,4 +60,4 @@ http-response-jq ^https:\/\/j1\.pupuapi\.com\/client\/notification\/message_cent
 朴朴-H5预载 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/app_resource\/resource_preload\/list_h5_resource, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
 
 [MITM]
-hostname = %APPEND% j1.pupuapi.com
+hostname = %APPEND% j1.pupuapi.com, product-files.pupumall.com
