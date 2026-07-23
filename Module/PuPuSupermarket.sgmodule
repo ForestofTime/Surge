@@ -56,7 +56,7 @@
 朴朴-订单列表 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/order\/orders\/list\/v4, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=17, requires-body=true, max-size=1048576, timeout=60
 
 # 当前 App 会直接读取本地开屏配置。兜底只识别 1080x2240 WebP 画布，不包含素材 ID。
-朴朴-缓存开屏兜底 = type=http-response, pattern=^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/.*\.(?:jpe?g|png)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=17, requires-body=true, binary-body-mode=true, max-size=1048576, timeout=10
+朴朴-缓存开屏兜底 = type=http-response, pattern=^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/.*\.jpe?g(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=17, requires-body=true, binary-body-mode=true, max-size=1048576, timeout=10
 
 [MITM]
 hostname = %APPEND% j1.pupuapi.com, product-files.pupumall.com
