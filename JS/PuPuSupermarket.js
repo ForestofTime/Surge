@@ -7,11 +7,33 @@
 
 const url = $request.url;
 
+function getRequestHeader(name) {
+  const headers = $request.headers || {};
+  const key = Object.keys(headers).find(
+    (headerName) => headerName.toLowerCase() === name.toLowerCase()
+  );
+  return key ? headers[key] : '';
+}
+
+function emptyData(payload) {
+  payload.data = Array.isArray(payload.data) ? [] : {};
+}
+
 try {
   const payload = JSON.parse($response.body);
+  const currentPage =
+    getRequestHeader('pp_current_page_name') ||
+    getRequestHeader('pp-page-name');
 
   if (url.includes('/notification/message_center/unread_number')) {
     payload.data = [];
+  } else if (url.includes('/comments/v3/user/unfinished/count')) {
+    payload.data = 0;
+  } else if (
+    url.includes('/member_card/index/my') ||
+    url.includes('/member_card/premium/user_center')
+  ) {
+    emptyData(payload);
   } else if (url.includes('/search/hot_keywords')) {
     payload.data = [];
   } else if (url.includes('/resource_preload/list_h5_resource')) {
@@ -27,7 +49,9 @@ try {
       );
     }
   } else if (url.includes('/advertisement/v1')) {
-    if (Array.isArray(payload.data)) {
+    if (currentPage === 'personal_page') {
+      payload.data = [];
+    } else if (Array.isArray(payload.data)) {
       payload.data = payload.data
         .filter(
           (item) =>
@@ -57,6 +81,11 @@ try {
         delete item.just_in_time_comment;
       }
     });
+  } else if (
+    url.includes('/order_status_preview/person_page/') &&
+    Array.isArray(payload.data)
+  ) {
+    payload.data = [];
   }
 
   $done({ body: JSON.stringify(payload) });
