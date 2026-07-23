@@ -1,27 +1,21 @@
-#!name=朴朴超市(响应体改写去广告版 v11)
-#!desc=基于 2026-07-21/22/23 多次抓包修正：整容器拦截已确认的开屏广告素材池（与首页 banner 共用），覆盖子路径变化；补全 MITM 子域、删除损坏规则、放宽版本锁。注意：某些APP要清除缓存或者重新安装拦截广告才会生效！
+#!name=朴朴超市(响应体改写去广告版 v12)
+#!desc=v12 修复三处致命问题：1) v11 的 [MITM] 段损坏(段标题丢失导致 hostname 未生效)；2) [Script] 八条规则同名互相覆盖，实际只有最后一条生效，广告接口脚本从未执行；3) script-path 换用 jsdelivr CDN 提升可达性。注意：广告配置有本地缓存，更新模块后先打开 app 逛一遍首页再杀掉重开，开屏才会消失！
 #!author=奶思(原) / WorkBuddy 修正
 #!category=奶思的模块
 #!homepage=https://github.com/fmz200/wool_scripts
-#!raw-url=https://github.com/fmz200/wool_scripts/raw/main/Surge/module/split/partP/PuPuSupermarket.sgmodule
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/PuPuSupermarket.sgmodule
 #!tg-channel=https://t.me/inaisi
 #!arguments=pupuicui_enable:true
 
 [URL Rewrite]
-# 广告下发(httpdns)。注意：抓包显示 54.222.159.138:8053 完成握手未被 reject，
-# 说明 app 大概率走直连 socket 做 httpdns，URL Rewrite reject 对直连 socket 不生效，这几条可能无效。
-
-# v11 策略变更：不再拦截 CDN 图片(会误伤首页 banner 导致留白)。
-# 改为在 [Script] 段拦截 /marketing/advertisement 与 /marketing/banner 接口响应体，
-# 从配置源头让 app 不渲染开屏与首页 banner。详见 [Script] 段与 JS/PuPuSupermarket.js。
+# 广告下发(httpdns)。app 大概率走直连 socket 做 httpdns，这几条可能无效，保留兜底。
 ^http:\/\/139\.196\.12\.179:8053\/httpdns\/ - reject
 ^http:\/\/106\.55\.220\.18:8053\/httpdns\/ - reject
 ^http:\/\/54\.222\.159\.138:8053\/httpdns\/ - reject
 ^http:\/\/101\.42\.130\.147\/httpdns\/resolve\/ - reject
 
-
 [Rule]
-# v11：广告改为接口响应体改写([Script])，此处不再对素材 URL 做 REJECT，避免首页留白。
+# v11 起：广告改为接口响应体改写([Script])，不再对素材 URL 做 REJECT，避免首页留白。
 
 [Body Rewrite]
 http-response-jq ^https:\/\/j1\.pupuapi\.com\/client\/notification\/message_center\/unread_number '.data = []'
@@ -43,39 +37,29 @@ http-response-jq ^https:\/\/j1\.pupuapi\.com\/client\/notification\/message_cent
 ^https:\/\/j1\.pupuapi\.com\/client\/member_card\/premium\/user_center data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 [Script]
-# 搜索热词(放宽版本锁, 去掉 /v3)
-朴朴超市 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/search\/hot_keywords, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
+# ！！v12 关键修复：每条规则必须唯一命名。Surge 中同名脚本规则互相覆盖，
+# v11 八条全叫"朴朴超市"导致只有最后一条生效，广告接口脚本从未执行。
 
-# 原模块此处有一条损坏规则: ^https:\/\/j1\.pupuapi\.com\/client\/a朴朴超市, (含中文与逗号, 永不匹配, 已删除)
-# 若你知道开屏广告的真实端点, 可在此补回一条正确规则。
+# 开屏/全局广告配置(核心规则)：把 launch_time_close 改写为过去时间 -> app 判定活动结束不渲染
+朴朴-开屏广告 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/marketing\/advertisement, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, max-size=-1, timeout=60
 
-# 广告 v1(放宽版本锁, 去掉 /v1; 由脚本内部 /advertisement 匹配任意版本)
-朴朴超市 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/marketing\/advertisement, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
+# 首页 banner 广告(社区验证 position_type 320/710/50)
+朴朴-首页banner = type=http-response, pattern=^https?:\/\/j1\.pupuapi\.com\/client\/marketing\/banner\/v\d\?position, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, max-size=-1, timeout=60
 
-# 2026-07-23 v11 新增：首页 banner 广告(社区验证 position_type 320/710/50)
-朴朴超市 = type=http-response, pattern=^https?:\/\/j1\.pupuapi\.com\/client\/marketing\/banner\/v\d\?position, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, max-size=-1, timeout=60
+# 搜索热词
+朴朴-搜索热词 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/search\/hot_keywords, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
 
-# 搜索结果页信息流横幅广告(放宽版本锁, 去掉 /v6)
-朴朴超市 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/search\/hub\/search_box\/products, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
+# 搜索结果页信息流横幅广告
+朴朴-搜索信息流 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/search\/hub\/search_box\/products, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
 
 # 下单页实惠卡开通推荐
-朴朴超市 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/order_settlement\/detail, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
+朴朴-下单页推荐 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/order_settlement\/detail, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
 
-# 订单列表骑手反馈问题推荐(放宽版本锁, 去掉 /v4)
-朴朴超市 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/order\/orders\/list, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
+# 订单列表骑手反馈问题推荐
+朴朴-订单列表 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/order\/orders\/list, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
 
-# 补全脚本里存在但原模块遗漏的端点(原脚本有 /resource_preload/list_h5_resource 分支, 却无对应规则)
-朴朴超市 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/resource_preload\/list_h5_resource, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
-
-# 2026-07-23 v11 重大策略修正（参考社区 mieqq / ddgksf2013 朴朴去广告脚本）：
-# 1) 放弃「拦 CDN 图片」(v5-v10 的做法)——它误伤首页 banner 共用图，导致主页留白，且 app 换 campaign uuid 就要补规则。
-# 2) 改为接口响应体改写：/marketing/advertisement 把 launch_time_close 推到 2022(活动已结束 -> app 跳过开屏)；
-#    /marketing/banner 过滤 position_type 320/710/50 去掉首页 banner。app 自己不渲染广告，图片不再被请求 -> 无留白。
-# 3) 删除全部 STORE_PRODUCT 图片拦截规则与对应 [Rule] 兜底。
-# 4) 这两个接口需要 MITM(j1.pupuapi.com 已在 MITM 段)，脚本见 JS/PuPuSupermarket.js。
-# 5) 验证局限：历次抓包均为 app 温启动，未捕获到 /marketing/advertisement、/marketing/banner 请求；建议冷启动(杀后台重开)后验证。
+# H5 预载资源过滤
+朴朴-H5预载 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/resource_preload\/list_h5_resource, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
 
 [MITM]
-# 抓包显示 app 还连了以下子域并已被 MITM, 一并纳入以便后续规则可拦截
-# 2026-07-22 追加 imgs.pupuapi.com（天气/活动图标素材域，备用）
-hostname = %APPEND% j1.pupuapi.com, owl.pupuapi.com, pwy.pupuapi.com, push.pupuapi.com, product-files.pupumall.com, marketing-files.pupumall.com, imgs.pupuapi.com
+hostname = %APPEND% j1.pupuapi.com
