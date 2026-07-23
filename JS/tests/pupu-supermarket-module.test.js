@@ -118,7 +118,9 @@ function runScript(url, body, headers = {}) {
   );
 
   assert.equal(doneCalls.length, 1, 'a Surge response script must finish once');
-  return JSON.parse(doneCalls[0].body);
+  return doneCalls[0].body
+    ? JSON.parse(doneCalls[0].body)
+    : body;
 }
 
 test('ports the QX source-level advertisement filters exactly', () => {
