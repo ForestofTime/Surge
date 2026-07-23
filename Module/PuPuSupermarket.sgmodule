@@ -1,5 +1,5 @@
-#!name=朴朴超市(响应体改写去广告版 v12)
-#!desc=v12 修复三处致命问题：1) v11 的 [MITM] 段损坏(段标题丢失导致 hostname 未生效)；2) [Script] 八条规则同名互相覆盖，实际只有最后一条生效，广告接口脚本从未执行；3) script-path 换用 jsdelivr CDN 提升可达性。注意：广告配置有本地缓存，更新模块后先打开 app 逛一遍首页再杀掉重开，开屏才会消失！
+#!name=朴朴超市去广告
+#!desc=移除开屏广告、首页 banner、搜索热词、消息红点及各页面推荐位。v12
 #!author=奶思(原) / WorkBuddy 修正
 #!category=奶思的模块
 #!homepage=https://github.com/fmz200/wool_scripts
@@ -8,42 +8,37 @@
 #!arguments=pupuicui_enable:true
 
 [URL Rewrite]
-# 广告下发(httpdns)。app 大概率走直连 socket 做 httpdns，这几条可能无效，保留兜底。
+# 拦截 httpdns 广告下发
 ^http:\/\/139\.196\.12\.179:8053\/httpdns\/ - reject
 ^http:\/\/106\.55\.220\.18:8053\/httpdns\/ - reject
 ^http:\/\/54\.222\.159\.138:8053\/httpdns\/ - reject
 ^http:\/\/101\.42\.130\.147\/httpdns\/resolve\/ - reject
 
-[Rule]
-# v11 起：广告改为接口响应体改写([Script])，不再对素材 URL 做 REJECT，避免首页留白。
-
 [Body Rewrite]
+# 清除消息中心未读红点
 http-response-jq ^https:\/\/j1\.pupuapi\.com\/client\/notification\/message_center\/unread_number '.data = []'
 
 [Map Local]
 # 搜索框页面热榜
 ^https:\/\/j1\.pupuapi\.com\/client\/marketing\/advertisement\/search_input_ranking data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
-# 朴朴超市订单待收货页右下角悬浮广告
+# 订单待收货页右下角悬浮广告
 ^https:\/\/j1\.pupuapi\.com\/client\/assets\/discount\/order data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 # 购物车页去换购推荐
 ^https:\/\/j1\.pupuapi\.com\/client\/marketing\/channel\/global_redeem\/top_tip\/v2 data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
-# 各种页面的商品推荐
+# 各页面商品推荐
 ^https:\/\/j1\.pupuapi\.com\/client\/recommendation\/hub\/interests\/products\/v2 data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 # 个人主页会员标识
 ^https:\/\/j1\.pupuapi\.com\/client\/member_card\/premium\/user_center data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 [Script]
-# ！！v12 关键修复：每条规则必须唯一命名。Surge 中同名脚本规则互相覆盖，
-# v11 八条全叫"朴朴超市"导致只有最后一条生效，广告接口脚本从未执行。
-
-# 开屏/全局广告配置(核心规则)：把 launch_time_close 改写为过去时间 -> app 判定活动结束不渲染
+# 开屏/全局广告配置：将 launch_time_close 改写为过去时间，app 判定活动结束不渲染
 朴朴-开屏广告 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/marketing\/advertisement, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, max-size=-1, timeout=60
 
-# 首页 banner 广告(社区验证 position_type 320/710/50)
+# 首页 banner 广告(position_type 320/710/50)
 朴朴-首页banner = type=http-response, pattern=^https?:\/\/j1\.pupuapi\.com\/client\/marketing\/banner\/v\d\?position, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, max-size=-1, timeout=60
 
 # 搜索热词
