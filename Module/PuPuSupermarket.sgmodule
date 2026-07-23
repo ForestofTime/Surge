@@ -1,21 +1,20 @@
 #!name=朴朴超市去广告
-#!desc=等价转换 QX 源过滤，并兜底处理本地布局直接加载的个人页广告分类。v21
+#!desc=按 QX 实际响应语义返回显式 404，并过滤广告接口响应。v22
 #!author=奶思(原) / ForestofTime Surge 转换
 #!category=广告过滤
 #!homepage=https://github.com/fmz200/wool_scripts
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/PuPuSupermarket.sgmodule
 
-[URL Rewrite]
-# 广告 HTTPDNS 下发
-^http:\/\/139\.196\.12\.179:8053\/httpdns\/ _ reject
-^http:\/\/106\.55\.220\.18:8053\/httpdns\/ _ reject
-^http:\/\/54\.222\.159\.138:8053\/httpdns\/ _ reject
-^http:\/\/101\.42\.130\.147\/httpdns\/resolve\/ _ reject
+[Map Local]
+# 与 QX 抓包中的 REJECT 结果一致，显式返回 404 空响应。
+^http:\/\/139\.196\.12\.179:8053\/httpdns\/ data-type=text data="" status-code=404
+^http:\/\/106\.55\.220\.18:8053\/httpdns\/ data-type=text data="" status-code=404
+^http:\/\/54\.222\.159\.138:8053\/httpdns\/ data-type=text data="" status-code=404
+^http:\/\/101\.42\.130\.147\/httpdns\/resolve\/ data-type=text data="" status-code=404
 
 # 我的页面会员卡入口
-^https:\/\/j1\.pupuapi\.com\/client\/member_card\/index\/my _ reject
+^https:\/\/j1\.pupuapi\.com\/client\/member_card\/index\/my data-type=text data="" status-code=404
 
-[Map Local]
 # 搜索框页面热榜
 ^https:\/\/j1\.pupuapi\.com\/client\/marketing\/advertisement\/search_input_ranking data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
@@ -33,13 +32,10 @@
 
 [Script]
 # Surge 单一宽入口。具体路径在脚本中判定，避免复杂规则未命中。
-朴朴-API响应过滤 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=21, requires-body=true, max-size=1048576, timeout=60
+朴朴-API响应过滤 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=22, requires-body=true, max-size=1048576, timeout=60
 
 # 当前 App 会直接读取本地开屏配置。兜底只识别 1080x2240 WebP 画布，不包含素材 ID。
-朴朴-缓存开屏兜底 = type=http-response, pattern=^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/.*\.jpe?g(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=21, requires-body=true, binary-body-mode=true, max-size=1048576, timeout=10
-
-# 个人页会绕过配置接口，直接读取本地布局并加载该广告分类。保留 QX 抓包中的 228x228 直播入口。
-朴朴-个人页素材兜底 = type=http-response, pattern=^https:\/\/banner-files\.pupumall\.com\/ADVERTISING_INTERNAL\/.*\.(?:png|jpe?g)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=21, requires-body=true, binary-body-mode=true, max-size=1048576, timeout=10
+朴朴-缓存开屏兜底 = type=http-response, pattern=^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/.*\.jpe?g(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=22, requires-body=true, binary-body-mode=true, max-size=1048576, timeout=10
 
 [MITM]
-hostname = %APPEND% j1.pupuapi.com, product-files.pupumall.com, banner-files.pupumall.com
+hostname = %APPEND% j1.pupuapi.com, product-files.pupumall.com
