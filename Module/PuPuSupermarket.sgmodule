@@ -54,7 +54,7 @@ http-response-jq ^https:\/\/j1\.pupuapi\.com\/client\/notification\/message_cent
 朴朴-订单列表 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/order\/orders\/list, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
 
 # H5 预载资源过滤
-朴朴-H5预载 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/resource_preload\/list_h5_resource, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
+朴朴-H5预载 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/app_resource\/resource_preload\/list_h5_resource, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
 
 [MITM]
 hostname = %APPEND% j1.pupuapi.com
