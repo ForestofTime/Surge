@@ -143,13 +143,13 @@ test('limits MITM to the API and generic splash delivery hosts', () => {
   ]);
 });
 
-function runScript(url, body) {
+function runScript(url, body, headers = {}) {
   const doneCalls = [];
 
   vm.runInNewContext(
     scriptText,
     {
-      $request: { url },
+      $request: { url, headers },
       $response: { body: JSON.stringify(body) },
       $done: (value) => doneCalls.push(value),
       console: { log() {} },
@@ -188,6 +188,23 @@ test('ports the QX source-level advertisement filters exactly', () => {
   });
 });
 
+test('keeps a response-stage personal-page fallback for advertisement data', () => {
+  assert.deepEqual(
+    runScript(
+      'https://j1.pupuapi.com/client/marketing/advertisement/v1',
+      {
+        errcode: 0,
+        errmsg: '',
+        data: [{ region_code: 2400, positions: [{ component_code: 2400 }] }],
+      },
+      {
+        'pp-page-name': 'personal_page',
+      }
+    ),
+    { errcode: 0, errmsg: '', data: [] }
+  );
+});
+
 test('restores the legacy QX banner source filter', () => {
   assert.deepEqual(
     runScript(
@@ -206,14 +223,6 @@ test('restores the legacy QX banner source filter', () => {
 });
 
 test('ports the remaining QX response mutations exactly', () => {
-  assert.deepEqual(
-    runScript(
-      'https://j1.pupuapi.com/client/notification/message_center/unread_number',
-      { data: [{ id: 1 }] }
-    ),
-    { data: [] }
-  );
-
   assert.deepEqual(
     runScript(
       'https://j1.pupuapi.com/client/search/hot_keywords/v3',
@@ -346,6 +355,25 @@ test('short-circuits advertisement only for the personal page', () => {
       runPersonalRequest(
         'https://j1.pupuapi.com/client/marketing/advertisement/v1',
         { pp_current_page_name: 'start_page' }
+      )
+    ).length,
+    0
+  );
+
+  assert.deepEqual(
+    responseData(
+      runPersonalRequest(
+        'https://j1.pupuapi.com/client/marketing/advertisement/v1',
+        { 'pp-page-name': 'personal_page' }
+      )
+    ),
+    { errcode: 0, errmsg: '', data: [] }
+  );
+
+  assert.equal(
+    Object.keys(
+      runPersonalRequest(
+        'https://j1.pupuapi.com/client/app_resource/app_config'
       )
     ).length,
     0
