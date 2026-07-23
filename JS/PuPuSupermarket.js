@@ -20,6 +20,12 @@ try {
         (item) => item.filename !== 'RecommendProduct.29e31893.js'
       );
     }
+  } else if (/\/marketing\/banner\/v\d+\?position/.test(url)) {
+    if (payload.data) {
+      payload.data = Object.values(payload.data).filter(
+        (item) => ![50, 320, 710].includes(item.position_type)
+      );
+    }
   } else if (url.includes('/advertisement/v1')) {
     if (Array.isArray(payload.data)) {
       payload.data = payload.data
