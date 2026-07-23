@@ -8,14 +8,20 @@ const modulePath = path.resolve(__dirname, '../../Module/PuPuSupermarket.sgmodul
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const scriptPath = path.resolve(__dirname, '../PuPuSupermarket.js');
 const scriptText = fs.readFileSync(scriptPath, 'utf8');
+const personalScriptPath = path.resolve(__dirname, '../PuPuPersonalPage.js');
+const personalScriptText = fs.existsSync(personalScriptPath)
+  ? fs.readFileSync(personalScriptPath, 'utf8')
+  : '';
 const splashScriptPath = path.resolve(__dirname, '../PuPuSplashImage.js');
 const splashScriptText = fs.existsSync(splashScriptPath)
   ? fs.readFileSync(splashScriptPath, 'utf8')
   : '';
 const surgeScript =
-  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=18';
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=19';
+const surgePersonalScript =
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuPersonalPage.js?v=19';
 const surgeSplashScript =
-  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=18';
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=19';
 
 function sectionLines(sectionName) {
   const section = moduleText.match(
@@ -37,17 +43,13 @@ test('contains no concrete PuPu creative identifiers', () => {
   assert.doesNotMatch(moduleText, /7edc759f51f8452db7a8432387b3b214/);
 });
 
-test('declares the v18 personal-page source fix', () => {
-  assert.match(moduleText, /^#!desc=.*v18$/m);
+test('declares the v19 request-stage personal-page fix', () => {
+  assert.match(moduleText, /^#!desc=.*v19$/m);
 });
 
 test('converts all QX response mutations to version-compatible Surge scripts', () => {
   const scriptLines = sectionLines('Script');
   const expectedJsonPatterns = [
-    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/notification\\/message_center\\/unread_number',
-    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/user_behavior\\/comments\\/v3\\/user\\/unfinished\\/count',
-    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/member_card\\/index\\/my',
-    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/member_card\\/premium\\/user_center',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/search\\/hot_keywords\\/v3',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/app_resource\\/resource_preload\\/list_h5_resource',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/marketing\\/advertisement\\/v1',
@@ -55,10 +57,9 @@ test('converts all QX response mutations to version-compatible Surge scripts', (
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/search\\/hub\\/search_box\\/products\\/v6',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/order_settlement\\/detail',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/order\\/orders\\/list\\/v4',
-    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/order\\/orders\\/order_status_preview\\/person_page\\/v3',
   ];
 
-  assert.equal(scriptLines.length, expectedJsonPatterns.length + 1);
+  assert.equal(scriptLines.length, expectedJsonPatterns.length + 2);
 
   const names = scriptLines.map((line) => line.split('=')[0].trim());
   assert.equal(new Set(names).size, names.length, 'Surge script names must be unique');
@@ -76,6 +77,33 @@ test('converts all QX response mutations to version-compatible Surge scripts', (
 
   assert.doesNotMatch(moduleText, /\[Body Rewrite\]/);
   assert.doesNotMatch(moduleText, /http-response-jq/);
+});
+
+test('handles personal-page sources before the request reaches the server', () => {
+  const requestLine = sectionLines('Script').find((line) =>
+    line.includes('type=http-request')
+  );
+
+  assert.ok(requestLine, 'a request-stage personal-page script must exist');
+  assert.ok(requestLine.includes('member_card\\/(?:index\\/my|premium\\/user_center)'));
+  assert.ok(requestLine.includes('marketing\\/advertisement\\/v1'));
+  assert.ok(
+    requestLine.includes(
+      'order\\/orders\\/order_status_preview\\/person_page\\/v3'
+    )
+  );
+  assert.ok(
+    requestLine.includes(
+      'user_behavior\\/comments\\/v3\\/user\\/unfinished\\/count'
+    )
+  );
+  assert.ok(
+    requestLine.includes(
+      'notification\\/message_center\\/unread_number'
+    )
+  );
+  assert.ok(requestLine.includes(`script-path=${surgePersonalScript}`));
+  assert.doesNotMatch(requestLine, /requires-body=true/);
 });
 
 test('adds a generic cached-splash fallback without asset hashes', () => {
@@ -115,13 +143,13 @@ test('limits MITM to the API and generic splash delivery hosts', () => {
   ]);
 });
 
-function runScript(url, body, headers = {}) {
+function runScript(url, body) {
   const doneCalls = [];
 
   vm.runInNewContext(
     scriptText,
     {
-      $request: { url, headers },
+      $request: { url },
       $response: { body: JSON.stringify(body) },
       $done: (value) => doneCalls.push(value),
       console: { log() {} },
@@ -158,62 +186,6 @@ test('ports the QX source-level advertisement filters exactly', () => {
       { region_code: 7, positions: [] },
     ],
   });
-});
-
-test('empties personal-page promotion sources with successful response shapes', () => {
-  assert.deepEqual(
-    runScript(
-      'https://j1.pupuapi.com/client/marketing/advertisement/v1',
-      {
-        errcode: 0,
-        errmsg: '',
-        data: [
-          { region_code: 2400, positions: [{ component_code: 2400 }] },
-          { region_code: 2, positions: [{ component_code: 560 }] },
-        ],
-      },
-      {
-        PP_CURRENT_PAGE_NAME: 'personal_page',
-      }
-    ),
-    { errcode: 0, errmsg: '', data: [] }
-  );
-
-  assert.deepEqual(
-    runScript(
-      'https://j1.pupuapi.com/client/member_card/index/my',
-      { errcode: 0, errmsg: '', data: { sections: [{ type: 'promotion' }] } }
-    ),
-    { errcode: 0, errmsg: '', data: {} }
-  );
-
-  assert.deepEqual(
-    runScript(
-      'https://j1.pupuapi.com/client/member_card/premium/user_center/v3',
-      { errcode: 0, errmsg: '', data: [{ type: 'promotion' }] }
-    ),
-    { errcode: 0, errmsg: '', data: [] }
-  );
-
-  assert.deepEqual(
-    runScript(
-      'https://j1.pupuapi.com/client/order/orders/order_status_preview/person_page/v3',
-      {
-        errcode: 0,
-        errmsg: '',
-        data: [{ client_status_title: '订单已完成，待评价' }],
-      }
-    ),
-    { errcode: 0, errmsg: '', data: [] }
-  );
-
-  assert.deepEqual(
-    runScript(
-      'https://j1.pupuapi.com/client/user_behavior/comments/v3/user/unfinished/count',
-      { errcode: 0, errmsg: '', data: 4 }
-    ),
-    { errcode: 0, errmsg: '', data: 0 }
-  );
 });
 
 test('restores the legacy QX banner source filter', () => {
@@ -285,6 +257,96 @@ test('ports the remaining QX response mutations exactly', () => {
       { data: [{ just_in_time_comment: { id: 1 }, keep: true }] }
     ),
     { data: [{ keep: true }] }
+  );
+});
+
+function runPersonalRequest(url, headers = {}) {
+  const doneCalls = [];
+
+  vm.runInNewContext(
+    personalScriptText,
+    {
+      $request: { url, headers },
+      $done: (value) => doneCalls.push(value),
+      console: { log() {} },
+    },
+    { filename: personalScriptPath }
+  );
+
+  assert.equal(doneCalls.length, 1, 'a request script must finish once');
+  return doneCalls[0];
+}
+
+function responseData(result) {
+  assert.equal(result.response.status, 200);
+  assert.equal(result.response.headers['Content-Type'], 'application/json');
+  return JSON.parse(result.response.body);
+}
+
+test('returns successful empty personal-page responses at request time', () => {
+  assert.deepEqual(
+    responseData(
+      runPersonalRequest(
+        'https://j1.pupuapi.com/client/member_card/index/my'
+      )
+    ),
+    { errcode: 0, errmsg: '', data: {} }
+  );
+
+  assert.deepEqual(
+    responseData(
+      runPersonalRequest(
+        'https://j1.pupuapi.com/client/member_card/premium/user_center/v3'
+      )
+    ),
+    { errcode: 0, errmsg: '', data: {} }
+  );
+
+  assert.deepEqual(
+    responseData(
+      runPersonalRequest(
+        'https://j1.pupuapi.com/client/order/orders/order_status_preview/person_page/v3'
+      )
+    ),
+    { errcode: 0, errmsg: '', data: [] }
+  );
+
+  assert.deepEqual(
+    responseData(
+      runPersonalRequest(
+        'https://j1.pupuapi.com/client/user_behavior/comments/v3/user/unfinished/count'
+      )
+    ),
+    { errcode: 0, errmsg: '', data: 0 }
+  );
+
+  assert.deepEqual(
+    responseData(
+      runPersonalRequest(
+        'https://j1.pupuapi.com/client/notification/message_center/unread_number'
+      )
+    ),
+    { errcode: 0, errmsg: '', data: [] }
+  );
+});
+
+test('short-circuits advertisement only for the personal page', () => {
+  assert.deepEqual(
+    responseData(
+      runPersonalRequest(
+        'https://j1.pupuapi.com/client/marketing/advertisement/v1',
+        { PP_CURRENT_PAGE_NAME: 'personal_page' }
+      )
+    ),
+    { errcode: 0, errmsg: '', data: [] }
+  );
+
+  assert.deepEqual(
+    runPersonalRequest(
+      'https://j1.pupuapi.com/client/marketing/advertisement/v1',
+      { pp_current_page_name: 'start_page' }
+    ),
+    {}
   );
 });
 
