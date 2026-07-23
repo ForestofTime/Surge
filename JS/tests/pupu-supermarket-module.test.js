@@ -341,12 +341,14 @@ test('short-circuits advertisement only for the personal page', () => {
     { errcode: 0, errmsg: '', data: [] }
   );
 
-  assert.deepEqual(
-    runPersonalRequest(
-      'https://j1.pupuapi.com/client/marketing/advertisement/v1',
-      { pp_current_page_name: 'start_page' }
-    ),
-    {}
+  assert.equal(
+    Object.keys(
+      runPersonalRequest(
+        'https://j1.pupuapi.com/client/marketing/advertisement/v1',
+        { pp_current_page_name: 'start_page' }
+      )
+    ).length,
+    0
   );
 });
 
