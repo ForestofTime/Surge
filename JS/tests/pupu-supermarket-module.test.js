@@ -76,7 +76,8 @@ test('adds a generic cached-splash fallback without asset hashes', () => {
   );
 
   assert.ok(splashLine, 'the current cached splash delivery host must be covered');
-  assert.ok(splashLine.includes('(?:jpe?g|png)'));
+  assert.ok(splashLine.includes('jpe?g'));
+  assert.doesNotMatch(splashLine, /\|png/);
   assert.ok(splashLine.includes(`script-path=${surgeSplashScript}`));
   assert.ok(splashLine.includes('requires-body=true'));
   assert.ok(splashLine.includes('binary-body-mode=true'));
