@@ -1,23 +1,40 @@
 /**
- * @author 树先生(原) / WorkBuddy 修正 2026-07-21
- * @function 朴朴超市 去广告(加固版)
- * 修正点:
- *  1. adv 匹配从 /advertisement/v1 放宽到 /advertisement, 兼容 app 升级后的版本号
- *  2. 对 obj.data 做类型与存在性校验, 响应结构变化时不再抛错(避免整段脚本崩溃导致广告回滚)
- *  3. 出错时 $done({}) 透传原响应, 保证 app 不崩
- * 注意: region_code / component_code 仍是写死的广告标识, 若朴朴改了这些值需同步更新下方数组
+ * @author 树先生(原) / WorkBuddy 修正 2026-07-21, 2026-07-23 采用社区方案增强
+ * @function 朴朴超市 去广告(响应体改写版)
+ *
+ * 2026-07-23 重大策略修正(参考社区 mieqq / ddgksf2013 的朴朴去广告脚本)：
+ *   放弃「拦截 CDN 图片」思路——那种做法会误伤首页 banner(同一批图开屏与首页共用)，
+ *   导致主页留白。改为从【接口响应体源头】改写，让 app 自己决定不渲染广告：
+ *
+ *   1) /marketing/advertisement  (开屏广告配置)
+ *      - 把 launch_time_close 推到过去(1660716799999 ≈ 2022-08)，app 判定活动已结束 -> 跳过开屏。
+ *        用正则直接改整段响应体，不依赖具体 JSON 结构，比按 region_code 过滤更稳。
+ *      - 同时保留原来的 region_code / component_code 过滤，覆盖其它广告位。
+ *
+ *   2) /marketing/banner/v\d?position  (首页 banner 配置)
+ *      - 过滤 position_type 为 320 / 710 / 50 的广告位(社区验证值)，去掉首页 banner。
+ *
+ * 这两个接口都需要 MITM，模块 MITM 段已包含 j1.pupuapi.com。
+ * 出错时 $done({}) 透传原响应，保证 app 不崩。
  */
 try {
   let url = $request.url;
   let body = $response.body;
-  let obj = JSON.parse(body);
 
   const search_hot = "/search/hot_keywords";
   const recommend = "/resource_preload/list_h5_resource";
   const adv = "/advertisement";
+  const banner = "/marketing/banner";
   const search_box = "/search_box/products";
   const order_detail = "/order_settlement/detail";
   const orders_list = "/orders/list";
+
+  // 开屏广告：把 launch_time_close 推到过去，app 判定活动已结束 -> 跳过开屏
+  if (url.indexOf(adv) != -1) {
+    body = body.replace(/"launch_time_close"\s*:\s*\d+/g, '"launch_time_close":1660716799999');
+  }
+
+  let obj = JSON.parse(body);
 
   if (url.indexOf(search_hot) != -1) {
     if (obj.data) obj.data = [];
@@ -40,6 +57,14 @@ try {
         }
         return item;
       });
+    }
+    $done({ body: JSON.stringify(obj) });
+  }
+
+  // 首页 banner：过滤 position_type 320/710/50（社区验证的开屏/广告位标识）
+  if (url.indexOf(banner) != -1) {
+    if (obj.data) {
+      obj.data = Object.values(obj.data).filter(o => !(320 === o.position_type || 710 === o.position_type || 50 === o.position_type));
     }
     $done({ body: JSON.stringify(obj) });
   }
