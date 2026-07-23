@@ -111,12 +111,16 @@ test('limits MITM to the API and generic splash delivery hosts', () => {
 function runScript(url, body) {
   const doneCalls = [];
 
-  vm.runInNewContext(scriptText, {
-    $request: { url },
-    $response: { body: JSON.stringify(body) },
-    $done: (value) => doneCalls.push(value),
-    console: { log() {} },
-  });
+  vm.runInNewContext(
+    scriptText,
+    {
+      $request: { url },
+      $response: { body: JSON.stringify(body) },
+      $done: (value) => doneCalls.push(value),
+      console: { log() {} },
+    },
+    { filename: scriptPath }
+  );
 
   assert.equal(doneCalls.length, 1, 'a Surge response script must finish once');
   return JSON.parse(doneCalls[0].body);
@@ -253,15 +257,19 @@ function runSplashScript(width, height, format = 'VP8') {
       ? makeWebpVp8x(width, height)
       : makeWebpVp8(width, height);
 
-  vm.runInNewContext(splashScriptText, {
-    $request: {
-      url: 'https://product-files.pupumall.com/STORE_PRODUCT/campaign/path/creative.jpg?x-oss-process=image/format,webp',
+  vm.runInNewContext(
+    splashScriptText,
+    {
+      $request: {
+        url: 'https://product-files.pupumall.com/STORE_PRODUCT/campaign/path/creative.jpg?x-oss-process=image/format,webp',
+      },
+      $response: { body },
+      $done: (value) => doneCalls.push(value),
+      Uint8Array,
+      console: { log() {} },
     },
-    $response: { body },
-    $done: (value) => doneCalls.push(value),
-    Uint8Array,
-    console: { log() {} },
-  });
+    { filename: splashScriptPath }
+  );
 
   assert.equal(doneCalls.length, 1, 'the binary response script must finish once');
   return doneCalls[0];
@@ -278,6 +286,6 @@ test('blocks the HAR-confirmed 1080x2240 splash dimensions generically', () => {
 });
 
 test('passes through ordinary product image dimensions', () => {
-  assert.deepEqual(runSplashScript(800, 800), {});
-  assert.deepEqual(runSplashScript(1242, 900), {});
+  assert.equal(Object.keys(runSplashScript(800, 800)).length, 0);
+  assert.equal(Object.keys(runSplashScript(1242, 900)).length, 0);
 });
