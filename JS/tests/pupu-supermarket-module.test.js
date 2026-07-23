@@ -13,9 +13,9 @@ const splashScriptText = fs.existsSync(splashScriptPath)
   ? fs.readFileSync(splashScriptPath, 'utf8')
   : '';
 const surgeScript =
-  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=17';
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=18';
 const surgeSplashScript =
-  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=17';
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=18';
 
 function sectionLines(sectionName) {
   const section = moduleText.match(
@@ -37,10 +37,17 @@ test('contains no concrete PuPu creative identifiers', () => {
   assert.doesNotMatch(moduleText, /7edc759f51f8452db7a8432387b3b214/);
 });
 
+test('declares the v18 personal-page source fix', () => {
+  assert.match(moduleText, /^#!desc=.*v18$/m);
+});
+
 test('converts all QX response mutations to version-compatible Surge scripts', () => {
   const scriptLines = sectionLines('Script');
   const expectedJsonPatterns = [
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/notification\\/message_center\\/unread_number',
+    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/user_behavior\\/comments\\/v3\\/user\\/unfinished\\/count',
+    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/member_card\\/index\\/my',
+    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/member_card\\/premium\\/user_center',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/search\\/hot_keywords\\/v3',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/app_resource\\/resource_preload\\/list_h5_resource',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/marketing\\/advertisement\\/v1',
@@ -48,6 +55,7 @@ test('converts all QX response mutations to version-compatible Surge scripts', (
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/search\\/hub\\/search_box\\/products\\/v6',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/order_settlement\\/detail',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/order\\/orders\\/list\\/v4',
+    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/order\\/orders\\/order_status_preview\\/person_page\\/v3',
   ];
 
   assert.equal(scriptLines.length, expectedJsonPatterns.length + 1);
@@ -90,7 +98,6 @@ test('converts QX reject and reject-dict rules without omissions', () => {
     '^http:\\/\\/106\\.55\\.220\\.18:8053\\/httpdns\\/ _ reject',
     '^http:\\/\\/54\\.222\\.159\\.138:8053\\/httpdns\\/ _ reject',
     '^http:\\/\\/101\\.42\\.130\\.147\\/httpdns\\/resolve\\/ _ reject',
-    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/member_card\\/index\\/my _ reject',
   ]);
 
   assert.deepEqual(sectionLines('Map Local'), [
@@ -98,7 +105,6 @@ test('converts QX reject and reject-dict rules without omissions', () => {
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/assets\\/discount\\/order data-type=text data="{}" status-code=200 header="Content-Type:application/json"',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/marketing\\/channel\\/global_redeem\\/top_tip\\/v2 data-type=text data="{}" status-code=200 header="Content-Type:application/json"',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/recommendation\\/hub\\/interests\\/products\\/v2 data-type=text data="{}" status-code=200 header="Content-Type:application/json"',
-    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/member_card\\/premium\\/user_center data-type=text data="{}" status-code=200 header="Content-Type:application/json"',
   ]);
 
 });
@@ -109,13 +115,13 @@ test('limits MITM to the API and generic splash delivery hosts', () => {
   ]);
 });
 
-function runScript(url, body) {
+function runScript(url, body, headers = {}) {
   const doneCalls = [];
 
   vm.runInNewContext(
     scriptText,
     {
-      $request: { url },
+      $request: { url, headers },
       $response: { body: JSON.stringify(body) },
       $done: (value) => doneCalls.push(value),
       console: { log() {} },
@@ -152,6 +158,62 @@ test('ports the QX source-level advertisement filters exactly', () => {
       { region_code: 7, positions: [] },
     ],
   });
+});
+
+test('empties personal-page promotion sources with successful response shapes', () => {
+  assert.deepEqual(
+    runScript(
+      'https://j1.pupuapi.com/client/marketing/advertisement/v1',
+      {
+        errcode: 0,
+        errmsg: '',
+        data: [
+          { region_code: 2400, positions: [{ component_code: 2400 }] },
+          { region_code: 2, positions: [{ component_code: 560 }] },
+        ],
+      },
+      {
+        PP_CURRENT_PAGE_NAME: 'personal_page',
+      }
+    ),
+    { errcode: 0, errmsg: '', data: [] }
+  );
+
+  assert.deepEqual(
+    runScript(
+      'https://j1.pupuapi.com/client/member_card/index/my',
+      { errcode: 0, errmsg: '', data: { sections: [{ type: 'promotion' }] } }
+    ),
+    { errcode: 0, errmsg: '', data: {} }
+  );
+
+  assert.deepEqual(
+    runScript(
+      'https://j1.pupuapi.com/client/member_card/premium/user_center/v3',
+      { errcode: 0, errmsg: '', data: [{ type: 'promotion' }] }
+    ),
+    { errcode: 0, errmsg: '', data: [] }
+  );
+
+  assert.deepEqual(
+    runScript(
+      'https://j1.pupuapi.com/client/order/orders/order_status_preview/person_page/v3',
+      {
+        errcode: 0,
+        errmsg: '',
+        data: [{ client_status_title: '订单已完成，待评价' }],
+      }
+    ),
+    { errcode: 0, errmsg: '', data: [] }
+  );
+
+  assert.deepEqual(
+    runScript(
+      'https://j1.pupuapi.com/client/user_behavior/comments/v3/user/unfinished/count',
+      { errcode: 0, errmsg: '', data: 4 }
+    ),
+    { errcode: 0, errmsg: '', data: 0 }
+  );
 });
 
 test('restores the legacy QX banner source filter', () => {
