@@ -13,9 +13,9 @@ const splashScriptText = fs.existsSync(splashScriptPath)
   ? fs.readFileSync(splashScriptPath, 'utf8')
   : '';
 const surgeScript =
-  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=20';
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=21';
 const surgeSplashScript =
-  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=20';
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=21';
 
 function sectionLines(sectionName) {
   const section = moduleText.match(
@@ -31,14 +31,16 @@ function sectionLines(sectionName) {
 }
 
 test('contains no concrete PuPu creative identifiers', () => {
-  assert.doesNotMatch(moduleText, /92bd7b325d08448a225231962b32a780/);
-  assert.doesNotMatch(moduleText, /37704a60ca16a6741da4db6d4df9184e/);
-  assert.doesNotMatch(moduleText, /0876bb9f23bd4d2789adae816be7cdcd/);
-  assert.doesNotMatch(moduleText, /7edc759f51f8452db7a8432387b3b214/);
+  const sourceText = moduleText + scriptText + splashScriptText;
+
+  assert.doesNotMatch(sourceText, /92bd7b325d08448a225231962b32a780/);
+  assert.doesNotMatch(sourceText, /37704a60ca16a6741da4db6d4df9184e/);
+  assert.doesNotMatch(sourceText, /0876bb9f23bd4d2789adae816be7cdcd/);
+  assert.doesNotMatch(sourceText, /7edc759f51f8452db7a8432387b3b214/);
 });
 
-test('declares the v20 exact QX response conversion', () => {
-  assert.match(moduleText, /^#!desc=.*v20$/m);
+test('declares the v21 QX conversion with a cached-layout fallback', () => {
+  assert.match(moduleText, /^#!desc=.*v21$/m);
 });
 
 test('routes every QX response mutation through one Surge response script', () => {
@@ -47,7 +49,7 @@ test('routes every QX response mutation through one Surge response script', () =
     line.includes(`script-path=${surgeScript}`)
   );
 
-  assert.equal(scriptLines.length, 2);
+  assert.equal(scriptLines.length, 3);
   assert.equal(apiLines.length, 1);
   assert.ok(apiLines[0].includes('type=http-response'));
   assert.ok(
@@ -78,6 +80,20 @@ test('adds a generic cached-splash fallback without asset hashes', () => {
   assert.ok(splashLine.includes('max-size=1048576'));
 });
 
+test('adds a category-level personal-ad fallback without creative paths', () => {
+  const personalAdLine = sectionLines('Script').find((line) =>
+    line.includes(
+      'banner-files\\.pupumall\\.com\\/ADVERTISING_INTERNAL\\/'
+    )
+  );
+
+  assert.ok(personalAdLine, 'the cached personal-ad category must be covered');
+  assert.ok(personalAdLine.includes(`script-path=${surgeSplashScript}`));
+  assert.ok(personalAdLine.includes('requires-body=true'));
+  assert.ok(personalAdLine.includes('binary-body-mode=true'));
+  assert.ok(personalAdLine.includes('max-size=1048576'));
+});
+
 test('converts QX reject and reject-dict rules without omissions', () => {
   assert.deepEqual(sectionLines('URL Rewrite'), [
     '^http:\\/\\/139\\.196\\.12\\.179:8053\\/httpdns\\/ _ reject',
@@ -97,9 +113,9 @@ test('converts QX reject and reject-dict rules without omissions', () => {
 
 });
 
-test('limits MITM to the API and generic splash delivery hosts', () => {
+test('limits MITM to the API and generic filtered asset hosts', () => {
   assert.deepEqual(sectionLines('MITM'), [
-    'hostname = %APPEND% j1.pupuapi.com, product-files.pupumall.com',
+    'hostname = %APPEND% j1.pupuapi.com, product-files.pupumall.com, banner-files.pupumall.com',
   ]);
 });
 
@@ -291,7 +307,7 @@ function makeWebpVp8(width, height) {
   return new Uint8Array(bytes);
 }
 
-function runSplashScript(width, height, format = 'VP8') {
+function runImageScript(url, width, height, format = 'VP8') {
   const doneCalls = [];
   const body =
     format === 'VP8X'
@@ -301,9 +317,7 @@ function runSplashScript(width, height, format = 'VP8') {
   vm.runInNewContext(
     splashScriptText,
     {
-      $request: {
-        url: 'https://product-files.pupumall.com/STORE_PRODUCT/campaign/path/creative.jpg?x-oss-process=image/format,webp',
-      },
+      $request: { url },
       $response: { body },
       $done: (value) => doneCalls.push(value),
       Uint8Array,
@@ -317,16 +331,34 @@ function runSplashScript(width, height, format = 'VP8') {
 }
 
 test('blocks the HAR-confirmed 1080x2240 splash dimensions generically', () => {
-  const result = runSplashScript(1080, 2240, 'VP8');
+  const url =
+    'https://product-files.pupumall.com/STORE_PRODUCT/campaign/path/creative.jpg?x-oss-process=image/format,webp';
+  const result = runImageScript(url, 1080, 2240, 'VP8');
 
   assert.equal(result.status, 404);
   assert.equal(result.body.length, 0);
 
-  const vp8xResult = runSplashScript(1080, 2240, 'VP8X');
+  const vp8xResult = runImageScript(url, 1080, 2240, 'VP8X');
   assert.equal(vp8xResult.status, 404);
 });
 
 test('passes through ordinary product image dimensions', () => {
-  assert.equal(Object.keys(runSplashScript(800, 800)).length, 0);
-  assert.equal(Object.keys(runSplashScript(1242, 900)).length, 0);
+  const url =
+    'https://product-files.pupumall.com/STORE_PRODUCT/catalog/path/product.jpg?x-oss-process=image/format,webp';
+
+  assert.equal(Object.keys(runImageScript(url, 800, 800)).length, 0);
+  assert.equal(Object.keys(runImageScript(url, 1242, 900)).length, 0);
+});
+
+test('blocks the cached personal-ad category while preserving QX live entry', () => {
+  const url =
+    'https://banner-files.pupumall.com/ADVERTISING_INTERNAL/campaign/path/creative.png?x-oss-process=image/format,webp';
+
+  assert.equal(runImageScript(url, 90, 60).status, 404);
+  assert.equal(runImageScript(url, 375, 200, 'VP8X').status, 404);
+  assert.equal(Object.keys(runImageScript(url, 228, 228)).length, 0);
+  assert.equal(
+    Object.keys(runImageScript(url, 228, 228, 'VP8X')).length,
+    0
+  );
 });
