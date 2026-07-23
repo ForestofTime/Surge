@@ -13,9 +13,9 @@ const splashScriptText = fs.existsSync(splashScriptPath)
   ? fs.readFileSync(splashScriptPath, 'utf8')
   : '';
 const surgeScript =
-  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=21';
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=22';
 const surgeSplashScript =
-  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=21';
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=22';
 
 function sectionLines(sectionName) {
   const section = moduleText.match(
@@ -39,8 +39,8 @@ test('contains no concrete PuPu creative identifiers', () => {
   assert.doesNotMatch(sourceText, /7edc759f51f8452db7a8432387b3b214/);
 });
 
-test('declares the v21 QX conversion with a cached-layout fallback', () => {
-  assert.match(moduleText, /^#!desc=.*v21$/m);
+test('declares the v22 QX conversion with explicit reject responses', () => {
+  assert.match(moduleText, /^#!desc=.*v22$/m);
 });
 
 test('routes every QX response mutation through one Surge response script', () => {
@@ -49,7 +49,7 @@ test('routes every QX response mutation through one Surge response script', () =
     line.includes(`script-path=${surgeScript}`)
   );
 
-  assert.equal(scriptLines.length, 3);
+  assert.equal(scriptLines.length, 2);
   assert.equal(apiLines.length, 1);
   assert.ok(apiLines[0].includes('type=http-response'));
   assert.ok(
@@ -80,30 +80,14 @@ test('adds a generic cached-splash fallback without asset hashes', () => {
   assert.ok(splashLine.includes('max-size=1048576'));
 });
 
-test('adds a category-level personal-ad fallback without creative paths', () => {
-  const personalAdLine = sectionLines('Script').find((line) =>
-    line.includes(
-      'banner-files\\.pupumall\\.com\\/ADVERTISING_INTERNAL\\/'
-    )
-  );
-
-  assert.ok(personalAdLine, 'the cached personal-ad category must be covered');
-  assert.ok(personalAdLine.includes(`script-path=${surgeSplashScript}`));
-  assert.ok(personalAdLine.includes('requires-body=true'));
-  assert.ok(personalAdLine.includes('binary-body-mode=true'));
-  assert.ok(personalAdLine.includes('max-size=1048576'));
-});
-
-test('converts QX reject and reject-dict rules without omissions', () => {
-  assert.deepEqual(sectionLines('URL Rewrite'), [
-    '^http:\\/\\/139\\.196\\.12\\.179:8053\\/httpdns\\/ _ reject',
-    '^http:\\/\\/106\\.55\\.220\\.18:8053\\/httpdns\\/ _ reject',
-    '^http:\\/\\/54\\.222\\.159\\.138:8053\\/httpdns\\/ _ reject',
-    '^http:\\/\\/101\\.42\\.130\\.147\\/httpdns\\/resolve\\/ _ reject',
-    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/member_card\\/index\\/my _ reject',
-  ]);
-
+test('reproduces QX reject as an explicit empty HTTP 404 response', () => {
+  assert.doesNotMatch(moduleText, /^\[URL Rewrite\]$/m);
   assert.deepEqual(sectionLines('Map Local'), [
+    '^http:\\/\\/139\\.196\\.12\\.179:8053\\/httpdns\\/ data-type=text data="" status-code=404',
+    '^http:\\/\\/106\\.55\\.220\\.18:8053\\/httpdns\\/ data-type=text data="" status-code=404',
+    '^http:\\/\\/54\\.222\\.159\\.138:8053\\/httpdns\\/ data-type=text data="" status-code=404',
+    '^http:\\/\\/101\\.42\\.130\\.147\\/httpdns\\/resolve\\/ data-type=text data="" status-code=404',
+    '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/member_card\\/index\\/my data-type=text data="" status-code=404',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/marketing\\/advertisement\\/search_input_ranking data-type=text data="{}" status-code=200 header="Content-Type:application/json"',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/assets\\/discount\\/order data-type=text data="{}" status-code=200 header="Content-Type:application/json"',
     '^https:\\/\\/j1\\.pupuapi\\.com\\/client\\/marketing\\/channel\\/global_redeem\\/top_tip\\/v2 data-type=text data="{}" status-code=200 header="Content-Type:application/json"',
@@ -115,7 +99,7 @@ test('converts QX reject and reject-dict rules without omissions', () => {
 
 test('limits MITM to the API and generic filtered asset hosts', () => {
   assert.deepEqual(sectionLines('MITM'), [
-    'hostname = %APPEND% j1.pupuapi.com, product-files.pupumall.com, banner-files.pupumall.com',
+    'hostname = %APPEND% j1.pupuapi.com, product-files.pupumall.com',
   ]);
 });
 
@@ -350,15 +334,14 @@ test('passes through ordinary product image dimensions', () => {
   assert.equal(Object.keys(runImageScript(url, 1242, 900)).length, 0);
 });
 
-test('blocks the cached personal-ad category while preserving QX live entry', () => {
+test('does not classify personal-page assets by host or dimensions', () => {
   const url =
     'https://banner-files.pupumall.com/ADVERTISING_INTERNAL/campaign/path/creative.png?x-oss-process=image/format,webp';
 
-  assert.equal(runImageScript(url, 90, 60).status, 404);
-  assert.equal(runImageScript(url, 375, 200, 'VP8X').status, 404);
-  assert.equal(Object.keys(runImageScript(url, 228, 228)).length, 0);
+  assert.equal(Object.keys(runImageScript(url, 90, 60)).length, 0);
   assert.equal(
-    Object.keys(runImageScript(url, 228, 228, 'VP8X')).length,
+    Object.keys(runImageScript(url, 375, 200, 'VP8X')).length,
     0
   );
+  assert.equal(Object.keys(runImageScript(url, 228, 228)).length, 0);
 });
