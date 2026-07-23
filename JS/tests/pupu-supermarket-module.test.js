@@ -13,9 +13,9 @@ const splashScriptText = fs.existsSync(splashScriptPath)
   ? fs.readFileSync(splashScriptPath, 'utf8')
   : '';
 const surgeScript =
-  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js';
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=17';
 const surgeSplashScript =
-  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js';
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=17';
 
 function sectionLines(sectionName) {
   const section = moduleText.match(
