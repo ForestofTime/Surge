@@ -37,7 +37,7 @@ test('does not block the misidentified landscape video or all product videos', (
   );
 });
 
-test('enables MITM for the splash video host', () => {
+test('enables MITM for the splash image host', () => {
   const mitmLine = moduleText
     .split('\n')
     .find((line) => line.startsWith('hostname ='));

@@ -1,5 +1,5 @@
 #!name=朴朴超市去广告
-#!desc=移除开屏广告、首页 banner、搜索热词、消息红点及各页面推荐位。v13
+#!desc=移除开屏广告、首页 banner、搜索热词、消息红点及各页面推荐位。v14
 #!author=奶思(原) / WorkBuddy 修正
 #!category=奶思的模块
 #!homepage=https://github.com/fmz200/wool_scripts
@@ -14,8 +14,9 @@
 ^http:\/\/54\.222\.159\.138:8053\/httpdns\/ - reject
 ^http:\/\/101\.42\.130\.147\/httpdns\/resolve\/ - reject
 
-# 2026-07-23 HAR 确认的缓存开屏视频，仅拦截精确素材文件
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/7edc759f51f8452db7a8432387b3b214\/1129\/1eb887ee920b0eceb646b517582fea86\.mp4(\?.*)? - reject
+# 2026-07-23 HAR 与用户截图确认的 1080x2240 竖版开屏图，仅拦截精确素材文件
+^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/0876bb9f23bd4d2789adae816be7cdcd\/310f\/37704a60ca16a6741da4db6d4df9184e\.jpg(\?.*)? - reject
+^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/7edc759f51f8452db7a8432387b3b214\/0ed5\/92bd7b325d08448a225231962b32a780\.jpg(\?.*)? - reject
 
 [Body Rewrite]
 # 清除消息中心未读红点
