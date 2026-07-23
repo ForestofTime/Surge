@@ -1,5 +1,5 @@
 #!name=朴朴超市去广告
-#!desc=按 QX 实际响应语义返回显式 404，并过滤广告接口响应。v22
+#!desc=过滤 QX 广告接口，并兜底处理当前 PNG 开屏与个人页广告分类。v23
 #!author=奶思(原) / ForestofTime Surge 转换
 #!category=广告过滤
 #!homepage=https://github.com/fmz200/wool_scripts
@@ -32,10 +32,13 @@
 
 [Script]
 # Surge 单一宽入口。具体路径在脚本中判定，避免复杂规则未命中。
-朴朴-API响应过滤 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=22, requires-body=true, max-size=1048576, timeout=60
+朴朴-API响应过滤 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=23, requires-body=true, max-size=1048576, timeout=60
 
-# 当前 App 会直接读取本地开屏配置。兜底只识别 1080x2240 WebP 画布，不包含素材 ID。
-朴朴-缓存开屏兜底 = type=http-response, pattern=^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/.*\.jpe?g(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=22, requires-body=true, binary-body-mode=true, max-size=1048576, timeout=10
+# 当前 App 会直接读取本地开屏配置。源文件后缀会在 PNG 与 JPEG 间变化，响应统一为 WebP。
+朴朴-缓存开屏兜底 = type=http-response, pattern=^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/.*\.(?:png|jpe?g)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=23, requires-body=true, binary-body-mode=true, max-size=1048576, timeout=10
+
+# 个人页会从本地配置直接加载广告分类。保留 QX 抓包中的 228x228 功能入口。
+朴朴-个人页素材兜底 = type=http-response, pattern=^https:\/\/banner-files\.pupumall\.com\/ADVERTISING_INTERNAL\/.*\.(?:png|jpe?g)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=23, requires-body=true, binary-body-mode=true, max-size=1048576, timeout=10
 
 [MITM]
-hostname = %APPEND% j1.pupuapi.com, product-files.pupumall.com
+hostname = %APPEND% j1.pupuapi.com, product-files.pupumall.com, banner-files.pupumall.com

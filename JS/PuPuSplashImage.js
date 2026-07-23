@@ -1,9 +1,12 @@
 /**
  * 朴朴超市缓存广告素材兜底
  *
- * 当前 iOS 版会从本地布局直接加载开屏素材。
- * 仅按开屏画布尺寸识别，不依赖素材文件名或哈希。
+ * 当前 iOS 版会从本地布局直接加载开屏及个人页广告素材。
+ * 开屏按画布尺寸识别；个人页按服务端广告分类识别，并保留 QX
+ * 抓包中仍会加载的 228x228 功能入口。不依赖素材文件名或哈希。
  */
+
+const url = $request.url;
 
 function readAscii(bytes, offset, length) {
   let value = '';
@@ -108,10 +111,15 @@ function readWebpDimensions(bytes) {
 
 try {
   const dimensions = readWebpDimensions($response.body);
+  const isPersonalAdCategory = url.includes(
+    '://banner-files.pupumall.com/ADVERTISING_INTERNAL/'
+  );
+  const isQxFunctionalEntry =
+    dimensions?.width === 228 && dimensions?.height === 228;
   const isSplash =
     dimensions?.width === 1080 && dimensions?.height === 2240;
 
-  if (isSplash) {
+  if ((isPersonalAdCategory && !isQxFunctionalEntry) || isSplash) {
     $done({ status: 404, body: new Uint8Array(0) });
   } else {
     $done({});
