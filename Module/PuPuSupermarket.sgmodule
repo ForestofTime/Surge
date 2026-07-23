@@ -1,26 +1,19 @@
 #!name=朴朴超市去广告
-#!desc=移除开屏广告、首页 banner、搜索热词、消息红点及各页面推荐位。v14
-#!author=奶思(原) / WorkBuddy 修正
-#!category=奶思的模块
+#!desc=等价转换 Quantumult X 源规则，从广告配置接口过滤开屏及各页面推广。v16
+#!author=奶思(原) / ForestofTime Surge 转换
+#!category=广告过滤
 #!homepage=https://github.com/fmz200/wool_scripts
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/PuPuSupermarket.sgmodule
-#!tg-channel=https://t.me/inaisi
-#!arguments=pupuicui_enable:true
 
 [URL Rewrite]
-# 拦截 httpdns 广告下发
-^http:\/\/139\.196\.12\.179:8053\/httpdns\/ - reject
-^http:\/\/106\.55\.220\.18:8053\/httpdns\/ - reject
-^http:\/\/54\.222\.159\.138:8053\/httpdns\/ - reject
-^http:\/\/101\.42\.130\.147\/httpdns\/resolve\/ - reject
+# 广告 HTTPDNS 下发
+^http:\/\/139\.196\.12\.179:8053\/httpdns\/ _ reject
+^http:\/\/106\.55\.220\.18:8053\/httpdns\/ _ reject
+^http:\/\/54\.222\.159\.138:8053\/httpdns\/ _ reject
+^http:\/\/101\.42\.130\.147\/httpdns\/resolve\/ _ reject
 
-# 2026-07-23 HAR 与用户截图确认的 1080x2240 竖版开屏图，仅拦截精确素材文件
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/0876bb9f23bd4d2789adae816be7cdcd\/310f\/37704a60ca16a6741da4db6d4df9184e\.jpg(\?.*)? - reject
-^https:\/\/product-files\.pupumall\.com\/STORE_PRODUCT\/7edc759f51f8452db7a8432387b3b214\/0ed5\/92bd7b325d08448a225231962b32a780\.jpg(\?.*)? - reject
-
-[Body Rewrite]
-# 清除消息中心未读红点
-http-response-jq ^https:\/\/j1\.pupuapi\.com\/client\/notification\/message_center\/unread_number '.data = []'
+# 主页实惠卡横幅
+^https:\/\/j1\.pupuapi\.com\/client\/member_card\/index\/my _ reject
 
 [Map Local]
 # 搜索框页面热榜
@@ -29,7 +22,7 @@ http-response-jq ^https:\/\/j1\.pupuapi\.com\/client\/notification\/message_cent
 # 订单待收货页右下角悬浮广告
 ^https:\/\/j1\.pupuapi\.com\/client\/assets\/discount\/order data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
-# 购物车页去换购推荐
+# 购物车页换购推荐
 ^https:\/\/j1\.pupuapi\.com\/client\/marketing\/channel\/global_redeem\/top_tip\/v2 data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 # 各页面商品推荐
@@ -39,26 +32,25 @@ http-response-jq ^https:\/\/j1\.pupuapi\.com\/client\/notification\/message_cent
 ^https:\/\/j1\.pupuapi\.com\/client\/member_card\/premium\/user_center data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 [Script]
-# 开屏/全局广告配置：将 launch_time_close 改写为过去时间，app 判定活动结束不渲染
-朴朴-开屏广告 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/marketing\/advertisement, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, max-size=-1, timeout=60
+# QX 的 JQ 改写转换为响应脚本，兼容 Surge iOS 5.10.2。
+朴朴-消息未读 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/notification\/message_center\/unread_number, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, max-size=1048576, timeout=60
 
-# 首页 banner 广告(position_type 320/710/50)
-朴朴-首页banner = type=http-response, pattern=^https?:\/\/j1\.pupuapi\.com\/client\/marketing\/banner\/v\d\?position, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, max-size=-1, timeout=60
+# 六条响应规则与 QX 源文件逐项对应。名称唯一，避免 Surge 配置键互相覆盖。
+朴朴-搜索热词 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/search\/hot_keywords\/v3, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, max-size=1048576, timeout=60
 
-# 搜索热词
-朴朴-搜索热词 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/search\/hot_keywords, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
+朴朴-H5预载 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/app_resource\/resource_preload\/list_h5_resource, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, max-size=1048576, timeout=60
 
-# 搜索结果页信息流横幅广告
-朴朴-搜索信息流 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/search\/hub\/search_box\/products, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
+# 开屏及全局广告配置
+朴朴-广告配置 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/marketing\/advertisement\/v1, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, max-size=1048576, timeout=60
+
+# 搜索结果页信息流横幅
+朴朴-搜索信息流 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/search\/hub\/search_box\/products\/v6, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, max-size=1048576, timeout=60
 
 # 下单页实惠卡开通推荐
-朴朴-下单页推荐 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/order_settlement\/detail, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
+朴朴-下单页推荐 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/order_settlement\/detail, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, max-size=1048576, timeout=60
 
-# 订单列表骑手反馈问题推荐
-朴朴-订单列表 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/order\/orders\/list, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
-
-# H5 预载资源过滤
-朴朴-H5预载 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/app_resource\/resource_preload\/list_h5_resource, script-path=https://cdn.jsdelivr.net/gh/ForestofTime/Surge@main/JS/PuPuSupermarket.js, requires-body=true, timeout=60
+# 订单列表骑手反馈推荐
+朴朴-订单列表 = type=http-response, pattern=^https:\/\/j1\.pupuapi\.com\/client\/order\/orders\/list\/v4, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js, requires-body=true, max-size=1048576, timeout=60
 
 [MITM]
-hostname = %APPEND% j1.pupuapi.com, product-files.pupumall.com
+hostname = %APPEND% j1.pupuapi.com
