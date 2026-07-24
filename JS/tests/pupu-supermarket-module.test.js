@@ -13,9 +13,9 @@ const splashScriptText = fs.existsSync(splashScriptPath)
   ? fs.readFileSync(splashScriptPath, 'utf8')
   : '';
 const surgeScript =
-  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=23';
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSupermarket.js?v=24';
 const surgeSplashScript =
-  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=23';
+  'https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PuPuSplashImage.js?v=24';
 
 function sectionLines(sectionName) {
   const section = moduleText.match(
@@ -39,8 +39,8 @@ test('contains no concrete PuPu creative identifiers', () => {
   assert.doesNotMatch(sourceText, /7edc759f51f8452db7a8432387b3b214/);
 });
 
-test('declares the v23 QX conversion with current cached-asset fallbacks', () => {
-  assert.match(moduleText, /^#!desc=.*v23$/m);
+test('declares the v24 QX conversion with raw-connection interception', () => {
+  assert.match(moduleText, /^#!desc=.*v24$/m);
 });
 
 test('routes every QX response mutation through one Surge response script', () => {
@@ -110,10 +110,18 @@ test('reproduces QX reject as an explicit empty HTTP 404 response', () => {
 
 });
 
-test('limits MITM to the API and generic filtered asset hosts', () => {
-  assert.deepEqual(sectionLines('MITM'), [
-    'hostname = %APPEND% j1.pupuapi.com, product-files.pupumall.com, banner-files.pupumall.com',
+test('forces raw HTTPDNS connections through the HTTP engine', () => {
+  assert.deepEqual(sectionLines('General'), [
+    'force-http-engine-hosts = %APPEND% 139.196.12.179:8053, 106.55.220.18:8053, 54.222.159.138:8053, 101.42.130.147',
   ]);
+});
+
+test('decrypts only PuPu raw TLS connections needed by the filters', () => {
+  assert.deepEqual(sectionLines('MITM'), [
+    'hostname = %APPEND% j1.pupuapi.com, 81.70.116.57, product-files.pupumall.com, banner-files.pupumall.com',
+    'tcp-connection = true',
+  ]);
+  assert.doesNotMatch(moduleText, /<ip-address>/);
 });
 
 function runScript(url, body, headers = {}) {
