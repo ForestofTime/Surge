@@ -1,0 +1,68 @@
+#!name=滴滴出行去广告
+#!desc=合并 QX 首页净化与 Surge 个人页净化，保留核心出行功能。v1
+#!author=QingRex / ZenmoFeiShi / ForestofTime
+#!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/DiDi.png
+#!category=广告过滤
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/Didichuxing.sgmodule
+
+[Rule]
+# 阻断滴滴私有 TCP 下发，促使 App 回落到可改写的 HTTPS 接口。
+DOMAIN,gwp.xiaojukeji.com,REJECT,extended-matching,pre-matching
+IP-CIDR,139.199.244.6/32,REJECT,no-resolve
+IP-CIDR,113.46.225.9/32,REJECT,no-resolve
+IP-CIDR,139.199.244.7/32,REJECT,no-resolve
+IP-CIDR,113.46.225.8/32,REJECT,no-resolve
+IP-CIDR,123.207.209.39/32,REJECT,no-resolve
+IP-CIDR,123.207.209.60/32,REJECT,no-resolve
+IP-CIDR,139.199.240.15/32,REJECT,no-resolve
+IP-CIDR,139.199.240.12/32,REJECT,no-resolve
+IP-CIDR,116.85.3.37/32,REJECT,no-resolve
+IP-CIDR,162.14.157.2/32,REJECT,no-resolve
+IP-CIDR,162.14.157.24/32,REJECT,no-resolve
+IP-CIDR,116.85.1.0/32,REJECT,no-resolve
+IP-CIDR,116.85.1.17/32,REJECT,no-resolve
+IP-CIDR,116.85.1.22/32,REJECT,no-resolve
+IP-CIDR,116.85.3.25/32,REJECT,no-resolve
+AND,((IP-ASN,45090,no-resolve),(DEST-PORT,25641),(PROTOCOL,TCP)),REJECT
+AND,((IP-ASN,55990,no-resolve),(DEST-PORT,25641),(PROTOCOL,TCP)),REJECT
+AND,((IP-ASN,63646,no-resolve),(DEST-PORT,25641),(PROTOCOL,TCP)),REJECT
+
+[Map Local]
+# 首页活动、推荐流和营销卡片。与 QX reject-dict 的 200 + {} 语义一致。
+^https:\/\/res\.xiaojukeji\.com\/resapi\/activity\/(?:getMulti|xpget|getInsActivityV2|mget)(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/ct\.xiaojukeji\.com\/agent\/v3\/feeds(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/conf\.diditaxi\.com\.cn\/homepage\/v\d+\/other\/(?:fast|slow)(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/conf\.diditaxi\.com\.cn\/dynamic\/conf(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/api\.udache\.com\/gulfstream\/watson\/v1\/bubble\/getBubble(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/conf\.diditaxi\.com\.cn\/ota\/na\/yuantu\/infoList(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+[Body Rewrite]
+# 首页仅保留 QX 当前 HAR 中验证过的导航结构。
+http-response-jq ^https:\/\/conf\.diditaxi\.com\.cn\/homepage\/v\d+\/core(?:\?|$) '(if (.data.order_cards.nav_list_card.data | type) == "array" then .data.order_cards.nav_list_card.data |= map(select(.nav_id == "dache_anycar" or .nav_id == "driverservice" or .nav_id == "bike" or .nav_id == "carmate" or .nav_id == "nav_more_v3")) else . end) | (if (.data.disorder_cards.bottom_nav_list.data | type) == "array" then .data.disorder_cards.bottom_nav_list.data |= map(select(.id == "v6x_home" or .id == "home_page" or .id == "user_center")) else . end) | (if (.data.disorder_cards.top_nav_list.data.top_nav_info | type) == "array" then .data.disorder_cards.top_nav_list.data.top_nav_info |= map(select(.name != "旅行" and .name != "车主")) else . end)'
+
+# 我的页面沿用 Surge 实机干净版白名单，保留基础资料、订单、钱包和工具。
+http-response-jq ^https:\/\/common\.diditaxi\.com\.cn\/common\/v\d+\/usercenter\/layout(?:\?|$) '(if (.data.layout.order | type) == "array" then .data.layout.order |= map(select(. == "center_base_info_card" or . == "center_order_related_card" or . == "center_wallet_finance_card" or . == "center_tool_card")) else . end) | (if (.data.instances | type) == "object" then .data.instances |= (to_entries | map(select(.key as $k | ["center_base_info_card", "center_order_related_card", "center_wallet_finance_card", "center_tool_card"] | index($k))) | from_entries) else . end) | (if (.data.instances.center_wallet_finance_card.data.view_info | type) == "array" then .data.instances.center_wallet_finance_card.data.view_info |= map(select(.title == "优惠卡券" or .title == "余额" or .title == "福利金")) else . end)'
+http-response-jq ^https:\/\/common\.diditaxi\.com\.cn\/common\/v\d+\/usercenter\/me(?:\?|$) 'if (.data.cards | type) == "array" then .data.cards |= (map(select(.title != "天天领福利" and .title != "金融服务" and .title != "更多服务" and .title != "企业服务" and .title != "安全中心")) | map(if .tag == "wallet" then (if (.items | type) == "array" then .items |= map(select(.title == "优惠券")) else . end) | (if .card_type == 4 and (.bottom_items | type) == "array" then .bottom_items |= map(select(.title == "省钱套餐" or .title == "出行里程")) else . end) else . end)) else . end'
+
+# 打车、代驾、城际等业务只删除广告字段，不整接口拒绝。
+http-response-jq ^https:\/\/api\.udache\.com\/gulfstream\/porsche\/v1\/dache_homepage_layout(?:\?|$) 'if (.data.instances | type) == "object" then .data.instances |= (to_entries | map(select(.key | test("^(feed_back_|dache_main_member|order_container_|dache_main_core_icon|dache_main_card_)"))) | from_entries) else . end'
+http-response-jq ^https:\/\/api\.udache\.com\/gulfstream\/porsche\/v1\/pSFCHomePage(?:\?|$) '.data |= (if . == null then null else {hot_route_info, legal_info, tab_list: ((.tab_list // []) | map(select(.tab_id == "passenger")))} end)'
+http-response-jq ^https:\/\/api\.udache\.com\/gulfstream\/pre-sale\/v1\/other\/pGetSceneList(?:\?|$) '(if (.data.scene_list | type) == "array" then .data.scene_list |= map(select(.text != "优惠商城")) else . end) | (if (.data.show_data | type) == "array" then .data.show_data |= map(if (.scene_ids | type) == "array" then .scene_ids |= map(select(. != "scene_coupon_mall")) else . end) else . end)'
+http-response-jq ^https:\/\/conf\.diditaxi\.com\.cn\/homepage\/v1\/oversea\/layout(?:\?|$) 'del(.data.instances.oversea_main_banner)'
+http-response-jq ^https:\/\/api\.udache\.com\/gulfstream\/passenger-center\/v2\/other\/pInTripLayout(?:\?|$) 'if (.data.order_components | type) == "array" then .data.order_components |= map(select(.name != "passenger_common_casper")) else . end'
+http-response-jq ^https:\/\/daijia\.kuaidadi\.com:443\/gateway(?:\?|$) 'del(.data.variantInfo) | if (.data | type) == "object" then .data |= with_entries(select(.value.isAd != 1)) else . end'
+http-response-jq ^https:\/\/api\.udache\.com\/intercity\/ticket\/api\/v1\/core\/getFullPageInfoLayout(?:\?|$) 'if (.data.disorder_components | type) == "array" then .data.disorder_components |= map(select(.name == "history_order_card" or .name == "inprogress_order_card" or .name == "station_calendar" or .name == "main_card_v2" or .name == "user_history_order")) else . end'
+http-response-jq ^https:\/\/htwkop\.xiaojukeji\.com:443\/gateway(?:\?|$) 'del(.data["didi-bike-homepage-popup"], .data.variantInfo)'
+http-response-jq ^https:\/\/as\.xiaojukeji\.com\/ep\/as\/toggles(?:\?|$) 'if (.data | type) == "array" then .data |= map(if (.name | IN("daijia_journey_new_tcp_switch","daijia_tcp_init","daijia_tcp_msg_encrypt","daijia_tcp_site_info","daijia_tcp_site_report")) then .allow = false else . end) else . end'
+
+# 钱包和资产页保留基础资产，删除借贷、横幅和金融推荐。
+http-response-jq ^https:\/\/mapi\.xiaojukeji\.com\/passenger-wallet\/api\/v[\d.]+\/wallet\/homepage(?:\?|$) 'if (.data.cardList | type) == "array" then .data.cardList |= (map(if .mcode == "index_assets_v6" then .detailData |= (del(.myCreditLimit, .noticeList) | if (.discountList | type) == "array" then .discountList |= .[:3] else . end) else . end) | map(select(.mcode == "index_assets_v6"))) else . end'
+http-response-jq ^https:\/\/manhattan\.webapp\.xiaojukeji\.com\/zootopia\/api\/my-assets\/get-assets-data(?:\?|$) 'del(.data.myQuotaModularRes, .data.assetsData.myQuotaModularRes, .data.banner, .data.assetsData.banner, .data.myGuaranteeModularRes, .data.assetsData.myGuaranteeModularRes)'
+http-response-jq ^https:\/\/manhattan\.webapp\.xiaojukeji\.com\/zootopia\/api\/my-assets\/module-is-show(?:\?|$) '.data = []'
+http-response-jq ^https:\/\/ddpay\.xiaojukeji\.com\/ddpay\/api\/manhattan-small-change\/get-all-config(?:\?|$) '.data.result = []'
+http-response-jq ^https:\/\/ddpay\.xiaojukeji\.com\/ddpay\/api\/manhattan-small-change\/get-apollo-config(?:\?|$) '.data.result.hideList = []'
+
+[MITM]
+hostname = %APPEND% as.xiaojukeji.com, common.diditaxi.com.cn, conf.diditaxi.com.cn, api.udache.com, ct.xiaojukeji.com, res.xiaojukeji.com, daijia.kuaidadi.com, htwkop.xiaojukeji.com, mapi.xiaojukeji.com, manhattan.webapp.xiaojukeji.com, ddpay.xiaojukeji.com, 117.51.168.*, 112.53.55.225, 139.199.240.84, 113.46.225.*, 162.14.157.*, 123.207.209.*, 120.241.142.*, 120.241.143.*, 116.85.*
+tcp-connection = true

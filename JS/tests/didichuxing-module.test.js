@@ -309,6 +309,20 @@ test('filters ad fields instead of rejecting functional service gateways', () =>
   ]);
 });
 
+test('keeps every native jq rule valid on an empty response', () => {
+  for (const line of sectionLines('Body Rewrite')) {
+    const firstQuote = line.indexOf("'");
+    const lastQuote = line.lastIndexOf("'");
+    const expression = line.slice(firstQuote + 1, lastQuote);
+    const result = spawnSync('jq', ['-c', expression], {
+      encoding: 'utf8',
+      input: '{}',
+    });
+
+    assert.equal(result.status, 0, `${line}\n${result.stderr}`);
+  }
+});
+
 test('uses bounded MITM hosts and raw TLS processing', () => {
   const mitm = sectionLines('MITM');
   assert.equal(mitm.at(-1), 'tcp-connection = true');
