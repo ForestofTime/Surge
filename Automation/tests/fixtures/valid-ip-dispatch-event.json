@@ -1,0 +1,5 @@
+{
+  "inputs": {
+    "proposal": "{\"schema_version\":1,\"proposal_id\":\"a3af85601084ad35619654c5dcf8cd448d2aa71f7ceb9e254f995d75fcb0e89f\",\"lock_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"rules\":[{\"policy\":\"PROXY\",\"type\":\"IP-CIDR\",\"value\":\"103.107.90.33/32\",\"options\":[\"no-resolve\"]}]}"
+  }
+}
