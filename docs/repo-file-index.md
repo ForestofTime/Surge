@@ -139,11 +139,11 @@
 - 依赖关系：引用本仓库 raw 脚本 `JS/qidian_getconf_filter_fixed.js`、`JS/qidian_hide_daily.js`。
 
 ### `Module/Telegram-DC.sgmodule`
-- 作用：Telegram DC1 至 DC5 的可参数化分流，覆盖 Web 端点、Telegram ASN 与 MTProto 协议兜底。
+- 作用：Telegram 劣化 IP 绕行，将已验证的 DC2/DC5 劣化地址改写到同数据中心的备用地址。
 - 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为 Telegram。
-- 类型：Rule。
-- 依赖关系：ASN 以 Sukka `telegram_asn.conf` 为核验来源，Web DC 端点来自 `Jard1n/VPN_Tool` 的公开模块。
-- 维护建议：启用后删除主配置中重复的 `PROTOCOL,MTProto` 与 Telegram `IP-ASN` 单条规则；`DC1` 至 `DC5` 参数必须对应现有策略组名称。
+- 类型：General + Host。
+- 依赖关系：DC5 映射来自 FKTG 社区模块；DC2 备用端点采用 TDLib 默认 DC2 TCP 地址。
+- 维护建议：不要保留 `IP-CIDR,95.161.76.100/31,REJECT`，否则会与该模块的 DC2 改写冲突。未验证的 DC1/DC3/DC4 地址不应凭猜测加入映射表。
 
 ### `Module/XHS.sgmodule`
 - 作用：小红书去广告与去水印模块。
