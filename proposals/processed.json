@@ -3,5 +3,10 @@
     "proposal_id": "b1c9d0927d3233d22362adb2282e89f79e30e1dfddaabfe2ea0427a1c2bcabe4",
     "lock_digest": "c050fae04cf5215f13a1188314c66ec5cec220968639f272e88b117e05d1cdc2",
     "rules_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  {
+    "proposal_id": "b6ed07e9c13b1b2180290d36d6ac9fd7bd5a26d14f52c9ad39715b857cf5cf0f",
+    "lock_digest": "c050fae04cf5215f13a1188314c66ec5cec220968639f272e88b117e05d1cdc2",
+    "rules_sha256": "850fca555f906a1ac8d81a6743d6f836d1dfdbbb6af9b7935778a5388c25f554"
   }
 ]
