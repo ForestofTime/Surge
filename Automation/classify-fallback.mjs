@@ -250,6 +250,7 @@ function classifyOne(observation, {
         type: explicit.type,
         value: explicit.target,
         options: explicit.options,
+        override: true,
         reason: explicit.reason,
       };
     }
@@ -257,9 +258,9 @@ function classifyOne(observation, {
       if (!pslReady || !psl) return { status: 'DEFERRED', reason: 'missing-psl', value };
       const gate = suffixSafetyGate(explicit.target, { psl, policy: explicit.policy, existingRulesByPolicy, controlPlane, automatic: false });
       if (!gate.ok) return { status: 'REVIEW', reason: `suffix-${gate.reason}`, value };
-      return { status: 'PROPOSE', policy: explicit.policy, type: 'DOMAIN-SUFFIX', value: explicit.target, reason: explicit.reason };
+      return { status: 'PROPOSE', policy: explicit.policy, type: 'DOMAIN-SUFFIX', value: explicit.target, override: true, reason: explicit.reason };
     }
-    return { status: 'PROPOSE', policy: explicit.policy, type: 'DOMAIN', value, reason: explicit.reason };
+    return { status: 'PROPOSE', policy: explicit.policy, type: 'DOMAIN', value, override: true, reason: explicit.reason };
   }
 
   if (normalized.kind !== 'd') return { status: 'REVIEW', reason: 'public-ip-never-auto-publish', kind: normalized.kind, value };
@@ -330,6 +331,7 @@ export function classifyFallback({
       type: result.type,
       value: result.value,
       ...(Array.isArray(result.options) && result.options.length ? { options: [...result.options] } : {}),
+      ...(result.override === true ? { override: true } : {}),
     });
     else if (result.status === 'REVIEW') review.push(entry);
     else if (result.status === 'DEFERRED') deferred.push(entry);

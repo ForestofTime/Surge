@@ -42,13 +42,14 @@ if (!proposal || proposal.schema_version !== 1 || !/^[0-9a-f]{64}$/u.test(propos
   process.exit(1);
 }
 for (const rule of proposal.rules) {
+  const override = rule && rule.override === undefined ? false : rule?.override;
   const options = rule && rule.options === undefined ? [] : rule?.options;
   const validOptions = Array.isArray(options) && options.every((option) => option === 'no-resolve') && new Set(options).size === options.length;
   const type = rule?.type;
   const validValue = typeof rule?.value === 'string' && /^[\x21-\x7e]{1,253}$/u.test(rule.value);
   const validType = DOMAIN_TYPES.has(type) || IP_TYPES.has(type);
   const validTarget = validType && validValue && (DOMAIN_TYPES.has(type) ? options.length === 0 : validCidr(rule.value, type));
-  if (!rule || !['DIRECT', 'PROXY'].includes(rule.policy) || !validType || !validOptions || !validTarget) {
+  if (!rule || typeof override !== 'boolean' || !['DIRECT', 'PROXY'].includes(rule.policy) || !validType || !validOptions || !validTarget) {
     process.stderr.write('proposal rule is invalid\n');
     process.exit(1);
   }

@@ -281,10 +281,11 @@ test('publish CLI merges proposal with manual and existing auto sources idempote
     await writeFile(join(outputRoot, 'Source/Auto/Proxy+.list'), 'DOMAIN,old.example.com\n');
     await writeFile(join(outputRoot, 'Source/Auto/Direct+.list'), '');
     const proposalPath = join(sourceRoot, '.work/fallback-proposal.json');
-    await writeFile(proposalPath, JSON.stringify({ schema_version: 1, proposal_id: '6a7ad7cfe2659f8a7e5769803c58d394d33e8958bc6c94b8dabd789bbfe678c7', lock_digest: sourceLockDigest, rules: [{ policy: 'PROXY', type: 'DOMAIN-SUFFIX', value: 'new.example.com' }] }));
+    const proposalBase = { schema_version: 1, lock_digest: sourceLockDigest, rules: [{ policy: 'PROXY', type: 'DOMAIN-SUFFIX', value: 'checktrustworthiness.com', override: true }] };
+    await writeFile(proposalPath, JSON.stringify({ ...proposalBase, proposal_id: sha256(`${JSON.stringify(proposalBase)}\n`) }));
     const first = await generateFromFiles({ proposalFile: proposalPath, outputRoot, sourceRoot });
     assert.match(await readFile(join(outputRoot, 'Rule/Direct+.list'), 'utf8'), /direct\.example\.com/);
-    assert.match(await readFile(join(outputRoot, 'Rule/Proxy+.list'), 'utf8'), /new\.example\.com/);
+    assert.match(await readFile(join(outputRoot, 'Rule/Proxy+.list'), 'utf8'), /checktrustworthiness\.com/);
     assert.match(await readFile(join(outputRoot, 'Source/Auto/Proxy+.list'), 'utf8'), /old\.example\.com/);
     assert.equal(JSON.parse(await readFile(join(outputRoot, 'manifest.json'), 'utf8')).rules.Reject.count, 0);
     await assert.rejects(() => readFile(join(outputRoot, 'Rule/Reject+.list'), 'utf8'), /ENOENT/);
