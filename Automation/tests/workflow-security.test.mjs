@@ -69,6 +69,7 @@ const dispatchProposal = read('docs/private-inbox-template/Automation/dispatch-p
 assert.match(dispatchProposal, /https:\/\/api\.github\.com/);
 assert.match(dispatchProposal, /IP-CIDR/);
 assert.match(dispatchProposal, /IP-CIDR6/);
+assert.match(dispatchProposal, /override/);
 assert.doesNotMatch(read('docs/private-inbox-template/Automation/dispatch-proposal.mjs'), /GITHUB_API_URL/);
 assert.doesNotMatch(read('Automation/check-queue-depth.mjs'), /GITHUB_API_URL/);
 
