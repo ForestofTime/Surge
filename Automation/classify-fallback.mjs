@@ -65,6 +65,15 @@ function ruleCovers(ruleInput, value) {
   if (rule.type === 'DOMAIN') return rule.target === value;
   if (rule.type === 'DOMAIN-SUFFIX') return value === rule.target || value.endsWith(`.${rule.target}`);
   if (rule.type === 'DOMAIN-KEYWORD') return value.includes(rule.target);
+  if (IP_TYPES.has(rule.type)) {
+    try {
+      const bits = rule.type === 'IP-CIDR' ? 32 : 128;
+      const candidate = normalizeCidr(`${value}/${bits}`, { noResolve: true });
+      return cidrContains(rule, candidate);
+    } catch {
+      return false;
+    }
+  }
   return false;
 }
 
@@ -104,6 +113,29 @@ function normalizeOverrides(overrides = []) {
     if (!entry || entry.enabled === false) return [];
     const policy = policyName(entry.policy);
     if (!policy || policy === 'Reject' || typeof entry.target !== 'string') return [];
+    const type = String(entry.type ?? '').toUpperCase();
+    if (IP_TYPES.has(type)) {
+      try {
+        const normalized = normalizeRule({
+          type,
+          target: entry.target,
+          options: entry.options ?? ['no-resolve'],
+          source: 'override',
+          policy,
+        });
+        const address = normalizeCidr(normalized.target, { noResolve: true }).address;
+        return [{
+          policy,
+          type: normalized.type,
+          target: normalized.target,
+          address,
+          options: normalized.options,
+          reason: typeof entry.reason === 'string' ? entry.reason : 'manual override',
+        }];
+      } catch {
+        return [];
+      }
+    }
     let target;
     try {
       target = normalizeDomain(entry.target);
@@ -112,7 +144,7 @@ function normalizeOverrides(overrides = []) {
     }
     const scope = String(entry.scope ?? 'DOMAIN').toUpperCase();
     if (!['DOMAIN', 'DOMAIN-SUFFIX'].includes(scope)) return [];
-    return [{ policy, target, scope, reason: typeof entry.reason === 'string' ? entry.reason : 'manual override' }];
+    return [{ policy, type: scope, target, scope, reason: typeof entry.reason === 'string' ? entry.reason : 'manual override' }];
   });
 }
 
@@ -200,15 +232,27 @@ function classifyOne(observation, {
 }) {
   const normalized = normalizeObserved(observation);
   if (!normalized) return { status: 'IGNORE', reason: 'invalid-observation' };
-  if (normalized.kind !== 'd') return { status: 'REVIEW', reason: 'public-ip-never-auto-publish', kind: normalized.kind, value: normalized.value };
   const value = normalized.value;
-  if (isControlPlane(value, controlPlane)) return { status: 'IGNORE', reason: 'control-plane', value };
+  if (normalized.kind === 'd' && isControlPlane(value, controlPlane)) return { status: 'IGNORE', reason: 'control-plane', value };
 
-  const explicit = overrides.find((entry) => entry.target === value || (entry.scope === 'DOMAIN-SUFFIX' && value.endsWith(`.${entry.target}`)));
+  const explicit = overrides.find((entry) => {
+    if (IP_TYPES.has(entry.type)) return normalized.kind !== 'd' && entry.address === value;
+    return normalized.kind === 'd' && (entry.target === value || (entry.scope === 'DOMAIN-SUFFIX' && value.endsWith(`.${entry.target}`)));
+  });
   if (explicit) {
     const conflict = existingConflict(value, explicit.policy, existingRulesByPolicy);
     if (conflict === 'exists') return { status: 'EXISTS', value };
     if (conflict === 'conflict') return { status: 'REVIEW', reason: 'existing-policy-conflict', value };
+    if (IP_TYPES.has(explicit.type)) {
+      return {
+        status: 'PROPOSE',
+        policy: explicit.policy,
+        type: explicit.type,
+        value: explicit.target,
+        options: explicit.options,
+        reason: explicit.reason,
+      };
+    }
     if (explicit.scope === 'DOMAIN-SUFFIX') {
       if (!pslReady || !psl) return { status: 'DEFERRED', reason: 'missing-psl', value };
       const gate = suffixSafetyGate(explicit.target, { psl, policy: explicit.policy, existingRulesByPolicy, controlPlane, automatic: false });
@@ -217,6 +261,8 @@ function classifyOne(observation, {
     }
     return { status: 'PROPOSE', policy: explicit.policy, type: 'DOMAIN', value, reason: explicit.reason };
   }
+
+  if (normalized.kind !== 'd') return { status: 'REVIEW', reason: 'public-ip-never-auto-publish', kind: normalized.kind, value };
 
   const conflict = existingConflict(value, 'Proxy', existingRulesByPolicy);
   if (conflict === 'exists') return { status: 'EXISTS', value };
@@ -279,7 +325,12 @@ export function classifyFallback({
   for (const observation of merged.values()) {
     const result = classifyOne(observation, { sourceRules, overrides: normalizedOverrides, existingRulesByPolicy, controlPlane, psl, pslReady, sourceError, minimumProxyFamilies });
     const entry = { ...result, kind: observation.kind, value: result.value ?? observation.value };
-    if (result.status === 'PROPOSE') proposalRules.push({ policy: result.policy.toUpperCase(), type: result.type, value: result.value });
+    if (result.status === 'PROPOSE') proposalRules.push({
+      policy: result.policy.toUpperCase(),
+      type: result.type,
+      value: result.value,
+      ...(Array.isArray(result.options) && result.options.length ? { options: [...result.options] } : {}),
+    });
     else if (result.status === 'REVIEW') review.push(entry);
     else if (result.status === 'DEFERRED') deferred.push(entry);
     else if (result.status === 'IGNORE') ignored.push(entry);
