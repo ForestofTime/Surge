@@ -1,0 +1,44 @@
+#!name=Telegram DC 分流
+#!desc=Telegram DC1 至 DC5 分流，含 Web 端点、ASN 与 MTProto 兜底。
+#!author=ForestofTime
+#!category=分流
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/Telegram-DC.sgmodule
+#!arguments=Default:Proxy,DC1:US,DC2:EU,DC3:US,DC4:EU,DC5:SG
+#!arguments-desc=默认 Telegram 策略组；DC1/3 通常填 US，DC2/4 填 EU，DC5 填 SG。策略组名称须与配置一致。
+
+[Rule]
+# DC 专属规则必须排在通用 Telegram 域名与 MTProto 协议规则之前。
+# ASN 映射来源：Sukka Telegram ASN ruleset，2026-07-30 核验。
+
+# Telegram DC1, ASN 59930
+DOMAIN,pluto.web.telegram.org,{{{DC1}}}
+DOMAIN,pluto-1.web.telegram.org,{{{DC1}}}
+IP-ASN,59930,{{{DC1}}},no-resolve
+
+# Telegram DC2, ASN 44907
+DOMAIN,venus.web.telegram.org,{{{DC2}}}
+DOMAIN,venus-1.web.telegram.org,{{{DC2}}}
+IP-ASN,44907,{{{DC2}}},no-resolve
+
+# Telegram DC3, ASN 211157
+DOMAIN,aurora.web.telegram.org,{{{DC3}}}
+DOMAIN,aurora-1.web.telegram.org,{{{DC3}}}
+IP-ASN,211157,{{{DC3}}},no-resolve
+
+# Telegram DC4, ASN 62041
+DOMAIN,vesta.web.telegram.org,{{{DC4}}}
+DOMAIN,vesta-1.web.telegram.org,{{{DC4}}}
+IP-ASN,62041,{{{DC4}}},no-resolve
+
+# Telegram DC5, ASN 62014
+DOMAIN,flora.web.telegram.org,{{{DC5}}}
+DOMAIN,flora-1.web.telegram.org,{{{DC5}}}
+IP-ASN,62014,{{{DC5}}},no-resolve
+
+# 非数据中心专属的 Telegram 服务与协议兜底。
+DOMAIN-SUFFIX,telegram.org,{{{Default}}}
+DOMAIN-SUFFIX,telegram.me,{{{Default}}}
+DOMAIN-SUFFIX,t.me,{{{Default}}}
+DOMAIN-SUFFIX,telegra.ph,{{{Default}}}
+PROTOCOL,MTProto,{{{Default}}}
