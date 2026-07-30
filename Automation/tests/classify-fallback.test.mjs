@@ -119,6 +119,36 @@ test('honors an explicit proxy override with exact or suffix scope', () => {
   }]);
 });
 
+test('honors an explicit proxy override for an IPv4 address', () => {
+  const result = base({
+    observations: [{ kind: '4', value: '103.107.90.33', seen_days: 1 }],
+    overrides: [{ policy: 'PROXY', type: 'IP-CIDR', target: '103.107.90.33/32', options: ['no-resolve'] }],
+  });
+
+  assert.deepEqual(result.proposal.rules, [{
+    policy: 'PROXY',
+    type: 'IP-CIDR',
+    value: '103.107.90.33/32',
+    options: ['no-resolve'],
+  }]);
+  assert.equal(result.review.length, 0);
+});
+
+test('honors an explicit proxy override for an IPv6 address', () => {
+  const result = base({
+    observations: [{ kind: '6', value: '2001:db8::7', seen_days: 1 }],
+    overrides: [{ policy: 'PROXY', type: 'IP-CIDR6', target: '2001:db8::7/128', options: ['no-resolve'] }],
+  });
+
+  assert.deepEqual(result.proposal.rules, [{
+    policy: 'PROXY',
+    type: 'IP-CIDR6',
+    value: '2001:db8::7/128',
+    options: ['no-resolve'],
+  }]);
+  assert.equal(result.review.length, 0);
+});
+
 test('does not turn a reject override into a public proposal', () => {
   const result = base({
     observations: [{ kind: 'd', value: 'blocked.example.net', seen_days: 10 }],

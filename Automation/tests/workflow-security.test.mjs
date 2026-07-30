@@ -65,7 +65,10 @@ assert.match(classifyWorkflow, /classifier_commit|steps\.classifier\.outputs\.co
 assert.match(classifyWorkflow, /PUBLIC_DISPATCH_TOKEN/);
 assert.match(classifyWorkflow, /public-generated/);
 assert.match(classifyWorkflow, /dispatch-proposal\.mjs/);
-assert.match(read('docs/private-inbox-template/Automation/dispatch-proposal.mjs'), /https:\/\/api\.github\.com/);
+const dispatchProposal = read('docs/private-inbox-template/Automation/dispatch-proposal.mjs');
+assert.match(dispatchProposal, /https:\/\/api\.github\.com/);
+assert.match(dispatchProposal, /IP-CIDR/);
+assert.match(dispatchProposal, /IP-CIDR6/);
 assert.doesNotMatch(read('docs/private-inbox-template/Automation/dispatch-proposal.mjs'), /GITHUB_API_URL/);
 assert.doesNotMatch(read('Automation/check-queue-depth.mjs'), /GITHUB_API_URL/);
 
