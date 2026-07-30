@@ -33,15 +33,13 @@
     "timeout_seconds": 8
   },
   "kill_switches": {
-    "capture_enabled": false,
-    "classify_enabled": false,
-    "publish_enabled": false
+    "capture_enabled": true,
+    "classify_enabled": true,
+    "publish_enabled": true
   },
   "psl": {
     "snapshot_path": "Automation/vendor/public_suffix_list.dat",
     "lock_path": "Automation/vendor/public_suffix_list.lock.json",
     "require_ready_snapshot": true
-  },
-  "automation_disabled_at": "2026-07-30",
-  "automation_disabled_reason": "fallback learning complete; retain published rules"
+  }
 }
