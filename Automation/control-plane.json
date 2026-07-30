@@ -34,7 +34,7 @@
   },
   "kill_switches": {
     "capture_enabled": true,
-    "classify_enabled": false,
+    "classify_enabled": true,
     "publish_enabled": false
   },
   "psl": {
