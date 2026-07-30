@@ -5,26 +5,26 @@
   "source_lock_sha256": "c050fae04cf5215f13a1188314c66ec5cec220968639f272e88b117e05d1cdc2",
   "rules": {
     "Direct": {
-      "count": 5,
+      "count": 4,
       "counts": {
-        "DOMAIN": 1,
+        "DOMAIN": 0,
         "DOMAIN-SUFFIX": 2,
         "DOMAIN-KEYWORD": 0,
         "IP-CIDR": 2,
         "IP-CIDR6": 0
       },
-      "sha256": "fdf2cd5747074f642f85e9de9df0aa270f030297437f1f6acaf36cba80b13a40"
+      "sha256": "26beceedc6a08f36f2b3d5531c796e0377b4076b140c15669dbc7abacc70c468"
     },
     "Proxy": {
-      "count": 19,
+      "count": 11,
       "counts": {
-        "DOMAIN": 2,
-        "DOMAIN-SUFFIX": 14,
+        "DOMAIN": 0,
+        "DOMAIN-SUFFIX": 8,
         "DOMAIN-KEYWORD": 0,
         "IP-CIDR": 3,
         "IP-CIDR6": 0
       },
-      "sha256": "68978f24fb40dae984ecb3dc8eb9e8685865ee5fbc735ae9f922c83bdeb1b810"
+      "sha256": "d3b16a96784a44bcd9de548f0af52ed60a7ab3c90bf552f1e028af2e996d9fc1"
     },
     "Reject": {
       "count": 0,
