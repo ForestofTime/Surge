@@ -3,4 +3,3 @@
 DOMAIN,app-analytics-services.com // 腾讯系应用内置广告服务，拦截请求
 DOMAIN,app-site-association.cdn-apple.com // Safari 防跳转 App，明确覆盖 Apple 规则集的 DIRECT 判断
 DOMAIN,msmp.abchina.com.cn // 明确覆盖 SKK domestic 的 DIRECT 判断
-IP-CIDR,95.161.76.100/31,no-resolve // 防止 Telegram 转圈，明确覆盖 Telegram 规则集的 Proxy 判断

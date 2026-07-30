@@ -40,7 +40,7 @@
 | `Module/GoogleRewrite.sgmodule` | Safari Google.cn 重定向 | URL Rewrite + MITM | Surge iOS（标注 `#!system=ios`） | 无 | 无 |
 | `Module/MeiYou-Extra-AdBlock.sgmodule` | 美柚 | Rule + Map Local + Script + MITM | Surge iOS/Mac/tvOS | `JS/meiyou-strip-ads.js`, `JS/meiyou-body-clean.js` | 无 |
 | `Module/Qidian_Ad2.sgmodule` | 起点读书 | Script + Map Local + MITM | Surge iOS/Mac/tvOS | `JS/qidian_getconf_filter_fixed.js`, `JS/qidian_hide_daily.js` | 无 |
-| `Module/Telegram-DC.sgmodule` | Telegram DC1 至 DC5 | Rule | Surge iOS/Mac/tvOS | 无 | Sukka Telegram ASN、Jard1n/VPN_Tool 端点映射 |
+| `Module/Telegram-DC.sgmodule` | Telegram 劣化 IP 绕行 | General + Host | Surge iOS/Mac/tvOS | 无 | FKTG 社区映射、TDLib DC2 默认端点 |
 | `Module/XHS.sgmodule` | 小红书 | Rule + Map Local + Script + MITM | Surge iOS/Mac/tvOS | 无 | `ForestofTime/RuCu6-main` |
 | `Module/ZhiHu.sgmodule` | 知乎 | Rule + URL Rewrite + Map Local + Script + MITM | Surge iOS/Mac/tvOS | 无 | `ForestofTime/RuCu6-main` |
 | `Module/ad.conf` | 多 APP 广告拦截合集 | Rewrite + MITM | Surge iOS/Mac（语法偏 Rewrite 集合） | 无 | `RuCu6/QuanX` |
