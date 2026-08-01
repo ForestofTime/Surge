@@ -1,5 +1,10 @@
 [
   {
+    "proposal_id": "3d5efe8a4a01fc13fa9a847c96dc23bffd7f2626e82a8b2a7e6aabacf8f56691",
+    "lock_digest": "c050fae04cf5215f13a1188314c66ec5cec220968639f272e88b117e05d1cdc2",
+    "rules_sha256": "1eeb857e3da9e94fd5a501faacabe415111dc64f5f4bf2622d62e5d70de65083"
+  },
+  {
     "proposal_id": "4c1fae167b738c37331a5f05e4682fb0ad3d4c08379ae1eb0fac562e33324264",
     "lock_digest": "c050fae04cf5215f13a1188314c66ec5cec220968639f272e88b117e05d1cdc2",
     "rules_sha256": "92782acd01283d1ac48b72c26195974b94966b02868c310e12f2b1d0ef2d2ae4"
