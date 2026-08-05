@@ -1,0 +1,13 @@
+#!name=超鹿运动去开屏广告
+#!desc=仅清空超鹿开屏配置接口 data.splashes，不依赖广告素材链接。v1
+#!author=ForestofTime
+#!category=广告过滤
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/codex/superdeer-splash-20260805/Module/SuperDeer.sgmodule
+
+[Body Rewrite]
+# HAR 已验证：POST /app/getSplashData/V2 的 data.splashes 是开屏素材和跳转入口。
+http-response-jq ^https:\/\/app\.chaolu\.com\.cn\/app\/getSplashData\/V2(?:\?|$) 'if (.data | type) == "object" then .data.splashes = [] else . end'
+
+[MITM]
+hostname = %APPEND% app.chaolu.com.cn
