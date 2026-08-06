@@ -34,36 +34,38 @@
 
 ### 广告过滤与响应改写
 
-| 模块 | 作用 |
-| --- | --- |
-| `Module/Didichuxing.sgmodule` | 滴滴出行首页、活动、推荐流和个人页净化 |
-| `Module/MeiYou-Extra-AdBlock.sgmodule` | 美柚广告接口、信息流字段和埋点拦截 |
-| `Module/PuPuSupermarket.sgmodule` | 朴朴超市广告接口、HTTPDNS 和开屏素材处理 |
-| `Module/Qidian_Ad2.sgmodule` | 起点读书开屏、每日导读、活动弹窗、悬浮广告和页面字段清理 |
-| `Module/SuperDeer.sgmodule` | 超鹿运动开屏配置响应改写，清空 `data.splashes` |
-| `Module/XHS.sgmodule` | 小红书开屏、信息流、搜索和详情页广告处理 |
-| `Module/ZhiHu.sgmodule` | 知乎广告域名、推荐内容、横幅和卡片处理 |
-| `Module/ad.conf` | 多 APP Rewrite 去广告合集 |
-| `Module/jdad.sgmodule` | 京东开屏补充拦截 |
-| `Module/jf.sgmodule` | 京粉开屏和首页横幅广告处理 |
-| `Module/jhsh.sgmodule` | 建行生活及美团外卖内嵌场景广告净化 |
-| `Module/jhsh_pro.sgmodule` | 建行生活参数化广告净化，可按字段开关 |
-| `Module/nyyh.sgmodule` | 农业银行开屏广告拦截 |
-| `Module/sams.sgmodule` | 山姆会员商店开屏处理 |
-| `Module/xysh.sgmodule` | 兴业生活广告处理 |
-| `Module/yj.sgmodule` | 易捷加油广告处理 |
-| `modules/didi-adblock.sgmodule` | 滴滴开屏和弹窗的精简实验模块 |
+`.sgmodule` 文件提供 Raw 链接和一键导入 Surge 链接。`ad.conf` 是 Rewrite 合集，BoxJS JSON 不是 Surge 模块，因此只提供 Raw 链接。
+
+| 序号 | 模块 | 作用 | RAW 链接 | 一键导入 Surge |
+| ---: | --- | --- | --- | --- |
+| 1 | `Module/Didichuxing.sgmodule` | 滴滴出行首页、活动、推荐流和个人页净化 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/Didichuxing.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FDidichuxing.sgmodule) |
+| 2 | `Module/MeiYou-Extra-AdBlock.sgmodule` | 美柚广告接口、信息流字段和埋点拦截 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/MeiYou-Extra-AdBlock.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FMeiYou-Extra-AdBlock.sgmodule) |
+| 3 | `Module/PuPuSupermarket.sgmodule` | 朴朴超市广告接口、HTTPDNS 和开屏素材处理 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/PuPuSupermarket.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FPuPuSupermarket.sgmodule) |
+| 4 | `Module/Qidian_Ad2.sgmodule` | 起点读书开屏、每日导读、活动弹窗、悬浮广告和页面字段清理 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/Qidian_Ad2.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FQidian_Ad2.sgmodule) |
+| 5 | `Module/SuperDeer.sgmodule` | 超鹿运动开屏配置响应改写，清空 `data.splashes` | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/SuperDeer.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FSuperDeer.sgmodule) |
+| 6 | `Module/XHS.sgmodule` | 小红书开屏、信息流、搜索和详情页广告处理 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/XHS.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FXHS.sgmodule) |
+| 7 | `Module/ZhiHu.sgmodule` | 知乎广告域名、推荐内容、横幅和卡片处理 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/ZhiHu.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FZhiHu.sgmodule) |
+| 8 | `Module/ad.conf` | 多 APP Rewrite 去广告合集 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/ad.conf) | 不适用 |
+| 9 | `Module/jdad.sgmodule` | 京东开屏补充拦截 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/jdad.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2Fjdad.sgmodule) |
+| 10 | `Module/jf.sgmodule` | 京粉开屏和首页横幅广告处理 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/jf.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2Fjf.sgmodule) |
+| 11 | `Module/jhsh.sgmodule` | 建行生活及美团外卖内嵌场景广告净化 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/jhsh.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2Fjhsh.sgmodule) |
+| 12 | `Module/jhsh_pro.sgmodule` | 建行生活参数化广告净化，可按字段开关 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/jhsh_pro.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2Fjhsh_pro.sgmodule) |
+| 13 | `Module/nyyh.sgmodule` | 农业银行开屏广告拦截 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/nyyh.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2Fnyyh.sgmodule) |
+| 14 | `Module/sams.sgmodule` | 山姆会员商店开屏处理 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/sams.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2Fsams.sgmodule) |
+| 15 | `Module/xysh.sgmodule` | 兴业生活广告处理 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/xysh.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2Fxysh.sgmodule) |
+| 16 | `Module/yj.sgmodule` | 易捷加油广告处理 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/yj.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2Fyj.sgmodule) |
+| 17 | `modules/didi-adblock.sgmodule` | 滴滴开屏和弹窗的精简实验模块 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/modules/didi-adblock.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2Fmodules%2Fdidi-adblock.sgmodule) |
 
 ### 连接与工具
 
-| 模块 | 作用 |
-| --- | --- |
-| `Module/Telegram-DC.sgmodule` | 将已验证的 Telegram DC2、DC5 劣化 IP 改写到同数据中心的备用地址 |
-| `Module/GoogleRewrite.sgmodule` | iOS Safari 将 Google.cn 重定向到 Google.com |
-| `Module/panel/Flush-DNS.sgmodule` | Surge iOS 面板一键清理 DNS 缓存 |
-| `Task/Task.sgmodule` | 欧可林、贴吧等定时签到任务集合 |
-| `Task/FallbackRules.sgmodule` | 兜底命中采集、上传和配置脚本集合 |
-| `Module/boxjs/smzdm.boxjs.json` | 什么值得买 BoxJS 配置模板，当前仍含占位链接 |
+| 序号 | 模块 | 作用 | RAW 链接 | 一键导入 Surge |
+| ---: | --- | --- | --- | --- |
+| 18 | `Module/Telegram-DC.sgmodule` | 将已验证的 Telegram DC2、DC5 劣化 IP 改写到同数据中心的备用地址 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/Telegram-DC.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FTelegram-DC.sgmodule) |
+| 19 | `Module/GoogleRewrite.sgmodule` | iOS Safari 将 Google.cn 重定向到 Google.com | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/GoogleRewrite.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FGoogleRewrite.sgmodule) |
+| 20 | `Module/panel/Flush-DNS.sgmodule` | Surge iOS 面板一键清理 DNS 缓存 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/panel/Flush-DNS.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2Fpanel%2FFlush-DNS.sgmodule) |
+| 21 | `Task/Task.sgmodule` | 欧可林、贴吧等定时签到任务集合 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Task/Task.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FTask%2FTask.sgmodule) |
+| 22 | `Task/FallbackRules.sgmodule` | 兜底命中采集、上传和配置脚本集合 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Task/FallbackRules.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FTask%2FFallbackRules.sgmodule) |
+| 23 | `Module/boxjs/smzdm.boxjs.json` | 什么值得买 BoxJS 配置模板，当前仍含占位链接 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/boxjs/smzdm.boxjs.json) | 不适用 |
 
 ## 目录导航
 
