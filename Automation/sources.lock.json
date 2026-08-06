@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "lock_format": 1,
-  "updated_at": "2026-07-22T04:35:38.933Z",
+  "updated_at": "2026-08-03T06:33:10.138Z",
   "sources": [
     {
       "source_id": "bm7-direct",
@@ -16,12 +16,12 @@
     {
       "source_id": "bm7-proxy-domain",
       "family_id": "bm7-proxy",
-      "commit": "40ae51ca0186ee07bd48e1bdc22bdf10f3c66a5e",
-      "content_sha256": "8fb67cd14b7570936c5b0cbfb51080881219aa6a06276a0a584fb6425ec90f82",
+      "commit": "d0e4aafc8728e2b5e2a179b0922d8c09ad932024",
+      "content_sha256": "582bd1dfeaffcfad269aac520823ba84fce5d54570617943e630d5f2799c97f3",
       "max_bytes": 5000000,
       "max_entry_delta_ratio": 0.15,
-      "entry_count": 6760,
-      "verified_at": "2026-07-22T04:35:38.495Z"
+      "entry_count": 6766,
+      "verified_at": "2026-08-03T06:33:09.936Z"
     }
   ]
 }
