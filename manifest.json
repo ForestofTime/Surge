@@ -16,15 +16,15 @@
       "sha256": "26beceedc6a08f36f2b3d5531c796e0377b4076b140c15669dbc7abacc70c468"
     },
     "Proxy": {
-      "count": 11,
+      "count": 16,
       "counts": {
         "DOMAIN": 0,
-        "DOMAIN-SUFFIX": 8,
+        "DOMAIN-SUFFIX": 13,
         "DOMAIN-KEYWORD": 0,
         "IP-CIDR": 3,
         "IP-CIDR6": 0
       },
-      "sha256": "d3b16a96784a44bcd9de548f0af52ed60a7ab3c90bf552f1e028af2e996d9fc1"
+      "sha256": "34bb814159171676af257367f9db0f482ac9d91a2d88557b2a3f2a1e626b75a1"
     },
     "Reject": {
       "count": 0,
