@@ -1,4 +1,5 @@
 # Reject+ 规则集人工 source
-# Reject+ 当前仍由人工维护，供冲突验证使用
+# 仅保留未被当前 AdGuard 专属分流覆盖的例外
 DOMAIN,app-analytics-services.com // 腾讯系应用内置广告服务，拦截请求
-DOMAIN,msmp.abchina.com.cn // 中国农业银行防代理检测服务，拦截请求
+DOMAIN,app-site-association.cdn-apple.com // Safari 防跳转 App，明确覆盖 Apple 规则集的 DIRECT 判断
+DOMAIN,msmp.abchina.com.cn // 明确覆盖 SKK domestic 的 DIRECT 判断

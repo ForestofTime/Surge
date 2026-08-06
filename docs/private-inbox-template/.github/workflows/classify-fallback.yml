@@ -84,6 +84,10 @@ jobs:
             --review-dir Inbox/review \
             --deferred-dir Inbox/deferred
 
+      - name: Ensure review state directories exist
+        working-directory: inbox
+        run: mkdir -p Inbox/review Inbox/deferred
+
       - name: Check private diff allowlist and regular files
         working-directory: inbox
         run: |

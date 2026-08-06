@@ -69,6 +69,7 @@ const dispatchProposal = read('docs/private-inbox-template/Automation/dispatch-p
 assert.match(dispatchProposal, /https:\/\/api\.github\.com/);
 assert.match(dispatchProposal, /IP-CIDR/);
 assert.match(dispatchProposal, /IP-CIDR6/);
+assert.match(dispatchProposal, /override/);
 assert.doesNotMatch(read('docs/private-inbox-template/Automation/dispatch-proposal.mjs'), /GITHUB_API_URL/);
 assert.doesNotMatch(read('Automation/check-queue-depth.mjs'), /GITHUB_API_URL/);
 
@@ -122,6 +123,13 @@ const validRun = spawnSync(process.execPath, ['Automation/validate-workflow-even
   encoding: 'utf8'
 });
 assert.equal(validRun.status, 0, validRun.stderr);
+const validIpEvent = resolve(root, 'Automation/tests/fixtures/valid-ip-dispatch-event.json');
+const validIpRun = spawnSync(process.execPath, ['Automation/validate-workflow-event.mjs'], {
+  cwd: root,
+  env: { ...process.env, GITHUB_EVENT_PATH: validIpEvent },
+  encoding: 'utf8'
+});
+assert.equal(validIpRun.status, 0, validIpRun.stderr);
 const invalidEvent = resolve(root, 'Automation/tests/fixtures/invalid-dispatch-event.json');
 const invalidRun = spawnSync(process.execPath, ['Automation/validate-workflow-event.mjs'], {
   cwd: root,

@@ -189,9 +189,10 @@ function proposalRule(rule) {
   if (!rule || typeof rule !== 'object') throw new Error('invalid proposal rule');
   const policy = String(rule.policy ?? '').toUpperCase();
   if (policy !== 'DIRECT' && policy !== 'PROXY') throw new Error('proposal policy must be DIRECT or PROXY');
+  if (rule.override !== undefined && rule.override !== true) throw new Error('proposal override flag is invalid');
   const type = String(rule.type ?? '').toUpperCase();
   const target = rule.value ?? rule.target;
-  const normalized = normalizeRule({ type, target, options: rule.options ?? [], source: 'auto', policy: policy[0] + policy.slice(1).toLowerCase() });
+  const normalized = normalizeRule({ type, target, options: rule.options ?? [], source: rule.override === true ? 'override' : 'auto', policy: policy[0] + policy.slice(1).toLowerCase() });
   return normalized;
 }
 

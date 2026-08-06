@@ -90,13 +90,26 @@ function parseProposal(event) {
     const policy = stringField(rule.policy, 'rule policy', /^(DIRECT|PROXY)$/, 6);
     const type = stringField(rule.type, 'rule type', /^(DOMAIN|DOMAIN-SUFFIX|DOMAIN-KEYWORD|IP-CIDR|IP-CIDR6)$/, 16);
     const value = stringField(rule.value, 'rule value', /^[\x21-\x7e]+$/, 253);
+    const override = rule.override === undefined ? false : rule.override;
+    if (typeof override !== 'boolean') fail(`invalid override flag at index ${index}`);
+    const options = rule.options === undefined ? [] : rule.options;
+    if (!Array.isArray(options) || options.some((option) => option !== 'no-resolve') || new Set(options).size !== options.length) {
+      fail(`invalid rule options at index ${index}`);
+    }
     if (!POLICY_NAMES.has(policy)) fail('unsupported policy');
+    if (DOMAIN_TYPES.has(type) && options.length) fail(`invalid domain options at index ${index}`);
     if (DOMAIN_TYPES.has(type) && !validDomain(value, type)) fail(`invalid domain at index ${index}`);
     if (IP_TYPES.has(type) && !validCidr(value, type)) fail(`invalid CIDR at index ${index}`);
-    const normalized = `${policy}\u0000${type}\u0000${value.toLowerCase().replace(/\.$/, '')}`;
+    const normalized = `${policy}\u0000${type}\u0000${value.toLowerCase().replace(/\.$/, '')}\u0000${options.join(',')}`;
     if (seen.has(normalized)) fail(`duplicate rule at index ${index}`);
     seen.add(normalized);
-    return { policy, type, value: value.toLowerCase().replace(/\.$/, '') };
+    return {
+      policy,
+      type,
+      value: value.toLowerCase().replace(/\.$/, ''),
+      ...(options.length ? { options: [...options] } : {}),
+      ...(override ? { override: true } : {}),
+    };
   });
 
   for (let leftIndex = 0; leftIndex < rules.length; leftIndex += 1) {

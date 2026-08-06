@@ -116,6 +116,7 @@ test('honors an explicit proxy override with exact or suffix scope', () => {
     policy: 'PROXY',
     type: 'DOMAIN',
     value: 'video.example.net',
+    override: true,
   }]);
 });
 
@@ -130,6 +131,7 @@ test('honors an explicit proxy override for an IPv4 address', () => {
     type: 'IP-CIDR',
     value: '103.107.90.33/32',
     options: ['no-resolve'],
+    override: true,
   }]);
   assert.equal(result.review.length, 0);
 });
@@ -145,6 +147,7 @@ test('honors an explicit proxy override for an IPv6 address', () => {
     type: 'IP-CIDR6',
     value: '2001:db8::7/128',
     options: ['no-resolve'],
+    override: true,
   }]);
   assert.equal(result.review.length, 0);
 });
