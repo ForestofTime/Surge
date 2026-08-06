@@ -1,83 +1,152 @@
-# Surge 配置与模块仓库
+# Surge 配置、模块与规则仓库
 
-本仓库用于维护个人使用的网络配置资产，覆盖以下内容：
-- Surge 模块（去广告、重写、脚本、面板、任务）
-- Surge 规则集（按场景分流）
-- Surge 最小主配置示例
-- Clash for Windows 兼容配置
-- 脚本源码与简单测试
+这是一个面向个人使用的 Surge 配置资产仓库，集中维护模块、脚本、规则集、任务模块和最小主配置示例。仓库同时包含一套经过校验的兜底规则学习流程，用于采集显式兜底命中的域名或 IP，经私有 Inbox 审核后生成公开规则产物。
 
-## 适用客户端
+## 仓库内容
+
+| 内容 | 说明 |
+| --- | --- |
+| Surge 模块 | 去广告、响应体清理、URL 重写、Host IP 覆盖、面板和定时任务 |
+| 脚本 | Surge JavaScript，包括广告字段清理、开屏处理和兜底规则采集上传 |
+| 规则集 | 代理、直连、拒绝、国内服务、工作网段、Emby、IBKR 和 ZA Bank 等场景规则 |
+| 生成规则 | `generated` 分支中的 `Direct+` 与 `Proxy+` 规则产物，供主配置远程引用 |
+| 兼容配置 | Clash for Windows 配置模板 |
+| 自动化 | 上游规则锁定、提案复验、规则编译、生成分支发布和安全检查 |
+
+## 支持的客户端
+
 - Surge for iOS
 - Surge for Mac
-- Surge for tvOS（按模块兼容性使用）
-- Clash for Windows（仅 `Clash/ClashforWindows.yaml`）
-
-## 目录导航
-| 目录 | 作用 | 入口文件 |
-|---|---|---|
-| `Module/` | 主模块仓库（.sgmodule/.conf） | `Module/*.sgmodule` |
-| `modules/` | 独立实验/精简模块 | `modules/didi-adblock.sgmodule` |
-| `JS/` | 本地脚本源码 | `JS/*.js` |
-| `JS/tests/` | 脚本测试 | `JS/tests/jhsh_pro_toggle.test.js` |
-| `Rule/` | 自定义规则集 | `Rule/*.list` |
-| `Task/` | Surge 定时任务模块 | `Task/Task.sgmodule` |
-| `Clash/` | Clash 配置 | `Clash/ClashforWindows.yaml` |
-| `docs/` | 设计与计划文档 | `docs/repo-file-index.md` |
-| 根目录 | 主配置与说明 | `min.conf`, `README.md` |
+- Surge for tvOS，具体以模块中的平台标记和语法为准
+- Clash for Windows 或 ClashVerge，仅使用 `Clash/ClashforWindows.yaml`
 
 ## 快速开始
-1. 选择模块：从 `Module/` 或 `modules/` 挑选对应 APP 的 `.sgmodule`。
-2. 在 Surge 导入模块并启用。
-3. 对包含 `MITM`/脚本的模块，在 Surge 中开启 HTTPS 解密，并信任证书。
-4. 如需规则分流，在主配置加入 `Rule/` 对应规则集。
-5. 如需最小化示例，参考 `min.conf`。
+
+1. 从 `Module/` 或 `modules/` 选择目标 APP 的 `.sgmodule`。
+2. 在 Surge 中导入并启用模块。
+3. 模块包含 `MITM`、脚本或响应体改写时，在 Surge 中开启对应域名的 HTTPS 解密并信任证书。
+4. 需要分流时，在主配置中通过 `RULE-SET` 引入 `Rule/` 下的规则集。
+5. 基础配置可参考 `min.conf`。
+
+仅使用兜底规则学习功能时，可导入 `Task/FallbackRules.sgmodule`。该模块只声明脚本，`SCRIPT,fallback-capture,Proxy` 必须放在主配置的正式规则末尾，并位于 `FINAL` 之前。首次使用还需要按照 [操作说明](docs/fallback-rule-learning-operation.md) 配置私有 GitHub Inbox 和 Token。
 
 ## 模块索引
-| 模块文件 | 适用 APP | 类型 | 适用平台 | 本仓库本地脚本 | 外部依赖仓库 |
-|---|---|---|---|---|---|
-| `Module/Didichuxing-CarOwner.sgmodule` | 滴滴车主/顺风车车主端 | Rule + Map Local + Script + MITM | Surge iOS/Mac/tvOS | `JS/didi_carowner.js` | 无 |
-| `Module/GoogleRewrite.sgmodule` | Safari Google.cn 重定向 | URL Rewrite + MITM | Surge iOS（标注 `#!system=ios`） | 无 | 无 |
-| `Module/MeiYou-Extra-AdBlock.sgmodule` | 美柚 | Rule + Map Local + Script + MITM | Surge iOS/Mac/tvOS | `JS/meiyou-strip-ads.js`, `JS/meiyou-body-clean.js` | 无 |
-| `Module/Qidian_Ad2.sgmodule` | 起点读书 | Script + Map Local + MITM | Surge iOS/Mac/tvOS | `JS/qidian_getconf_filter_fixed.js`, `JS/qidian_hide_daily.js` | 无 |
-| `Module/Telegram-DC.sgmodule` | Telegram 劣化 IP 绕行 | General + Host | Surge iOS/Mac/tvOS | 无 | FKTG 社区映射、TDLib DC2 默认端点 |
-| `Module/XHS.sgmodule` | 小红书 | Rule + Map Local + Script + MITM | Surge iOS/Mac/tvOS | 无 | `ForestofTime/RuCu6-main` |
-| `Module/ZhiHu.sgmodule` | 知乎 | Rule + URL Rewrite + Map Local + Script + MITM | Surge iOS/Mac/tvOS | 无 | `ForestofTime/RuCu6-main` |
-| `Module/ad.conf` | 多 APP 广告拦截合集 | Rewrite + MITM | Surge iOS/Mac（语法偏 Rewrite 集合） | 无 | `RuCu6/QuanX` |
-| `Module/jdad.sgmodule` | 京东开屏补充 | Map Local + MITM | Surge iOS/Mac/tvOS | 无 | 无 |
-| `Module/jf.sgmodule` | 京粉 | Script + Map Local + MITM | Surge iOS/Mac/tvOS | `JS/jf.js`（以 raw 引用） | 无 |
-| `Module/jhsh.sgmodule` | 建行生活（含美团内嵌场景） | Script + Map Local + MITM | Surge iOS/Mac/tvOS | `JS/jhsh.js`（以 raw 引用） | 无 |
-| `Module/jhsh_pro.sgmodule` | 建行生活（参数化净化版） | Script + Map Local + MITM | Surge iOS/Mac/tvOS | `JS/JHSH_PRO.js`（以 raw 引用） | 无 |
-| `Module/nyyh.sgmodule` | 农业银行 | URL Rewrite + MITM | Surge iOS/Mac/tvOS | 无 | 无 |
-| `Module/panel/Flush-DNS.sgmodule` | Surge 面板工具 | Panel + Script | Surge iOS（标注 `#!system=ios`） | 无 | `Rabbit-Spec/Surge` |
-| `Module/sams.sgmodule` | 山姆会员商店 | Map Local + MITM | Surge iOS/Mac/tvOS | 无 | 无 |
-| `Module/xysh.sgmodule` | 兴业生活 | URL Rewrite + Map Local + MITM | Surge iOS/Mac/tvOS | 无 | 无 |
-| `Module/yj.sgmodule` | 易捷加油 | Script + Map Local + MITM | Surge iOS/Mac/tvOS | `JS/yjjy.js`（以 raw 引用） | 无 |
-| `Task/Task.sgmodule` | 定时签到任务 | Script(Cron) + MITM | Surge iOS/Mac | 无 | `zZPiglet/Task`, `blackmatrix7/ios_rule_script`, `Voldeemort/Surge`(注释) |
-| `modules/didi-adblock.sgmodule` | 滴滴（乘客/车主）开屏弹窗精简拦截 | URL Rewrite + MITM | Surge iOS/Mac/tvOS | 无 | 无 |
 
-## 外部依赖与引用仓库
-| 仓库 | 用途 |
-|---|---|
-| [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) | Task 签到脚本、Clash 规则提供者 |
-| [RuCu6/QuanX](https://github.com/RuCu6/QuanX) | `Module/ad.conf` 外部脚本来源 |
+### 广告过滤与响应改写
+
+| 模块 | 作用 |
+| --- | --- |
+| `Module/Didichuxing.sgmodule` | 滴滴出行首页、活动、推荐流和个人页净化 |
+| `Module/MeiYou-Extra-AdBlock.sgmodule` | 美柚广告接口、信息流字段和埋点拦截 |
+| `Module/PuPuSupermarket.sgmodule` | 朴朴超市广告接口、HTTPDNS 和开屏素材处理 |
+| `Module/Qidian_Ad2.sgmodule` | 起点读书开屏、每日导读、活动弹窗、悬浮广告和页面字段清理 |
+| `Module/SuperDeer.sgmodule` | 超鹿运动开屏配置响应改写，清空 `data.splashes` |
+| `Module/XHS.sgmodule` | 小红书开屏、信息流、搜索和详情页广告处理 |
+| `Module/ZhiHu.sgmodule` | 知乎广告域名、推荐内容、横幅和卡片处理 |
+| `Module/ad.conf` | 多 APP Rewrite 去广告合集 |
+| `Module/jdad.sgmodule` | 京东开屏补充拦截 |
+| `Module/jf.sgmodule` | 京粉开屏和首页横幅广告处理 |
+| `Module/jhsh.sgmodule` | 建行生活及美团外卖内嵌场景广告净化 |
+| `Module/jhsh_pro.sgmodule` | 建行生活参数化广告净化，可按字段开关 |
+| `Module/nyyh.sgmodule` | 农业银行开屏广告拦截 |
+| `Module/sams.sgmodule` | 山姆会员商店开屏处理 |
+| `Module/xysh.sgmodule` | 兴业生活广告处理 |
+| `Module/yj.sgmodule` | 易捷加油广告处理 |
+| `modules/didi-adblock.sgmodule` | 滴滴开屏和弹窗的精简实验模块 |
+
+### 连接与工具
+
+| 模块 | 作用 |
+| --- | --- |
+| `Module/Telegram-DC.sgmodule` | 将已验证的 Telegram DC2、DC5 劣化 IP 改写到同数据中心的备用地址 |
+| `Module/GoogleRewrite.sgmodule` | iOS Safari 将 Google.cn 重定向到 Google.com |
+| `Module/panel/Flush-DNS.sgmodule` | Surge iOS 面板一键清理 DNS 缓存 |
+| `Task/Task.sgmodule` | 欧可林、贴吧等定时签到任务集合 |
+| `Task/FallbackRules.sgmodule` | 兜底命中采集、上传和配置脚本集合 |
+| `Module/boxjs/smzdm.boxjs.json` | 什么值得买 BoxJS 配置模板，当前仍含占位链接 |
+
+## 目录导航
+
+| 目录 | 用途 |
+| --- | --- |
+| `Module/` | 主要 Surge 模块和 `.conf` Rewrite 集合 |
+| `modules/` | 独立实验或精简模块 |
+| `JS/` | Surge JavaScript 源码 |
+| `JS/tests/` | JavaScript 模块和脚本测试 |
+| `Rule/` | 手工维护和生成后的 Surge 规则集 |
+| `Source/` | 规则源、手工规则和自动生成源 |
+| `Automation/` | 规则编译、来源锁定、提案校验和发布前检查 |
+| `Task/` | Surge 定时任务及兜底学习模块 |
+| `Clash/` | Clash for Windows 配置模板 |
+| `docs/` | 自动化操作说明、设计文档和私有 Inbox 模板 |
+| `min.conf` | Surge 最小主配置示例 |
+
+## 兜底规则学习流程
+
+该流程只处理主配置中显式触发 `SCRIPT,fallback-capture,Proxy` 的请求，避免把普通请求误采集为学习样本。整体链路如下：
+
+1. Surge 本地脚本规范化并按天去重观察结果。
+2. `fallback-upload.js` 将不可变批次投递到私有 `Surge-Rule-Inbox`。
+3. 私有 Inbox 负责入库、分类、审核和提案准备。
+4. 公开仓库的 Workflow 重新校验提案、来源锁、Public Suffix List 快照和生成目录。
+5. 通过复验后，只更新 `generated` 分支中的 `Direct+`、`Proxy+` 及清单产物。
+
+相关入口：
+
+- `Automation/control-plane.json`：仓库和 kill switch 配置
+- `Automation/sources.json`：允许使用的上游规则来源
+- `Automation/sources.lock.json`：上游提交和内容 SHA-256 锁定
+- `Automation/vendor/public_suffix_list.dat`：Public Suffix List 快照
+- `Automation/rule-compiler.mjs`：规则编译和安全门禁
+- `Automation/generate-rules.mjs`：生成规则产物
+- `Automation/verify-rules.mjs`：规则文件校验
+- `.github/workflows/publish-fallback.yml`：复验并发布到 `generated`
+- `.github/workflows/update-source-locks.yml`：定期准备来源锁更新
+- `docs/fallback-rule-learning-operation.md`：部署、dry-run、回滚和数据删除说明
+
+## 测试与校验
+
+仓库使用 Node.js 内置测试运行器，无需额外依赖：
+
+```bash
+node --test JS/tests/*.test.js Automation/tests/*.test.mjs
+git diff --check
+```
+
+规则自动化还提供以下专项校验：
+
+```bash
+node Automation/verify-rules.mjs --rule-dir /path/to/generated-tree/Rule \
+  --psl Automation/vendor/public_suffix_list.dat \
+  --policies Direct,Proxy
+node Automation/verify-generated-tree.mjs --root /path/to/generated-tree
+```
+
+执行 `verify-generated-tree.mjs` 时，应将 `--root` 指向只包含生成分支允许产物的目录。主分支目录包含完整源码和文档，适合使用测试命令及针对性脚本检查。
+
+## 外部依赖
+
+仓库部分模块和规则引用社区项目。引用第三方 raw 脚本时，建议固定提交版本或定期核验上游内容。
+
+| 项目 | 用途 |
+| --- | --- |
+| [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) | 贴吧签到脚本及部分规则来源 |
+| [RuCu6/QuanX](https://github.com/RuCu6/QuanX) | Rewrite 和广告处理方案来源 |
 | [Rabbit-Spec/Surge](https://github.com/Rabbit-Spec/Surge) | Flush DNS 面板脚本 |
 | [zZPiglet/Task](https://github.com/zZPiglet/Task) | 欧可林签到脚本 |
-| [Voldeemort/Surge](https://github.com/Voldeemort/Surge) | 贴吧签到备用脚本（注释） |
+| [ForestofTime/RuCu6-main](https://github.com/ForestofTime/RuCu6-main) | 小红书和知乎脚本 |
 | [soffchen/GeoIP2-CN](https://github.com/soffchen/GeoIP2-CN) | Clash ChinaIP 规则来源 |
-| [ForestofTime/RuCu6-main](https://github.com/ForestofTime/RuCu6-main) | 小红书/知乎脚本镜像仓库 |
-
-## 已知占位与待修复项
-- `Module/boxjs/smzdm.boxjs.json` 仍包含占位内容：`YourUsername/YourRepo`、示例 icon/script 链接。
-- 若需要发布可用 BoxJS 配置，应替换为真实仓库链接与脚本路径。
 
 ## 风险提示
-- 去广告规则存在误杀风险，升级 APP 后可能需要重新抓包与调规则。
-- 开启 MITM 前请评估隐私与合规要求。
-- 引用第三方 raw 脚本时，建议固定版本或定期校验上游变更。
 
-## 致谢
-- 本仓库整合并二次维护了多个社区方案，感谢各开源作者与规则维护者。
+- 去广告和响应改写可能造成误杀，APP 更新后需要重新验证接口和字段。
+- 使用 `MITM` 前请评估隐私、证书信任和合规要求。
+- Telegram Host 映射只应保留已验证的劣化地址和同数据中心备用地址。
+- 自动化流程中的 Token 只能保存在 Surge 持久存储或 GitHub Secrets，不要写入仓库文件、日志或 issue。
+- `Module/boxjs/smzdm.boxjs.json` 仍含 `YourUsername/YourRepo` 等占位内容，发布前需要替换为真实链接。
 
-## 详细文件说明
-完整逐文件说明见：`docs/repo-file-index.md`
+## 维护说明
+
+模块接口和脚本大多来自抓包验证或社区方案。修改后建议同时检查对应测试、MITM hostname、raw 脚本路径、规则顺序和目标客户端兼容性。
+
+补充的逐文件说明见 [docs/repo-file-index.md](docs/repo-file-index.md)。
