@@ -1,11 +1,26 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { isIP } from 'node:net';
 
 const proposalPath = process.env.PROPOSAL_PATH;
 const token = process.env.GH_TOKEN;
 const repository = process.env.PUBLIC_REPOSITORY;
 const workflow = 'publish-fallback.yml';
 const ref = 'main';
+const DOMAIN_TYPES = new Set(['DOMAIN', 'DOMAIN-SUFFIX', 'DOMAIN-KEYWORD']);
+const IP_TYPES = new Set(['IP-CIDR', 'IP-CIDR6']);
+
+function validCidr(value, type) {
+  if (typeof value !== 'string' || /[\u0000-\u001f\u007f\s,]/u.test(value)) return false;
+  const [address, prefixText, extra] = value.split('/');
+  if (!address || prefixText === undefined || extra !== undefined) return false;
+  const version = isIP(address);
+  const maxPrefix = version === 4 ? 32 : version === 6 ? 128 : 0;
+  if ((type === 'IP-CIDR' && version !== 4) || (type === 'IP-CIDR6' && version !== 6)) return false;
+  if (!/^\d+$/u.test(prefixText)) return false;
+  const prefix = Number(prefixText);
+  return maxPrefix > 0 && prefix >= 0 && prefix <= maxPrefix;
+}
 if (process.env.PUBLISH_ENABLED !== 'true') {
   process.stdout.write('public publishing is disabled\n');
   process.exit(0);
@@ -27,7 +42,14 @@ if (!proposal || proposal.schema_version !== 1 || !/^[0-9a-f]{64}$/u.test(propos
   process.exit(1);
 }
 for (const rule of proposal.rules) {
-  if (!rule || !['DIRECT', 'PROXY'].includes(rule.policy) || !['DOMAIN', 'DOMAIN-SUFFIX'].includes(rule.type) || typeof rule.value !== 'string' || !/^[\x21-\x7e]{1,253}$/u.test(rule.value)) {
+  const override = rule && rule.override === undefined ? false : rule?.override;
+  const options = rule && rule.options === undefined ? [] : rule?.options;
+  const validOptions = Array.isArray(options) && options.every((option) => option === 'no-resolve') && new Set(options).size === options.length;
+  const type = rule?.type;
+  const validValue = typeof rule?.value === 'string' && /^[\x21-\x7e]{1,253}$/u.test(rule.value);
+  const validType = DOMAIN_TYPES.has(type) || IP_TYPES.has(type);
+  const validTarget = validType && validValue && (DOMAIN_TYPES.has(type) ? options.length === 0 : validCidr(rule.value, type));
+  if (!rule || typeof override !== 'boolean' || !['DIRECT', 'PROXY'].includes(rule.policy) || !validType || !validOptions || !validTarget) {
     process.stderr.write('proposal rule is invalid\n');
     process.exit(1);
   }
