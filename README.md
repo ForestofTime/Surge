@@ -55,7 +55,7 @@
 | 15 | `Module/xysh.sgmodule` | 兴业生活广告处理 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/xysh.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2Fxysh.sgmodule) |
 | 16 | `Module/yj.sgmodule` | 易捷加油广告处理 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/yj.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2Fyj.sgmodule) |
 | 17 | `modules/didi-adblock.sgmodule` | 滴滴开屏和弹窗的精简实验模块 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/modules/didi-adblock.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2Fmodules%2Fdidi-adblock.sgmodule) |
-| 18 | `Module/ICBCLife.sgmodule` | 工银e生活与其小程序开屏处理，保留正常楼层响应 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/ICBCLife.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FICBCLife.sgmodule) |
+| 18 | `Module/ICBCLife.sgmodule` | 工银e生活与小程序开屏处理，含原生缓存素材兜底 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/ICBCLife.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FICBCLife.sgmodule) |
 
 ### 连接与工具
 
