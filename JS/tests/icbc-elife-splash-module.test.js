@@ -2,11 +2,15 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+const vm = require('node:vm');
 
 const modulePath = path.resolve(__dirname, '../../Module/ICBCLife.sgmodule');
+const scriptPath = path.resolve(__dirname, '../ICBCLifeMiniSplash.js');
 const moduleText = fs.existsSync(modulePath)
   ? fs.readFileSync(modulePath, 'utf8')
+  : '';
+const scriptText = fs.existsSync(scriptPath)
+  ? fs.readFileSync(scriptPath, 'utf8')
   : '';
 
 function sectionLines(sectionName) {
@@ -21,38 +25,33 @@ function sectionLines(sectionName) {
     .filter((line) => line && !line.startsWith('#'));
 }
 
-function splashFilter() {
-  const rule = sectionLines('Body Rewrite').find((line) =>
-    line.includes('getStartupMantleFlatingFloor')
-  );
+function runResponseScript(headers, body) {
+  let completion;
+  const context = {
+    $request: { headers },
+    $response: { body },
+    $done: (value) => {
+      assert.equal(completion, undefined, 'the response script must call $done once');
+      completion = value;
+    },
+  };
 
-  assert.ok(rule, 'the HAR-confirmed mini-program splash endpoint must be filtered');
-  const firstQuote = rule.indexOf("'");
-  const lastQuote = rule.lastIndexOf("'");
-  assert.ok(firstQuote > 0 && lastQuote > firstQuote, `invalid jq rule: ${rule}`);
-  return rule.slice(firstQuote + 1, lastQuote);
+  vm.runInNewContext(scriptText, context, { filename: 'ICBCLifeMiniSplash.js' });
+  assert.notEqual(completion, undefined, 'the response script must finish');
+  return completion;
 }
 
-function runSplashFilter(value) {
-  const result = spawnSync('jq', ['-c', splashFilter()], {
-    encoding: 'utf8',
-    input: JSON.stringify(value),
-  });
-
-  assert.equal(result.status, 0, result.stderr);
-  return JSON.parse(result.stdout);
-}
-
-test('declares a dedicated v3 ICBC eLife splash module', () => {
+test('declares a dedicated v4 mini-program-only ICBC eLife splash module', () => {
   assert.match(moduleText, /^#!name=工银e生活去开屏广告$/m);
-  assert.match(moduleText, /^#!desc=.*v3$/m);
+  assert.match(moduleText, /^#!desc=.*v4$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/agent\/icbc-elife-splash-20260809\/Module\/ICBCLife\.sgmodule$/m
   );
+  assert.ok(fs.existsSync(scriptPath), 'the mini-program response script must exist');
 });
 
-test('clears only the HAR-confirmed qdp startup items and preserves other floors', () => {
+test('clears only the HAR-confirmed qdp startup items for the ICBC WeChat mini-program', () => {
   const source = {
     res: '0',
     errcode: '0',
@@ -78,10 +77,15 @@ test('clears only the HAR-confirmed qdp startup items and preserves other floors
       },
     ],
   };
+  const result = runResponseScript(
+    {
+      'User-Agent': 'MicroMessenger/8.0.75',
+      Referer: 'https://servicewechat.com/wxREDACTEDAPPID/108/page-frame.html',
+    },
+    JSON.stringify(source)
+  );
 
-  const rewritten = runSplashFilter(source);
-
-  assert.deepEqual(rewritten, {
+  assert.deepEqual(JSON.parse(result.body), {
     ...source,
     data: [
       { ...source.data[0], startupDto: [] },
@@ -92,14 +96,15 @@ test('clears only the HAR-confirmed qdp startup items and preserves other floors
 });
 
 test('also handles a startup floor whose stable name remains when its id changes', () => {
-  const rewritten = runSplashFilter({
+  const source = {
     data: [
       { floorId: 'future-startup-id', floorName: '启动屏', startupDto: [{ imageId: 'new' }] },
       { floorId: 'normal', floorName: '普通楼层', startupDto: [{ imageId: 'keep' }] },
     ],
-  });
+  };
+  const result = runResponseScript({ 'user-agent': 'MicroMessenger/8.0.75' }, JSON.stringify(source));
 
-  assert.deepEqual(rewritten, {
+  assert.deepEqual(JSON.parse(result.body), {
     data: [
       { floorId: 'future-startup-id', floorName: '启动屏', startupDto: [] },
       { floorId: 'normal', floorName: '普通楼层', startupDto: [{ imageId: 'keep' }] },
@@ -107,36 +112,41 @@ test('also handles a startup floor whose stable name remains when its id changes
   });
 });
 
-test('leaves malformed and non-startup responses unchanged', () => {
-  assert.deepEqual(runSplashFilter({ res: '0', data: null }), { res: '0', data: null });
-  assert.deepEqual(runSplashFilter({ res: '0', data: { floorId: 'qdp' } }), {
-    res: '0',
-    data: { floorId: 'qdp' },
-  });
-  assert.deepEqual(runSplashFilter({ res: '0', data: [{ floorId: 'normal', startupDto: [] }] }), {
-    res: '0',
-    data: [{ floorId: 'normal', startupDto: [] }],
-  });
+test('passes the native App response through without changing its body', () => {
+  const source = {
+    data: [{ floorId: 'qdp', floorName: '启动屏', startupDto: [{ imageId: 'native-creative' }] }],
+  };
+
+  assert.deepEqual(
+    runResponseScript(
+      { 'User-Agent': 'ICBC/10.2 CFNetwork/3860.0.1 Darwin/25.0.0' },
+      JSON.stringify(source)
+    ),
+    {}
+  );
 });
 
-test('retains only the HAR-confirmed configuration and exposure hosts', () => {
-  const rewrite = sectionLines('Body Rewrite');
-  assert.equal(rewrite.length, 1);
-  assert.ok(
-    rewrite[0].startsWith(
-      'http-response-jq ^https:\\/\\/elife\\.icbc\\.com\\.cn\\/OFSTNEWBASE\\/floorinfo\\/getStartupMantleFlatingFloor\\.do(?:\\?|$)'
-    )
+test('passes malformed and non-startup mini-program responses through', () => {
+  assert.deepEqual(runResponseScript({ 'User-Agent': 'MicroMessenger/8.0.75' }, '{not json'), {});
+  assert.deepEqual(
+    runResponseScript(
+      { 'User-Agent': 'MicroMessenger/8.0.75' },
+      JSON.stringify({ res: '0', data: [{ floorId: 'normal', startupDto: [] }] })
+    ),
+    {}
   );
-  assert.deepEqual(sectionLines('Map Local'), [
-    '^https?:\\/\\/pv\\.elife\\.icbc\\.com\\.cn\\/OFSTPV\\/utm\\.gif(?:\\?|$) data-type=text data=" " status-code=200',
+});
+
+test('retains only the mini-program configuration endpoint and removes App-facing hooks', () => {
+  const rawScript = 'https://raw.githubusercontent.com/ForestofTime/Surge/agent/icbc-elife-splash-20260809/JS/ICBCLifeMiniSplash.js?v=4';
+  assert.deepEqual(sectionLines('Script'), [
+    `工银e生活小程序开屏配置过滤 = type=http-response, pattern=^https:\/\\/elife\\.icbc\\.com\\.cn\\/OFSTNEWBASE\\/floorinfo\\/getStartupMantleFlatingFloor\\.do(?:\\?|$), script-path=${rawScript}, requires-body=true, max-size=1048576, timeout=10`,
   ]);
-  assert.deepEqual(sectionLines('MITM'), [
-    'hostname = %APPEND% elife.icbc.com.cn, pv.elife.icbc.com.cn',
-  ]);
-  assert.doesNotMatch(moduleText, /getMantlePages/);
-  assert.doesNotMatch(moduleText, /url reject|data=""/);
-  assert.doesNotMatch(moduleText, /^\[Script\]$/m);
-  assert.doesNotMatch(moduleText, /binary-body-mode=true/);
+  assert.deepEqual(sectionLines('MITM'), ['hostname = %APPEND% elife.icbc.com.cn']);
+  assert.doesNotMatch(moduleText, /^\[Map Local\]$/m);
+  assert.doesNotMatch(moduleText, /^\[Body Rewrite\]$/m);
+  assert.doesNotMatch(moduleText, /pv\.elife\.icbc\.com\.cn/);
   assert.doesNotMatch(moduleText, /image[1-4]\.elife\.icbc\.com\.cn/);
   assert.doesNotMatch(moduleText, /ICBCLifeSplashImage/);
+  assert.doesNotMatch(scriptText, /image[1-4]|filepath\/elife|status-code/);
 });
