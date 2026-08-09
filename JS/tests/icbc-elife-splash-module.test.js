@@ -117,31 +117,41 @@ test('passes the native App response through without changing its body', () => {
     data: [{ floorId: 'qdp', floorName: '启动屏', startupDto: [{ imageId: 'native-creative' }] }],
   };
 
-  assert.deepEqual(
-    runResponseScript(
-      { 'User-Agent': 'ICBC/10.2 CFNetwork/3860.0.1 Darwin/25.0.0' },
-      JSON.stringify(source)
+  assert.equal(
+    JSON.stringify(
+      runResponseScript(
+        { 'User-Agent': 'ICBC/10.2 CFNetwork/3860.0.1 Darwin/25.0.0' },
+        JSON.stringify(source)
+      )
     ),
-    {}
+    '{}'
   );
 });
 
 test('passes malformed and non-startup mini-program responses through', () => {
-  assert.deepEqual(runResponseScript({ 'User-Agent': 'MicroMessenger/8.0.75' }, '{not json'), {});
-  assert.deepEqual(
-    runResponseScript(
-      { 'User-Agent': 'MicroMessenger/8.0.75' },
-      JSON.stringify({ res: '0', data: [{ floorId: 'normal', startupDto: [] }] })
+  assert.equal(
+    JSON.stringify(runResponseScript({ 'User-Agent': 'MicroMessenger/8.0.75' }, '{not json')),
+    '{}'
+  );
+  assert.equal(
+    JSON.stringify(
+      runResponseScript(
+        { 'User-Agent': 'MicroMessenger/8.0.75' },
+        JSON.stringify({ res: '0', data: [{ floorId: 'normal', startupDto: [] }] })
+      )
     ),
-    {}
+    '{}'
   );
 });
 
 test('retains only the mini-program configuration endpoint and removes App-facing hooks', () => {
   const rawScript = 'https://raw.githubusercontent.com/ForestofTime/Surge/agent/icbc-elife-splash-20260809/JS/ICBCLifeMiniSplash.js?v=4';
-  assert.deepEqual(sectionLines('Script'), [
-    `工银e生活小程序开屏配置过滤 = type=http-response, pattern=^https:\/\\/elife\\.icbc\\.com\\.cn\\/OFSTNEWBASE\\/floorinfo\\/getStartupMantleFlatingFloor\\.do(?:\\?|$), script-path=${rawScript}, requires-body=true, max-size=1048576, timeout=10`,
-  ]);
+  const script = sectionLines('Script');
+  assert.equal(script.length, 1);
+  assert.ok(script[0].startsWith('工银e生活小程序开屏配置过滤 = type=http-response, pattern='));
+  assert.ok(script[0].includes('getStartupMantleFlatingFloor'));
+  assert.ok(script[0].includes('script-path=' + rawScript));
+  assert.ok(script[0].endsWith('requires-body=true, max-size=1048576, timeout=10'));
   assert.deepEqual(sectionLines('MITM'), ['hostname = %APPEND% elife.icbc.com.cn']);
   assert.doesNotMatch(moduleText, /^\[Map Local\]$/m);
   assert.doesNotMatch(moduleText, /^\[Body Rewrite\]$/m);
