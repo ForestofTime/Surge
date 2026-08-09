@@ -1,18 +1,14 @@
 #!name=工银e生活去开屏广告
-#!desc=字段级清理小程序启动屏配置，避免影响原生 App 素材与登录。v3
+#!desc=仅改写工银e生活微信小程序启动屏配置，原生 App 响应透传。v4
 #!author=ForestofTime
 #!category=广告过滤
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/agent/icbc-elife-splash-20260809/Module/ICBCLife.sgmodule
 
-[Map Local]
-# 原生 App 沿用社区已知的精确曝光像素处理，不触碰任何业务接口。
-^https?:\/\/pv\.elife\.icbc\.com\.cn\/OFSTPV\/utm\.gif(?:\?|$) data-type=text data=" " status-code=200
-
-[Body Rewrite]
-# HAR 已验证：getStartupMantleFlatingFloor 的 qdp/启动屏 startupDto 是小程序开屏配置。
-# 仅清空该数组，保留 WXMP01 蒙屏、JX001 精选页悬浮框及全部响应状态字段。
-http-response-jq ^https:\/\/elife\.icbc\.com\.cn\/OFSTNEWBASE\/floorinfo\/getStartupMantleFlatingFloor\.do(?:\?|$) 'if (.data | type) == "array" then .data |= map(if ((.floorId == "qdp" or .floorName == "启动屏") and (.startupDto | type) == "array") then .startupDto = [] else . end) else . end'
+[Script]
+# HAR 已验证：微信小程序的 qdp/启动屏 startupDto 是开屏配置。
+# 原生 App 请求由脚本直接透传，且不再映射曝光像素或图片资源。
+工银e生活小程序开屏配置过滤 = type=http-response, pattern=^https:\/\/elife\.icbc\.com\.cn\/OFSTNEWBASE\/floorinfo\/getStartupMantleFlatingFloor\.do(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/agent/icbc-elife-splash-20260809/JS/ICBCLifeMiniSplash.js?v=4, requires-body=true, max-size=1048576, timeout=10
 
 [MITM]
-hostname = %APPEND% elife.icbc.com.cn, pv.elife.icbc.com.cn
+hostname = %APPEND% elife.icbc.com.cn
