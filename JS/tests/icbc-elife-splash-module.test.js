@@ -8,6 +8,12 @@ const modulePath = path.resolve(__dirname, '../../Module/ICBCLife.sgmodule');
 const moduleText = fs.existsSync(modulePath)
   ? fs.readFileSync(modulePath, 'utf8')
   : '';
+const imageScriptPath = path.resolve(__dirname, '../ICBCLifeSplashImage.js');
+const imageScriptText = fs.existsSync(imageScriptPath)
+  ? fs.readFileSync(imageScriptPath, 'utf8')
+  : '';
+const surgeImageScript =
+  'https://raw.githubusercontent.com/ForestofTime/Surge/agent/icbc-elife-splash-20260809/JS/ICBCLifeSplashImage.js?v=2';
 
 function sectionLines(sectionName) {
   const section = moduleText.match(
@@ -43,9 +49,9 @@ function runSplashFilter(value) {
   return JSON.parse(result.stdout);
 }
 
-test('declares a dedicated v1 ICBC eLife splash module', () => {
+test('declares a dedicated v2 ICBC eLife splash module', () => {
   assert.match(moduleText, /^#!name=工银e生活去开屏广告$/m);
-  assert.match(moduleText, /^#!desc=.*v1$/m);
+  assert.match(moduleText, /^#!desc=.*v2$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/agent\/icbc-elife-splash-20260809\/Module\/ICBCLife\.sgmodule$/m
@@ -119,7 +125,7 @@ test('leaves malformed and non-startup responses unchanged', () => {
   });
 });
 
-test('limits rewriting and native handling to the two known endpoint hosts', () => {
+test('limits rewriting and native handling to known configuration and asset hosts', () => {
   const rewrite = sectionLines('Body Rewrite');
   assert.equal(rewrite.length, 1);
   assert.ok(
@@ -131,9 +137,72 @@ test('limits rewriting and native handling to the two known endpoint hosts', () 
     '^https?:\\/\\/pv\\.elife\\.icbc\\.com\\.cn\\/OFSTPV\\/utm\\.gif(?:\\?|$) data-type=text data=" " status-code=200',
   ]);
   assert.deepEqual(sectionLines('MITM'), [
-    'hostname = %APPEND% elife.icbc.com.cn, pv.elife.icbc.com.cn',
+    'hostname = %APPEND% elife.icbc.com.cn, pv.elife.icbc.com.cn, image1.elife.icbc.com.cn, image2.elife.icbc.com.cn, image3.elife.icbc.com.cn, image4.elife.icbc.com.cn',
   ]);
   assert.doesNotMatch(moduleText, /getMantlePages/);
-  assert.doesNotMatch(moduleText, /image[1-4]\.elife\.icbc\.com\.cn/);
   assert.doesNotMatch(moduleText, /url reject|data=""/);
+});
+
+test('adds a generic native cached-splash image fallback without creative ids', () => {
+  const imageLine = sectionLines('Script').find((line) =>
+    line.includes('image[1-4]\\.elife\\.icbc\\.com\\.cn')
+  );
+
+  assert.ok(imageLine, 'the HAR-confirmed eLife asset hosts must be covered');
+  assert.ok(imageLine.includes('(?:png|jpe?g|gif)'));
+  assert.ok(imageLine.includes(`script-path=${surgeImageScript}`));
+  assert.ok(imageLine.includes('requires-body=true'));
+  assert.ok(imageLine.includes('binary-body-mode=true'));
+  assert.ok(imageLine.includes('max-size=4194304'));
+  assert.doesNotMatch(moduleText + imageScriptText, /1e3176fa5ab74c48a4599c9c4971fc7e/);
+});
+
+function makeJpeg(width, height) {
+  const bytes = Buffer.alloc(23);
+  bytes.writeUInt16BE(0xffd8, 0);
+  bytes[2] = 0xff;
+  bytes[3] = 0xc0;
+  bytes.writeUInt16BE(17, 4);
+  bytes[6] = 8;
+  bytes.writeUInt16BE(height, 7);
+  bytes.writeUInt16BE(width, 9);
+  bytes[11] = 3;
+  bytes.set([1, 0x11, 0, 2, 0x11, 0, 3, 0x11, 0], 12);
+  bytes.writeUInt16BE(0xffd9, 21);
+  return new Uint8Array(bytes);
+}
+
+function runImageScript(width, height) {
+  const vm = require('node:vm');
+  const doneCalls = [];
+
+  vm.runInNewContext(
+    imageScriptText,
+    {
+      $request: {
+        url: 'https://image1.elife.icbc.com.cn/filepath/elife/current/campaign.jpg',
+      },
+      $response: { body: makeJpeg(width, height) },
+      $done: (value) => doneCalls.push(value),
+      Uint8Array,
+      ArrayBuffer,
+      console: { log() {} },
+    },
+    { filename: imageScriptPath }
+  );
+
+  assert.equal(doneCalls.length, 1, 'a binary response script must finish once');
+  return doneCalls[0];
+}
+
+test('blocks the HAR-confirmed full-canvas native splash dimensions generically', () => {
+  const result = runImageScript(1125, 2436);
+
+  assert.equal(result.status, 404);
+  assert.equal(result.body.length, 0);
+});
+
+test('passes through ordinary eLife image dimensions', () => {
+  assert.deepEqual(Object.keys(runImageScript(340, 454)), []);
+  assert.deepEqual(Object.keys(runImageScript(1125, 1410)), []);
 });
