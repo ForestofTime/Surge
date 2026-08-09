@@ -149,7 +149,7 @@ test('adds a generic native cached-splash image fallback without creative ids', 
   );
 
   assert.ok(imageLine, 'the HAR-confirmed eLife asset hosts must be covered');
-  assert.ok(imageLine.includes('(?:png|jpe?g|gif)'));
+  assert.ok(imageLine.includes('jpe?g'));
   assert.ok(imageLine.includes(`script-path=${surgeImageScript}`));
   assert.ok(imageLine.includes('requires-body=true'));
   assert.ok(imageLine.includes('binary-body-mode=true'));
@@ -157,11 +157,11 @@ test('adds a generic native cached-splash image fallback without creative ids', 
   assert.doesNotMatch(moduleText + imageScriptText, /1e3176fa5ab74c48a4599c9c4971fc7e/);
 });
 
-function makeJpeg(width, height) {
+function makeJpeg(width, height, marker = 0xc0) {
   const bytes = Buffer.alloc(23);
   bytes.writeUInt16BE(0xffd8, 0);
   bytes[2] = 0xff;
-  bytes[3] = 0xc0;
+  bytes[3] = marker;
   bytes.writeUInt16BE(17, 4);
   bytes[6] = 8;
   bytes.writeUInt16BE(height, 7);
@@ -172,7 +172,7 @@ function makeJpeg(width, height) {
   return new Uint8Array(bytes);
 }
 
-function runImageScript(width, height) {
+function runImageBody(body) {
   const vm = require('node:vm');
   const doneCalls = [];
 
@@ -182,7 +182,7 @@ function runImageScript(width, height) {
       $request: {
         url: 'https://image1.elife.icbc.com.cn/filepath/elife/current/campaign.jpg',
       },
-      $response: { body: makeJpeg(width, height) },
+      $response: { body },
       $done: (value) => doneCalls.push(value),
       Uint8Array,
       ArrayBuffer,
@@ -195,6 +195,10 @@ function runImageScript(width, height) {
   return doneCalls[0];
 }
 
+function runImageScript(width, height, marker) {
+  return runImageBody(makeJpeg(width, height, marker));
+}
+
 test('blocks the HAR-confirmed full-canvas native splash dimensions generically', () => {
   const result = runImageScript(1125, 2436);
 
@@ -205,4 +209,37 @@ test('blocks the HAR-confirmed full-canvas native splash dimensions generically'
 test('passes through ordinary eLife image dimensions', () => {
   assert.deepEqual(Object.keys(runImageScript(340, 454)), []);
   assert.deepEqual(Object.keys(runImageScript(1125, 1410)), []);
+});
+
+test('fails open for non-splash, malformed, and non-JPEG image bodies', () => {
+  assert.deepEqual(Object.keys(runImageBody(new Uint8Array([0, 1, 2]))), []);
+  assert.deepEqual(
+    Object.keys(runImageBody(makeJpeg(1125, 2436, 0xc5))),
+    ['status', 'body']
+  );
+  assert.deepEqual(
+    Object.keys(runImageBody(makeJpeg(1125, 2436, 0xc9))),
+    ['status', 'body']
+  );
+  assert.deepEqual(
+    Object.keys(runImageBody(makeJpeg(1125, 2436, 0xcd))),
+    ['status', 'body']
+  );
+  assert.deepEqual(
+    Object.keys(runImageBody(new Uint8Array([0xff, 0xd8, 0xff, 0xd9, 0]))),
+    []
+  );
+  assert.deepEqual(
+    Object.keys(runImageBody(new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 1]))),
+    []
+  );
+  assert.deepEqual(
+    Object.keys(runImageBody(new Uint8Array([0xff, 0xd8, 0xff, 0xff, 0xe0, 0]))),
+    []
+  );
+  assert.deepEqual(
+    Object.keys(runImageBody(new Uint8Array([0xff, 0xd8, 0xff, 0xc0, 0, 4, 0, 0]))),
+    []
+  );
+  assert.deepEqual(Object.keys(runImageBody(Symbol('invalid'))), []);
 });
