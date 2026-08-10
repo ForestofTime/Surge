@@ -1,9 +1,10 @@
 const TARGET_DNS_HOSTS = new Set([
   'guide-acs.m.taobao.com',
   'acs4miniapp-inner.m.taobao.com',
+  'guide-acs4miniapp-inner.m.taobao.com',
 ]);
 const TARGET_AD_IDS = new Set(['1308', '205', '1381']);
-const AD_ID_FIELDS = ['id', 'positionId', 'adId', 'slotId'];
+const AD_ID_FIELDS = ['id', 'positionId', 'adId', 'slotId', 'pitId'];
 const requestUrl = String(($request && $request.url) || '');
 const requestHeaders = ($request && $request.headers) || {};
 const userAgent = String(requestHeaders['User-Agent'] || requestHeaders['user-agent'] || '');
@@ -12,7 +13,7 @@ let result = {};
 try {
   if (isAmdcRequest(requestUrl) && isTaobaoUserAgent(userAgent)) {
     result = cleanAmdcResponse(String($response.body || ''));
-  } else if (isMshowRequest(requestUrl)) {
+  } else if (isAdvertisementRequest(requestUrl)) {
     result = cleanMshowResponse(String($response.body || ''));
   }
 } catch (_) {
@@ -29,8 +30,8 @@ function isTaobaoUserAgent(ua) {
   return /(?:淘宝|%E6%B7%98%E5%AE%9D)\//i.test(ua);
 }
 
-function isMshowRequest(url) {
-  return /\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.mshow(?:\.cn)?(?:\/|\?|$)/i.test(url);
+function isAdvertisementRequest(url) {
+  return /\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.(?:mshow(?:\.cn)?|show\.login)(?:\/|\?|$)/i.test(url);
 }
 
 function cleanAmdcResponse(body) {

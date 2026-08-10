@@ -1,18 +1,18 @@
 #!name=菜鸟淘宝小程序去广告
-#!desc=选择性清理菜鸟淘宝小程序 HTTPDNS，并过滤广告位 1308、205、1381，保留包裹数据。v1
+#!desc=选择性清理菜鸟淘宝小程序 HTTPDNS，并过滤广告位 1308、205、1381，保留包裹数据。v2
 #!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CainiaoMiniProgram.sgmodule
 
 [Script]
-# 仅处理菜鸟淘宝小程序 appkey。响应为 base64 JSON 时保持 base64 编码，只移除两个 MTop 直连域名。
-菜鸟小程序-HTTPDNS清理 = type=http-response, pattern=^https?:\/\/(?:amdc\.m\.taobao\.com|(?:\d+\.){3}\d+)(?::\d+)?\/amdc\/mobileDispatch\?(?:[^&#]*&)*appkey=21380790(?:&[^#]*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CainiaoMiniProgram.js?v=1, requires-body=true, max-size=1048576, timeout=10
+# 仅处理菜鸟淘宝小程序 appkey。响应为 base64 JSON 时保持 base64 编码，只移除三个已确认的 MTop 直连域名。
+菜鸟小程序-HTTPDNS清理 = type=http-response, pattern=^https?:\/\/(?:amdc\.m\.taobao\.com|(?:\d+\.){3}\d+)(?::\d+)?\/amdc\/mobileDispatch\?(?:[^&#]*&)*appkey=21380790(?:&[^#]*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CainiaoMiniProgram.js?v=2, requires-body=true, max-size=1048576, timeout=10
 
-# 仅改写 mshow 广告响应。删除已由 2026-08-10 抓包确认的广告位，保留包裹和其它业务数据。
-菜鸟小程序-广告位过滤 = type=http-response, pattern=^https?:\/\/(?:guide-acs\.m\.taobao\.com|acs4miniapp-inner\.m\.taobao\.com|acs\.m\.taobao\.com)\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.mshow(?:\.cn)?(?:\/|\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CainiaoMiniProgram.js?v=1, requires-body=true, max-size=1048576, timeout=10
+# 仅改写 mshow 与 show.login 广告响应。删除已由抓包确认的广告位，保留包裹和其它业务数据。
+菜鸟小程序-广告位过滤 = type=http-response, pattern=^https?:\/\/(?:guide-acs\.m\.taobao\.com|acs4miniapp-inner\.m\.taobao\.com|guide-acs4miniapp-inner\.m\.taobao\.com|acs\.m\.taobao\.com)\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.(?:mshow(?:\.cn)?|show\.login)(?:\/|\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CainiaoMiniProgram.js?v=2, requires-body=true, max-size=1048576, timeout=10
 
 [MITM]
-hostname = %APPEND% guide-acs.m.taobao.com, acs4miniapp-inner.m.taobao.com, acs.m.taobao.com
-# HTTPDNS 缓存可能使 MTop 走 Type 3 原始 TLS，限定由上方三个 hostname 进入 HTTP 引擎。
+hostname = %APPEND% guide-acs.m.taobao.com, acs4miniapp-inner.m.taobao.com, guide-acs4miniapp-inner.m.taobao.com, acs.m.taobao.com
+# HTTPDNS 缓存可能使 MTop 走 Type 3 原始 TLS，限定由上方四个 hostname 进入 HTTP 引擎。
 tcp-connection = true
