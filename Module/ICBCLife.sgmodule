@@ -1,14 +1,13 @@
-#!name=工银e生活去开屏广告
-#!desc=仅改写工银e生活微信小程序启动屏配置，原生 App 响应透传。v4
+#!name=工银e生活 App 去开屏广告
+#!desc=仅处理独立曝光主机，不解密业务域，避免影响 App 功能。v5
 #!author=ForestofTime
 #!category=广告过滤
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/agent/icbc-elife-splash-20260809/Module/ICBCLife.sgmodule
 
-[Script]
-# HAR 已验证：微信小程序的 qdp/启动屏 startupDto 是开屏配置。
-# 原生 App 请求由脚本直接透传，且不再映射曝光像素或图片资源。
-工银e生活小程序开屏配置过滤 = type=http-response, pattern=^https:\/\/elife\.icbc\.com\.cn\/OFSTNEWBASE\/floorinfo\/getStartupMantleFlatingFloor\.do(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/agent/icbc-elife-splash-20260809/JS/ICBCLifeMiniSplash.js?v=4, requires-body=true, max-size=1048576, timeout=10
+[Map Local]
+# App 安全模式：仅处理独立曝光像素，不解密 elife.icbc.com.cn 业务域。
+^https?:\/\/pv\.elife\.icbc\.com\.cn\/OFSTPV\/utm\.gif(?:\?|$) data-type=text data=" " status-code=200
 
 [MITM]
-hostname = %APPEND% elife.icbc.com.cn
+hostname = %APPEND% pv.elife.icbc.com.cn

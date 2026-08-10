@@ -1,0 +1,13 @@
+#!name=工银e生活微信小程序去开屏
+#!desc=会影响原生 App 的证书固定连接，请勿同时启用或常驻启用。v1
+#!author=ForestofTime
+#!category=广告过滤
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/agent/icbc-elife-splash-20260809/Module/ICBCLifeMiniProgram.sgmodule
+
+[Script]
+# 仅供微信小程序使用：清空 qdp/启动屏的 startupDto，保留其他楼层。
+工银e生活小程序开屏配置过滤 = type=http-response, pattern=^https:\/\/elife\.icbc\.com\.cn\/OFSTNEWBASE\/floorinfo\/getStartupMantleFlatingFloor\.do(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/agent/icbc-elife-splash-20260809/JS/ICBCLifeMiniSplash.js?v=5, requires-body=true, max-size=1048576, timeout=10
+
+[MITM]
+hostname = %APPEND% elife.icbc.com.cn
