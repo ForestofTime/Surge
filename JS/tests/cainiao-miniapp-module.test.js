@@ -46,9 +46,9 @@ function parseBase64Json(value) {
   return JSON.parse(Buffer.from(value, 'base64').toString('utf8'));
 }
 
-test('declares a narrowly scoped v1 mini-program module with unique script names', () => {
+test('declares a narrowly scoped v2 mini-program module with unique script names', () => {
   assert.match(moduleText, /^#!name=菜鸟淘宝小程序去广告$/m);
-  assert.match(moduleText, /^#!desc=.*HTTPDNS.*1308.*205.*1381.*v1$/m);
+  assert.match(moduleText, /^#!desc=.*HTTPDNS.*1308.*205.*1381.*v2$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/CainiaoMiniProgram\.sgmodule$/m
@@ -60,7 +60,7 @@ test('declares a narrowly scoped v1 mini-program module with unique script names
   assert.equal(new Set(names).size, names.length, 'Surge Script names must be unique');
   assert.deepEqual(names, ['菜鸟小程序-HTTPDNS清理', '菜鸟小程序-广告位过滤']);
   for (const line of scripts) {
-    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=1'));
+    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=2'));
     assert.ok(line.includes('type=http-response'));
     assert.ok(line.includes('requires-body=true'));
   }
@@ -79,28 +79,31 @@ test('limits AMDC interception to Cainiao appkey and the observed host or IPv4 p
   assert.doesNotMatch(moduleText, /data-type=text data=""/);
 });
 
-test('covers only the three MTop hosts and the exact mshow API', () => {
+test('covers only the HAR-confirmed MTop hosts and advertisement APIs', () => {
   const ads = sectionLines('Script').find((line) => line.startsWith('菜鸟小程序-广告位过滤'));
   assert.ok(ads);
   assert.match(ads, /pattern=\^https\?:\\\/\\\//);
   assert.match(ads, /guide-acs\\\.m\\\.taobao\\\.com/);
   assert.match(ads, /acs4miniapp-inner\\\.m\\\.taobao\\\.com/);
+  assert.match(ads, /guide-acs4miniapp-inner\\\.m\\\.taobao\\\.com/);
   assert.match(ads, /acs\\\.m\\\.taobao\\\.com/);
-  assert.match(ads, /mtop\\\.cainiao\\\.guoguo\\\.nbnetflow\\\.ads\\\.mshow/);
+  assert.match(ads, /mtop\\\.cainiao\\\.guoguo\\\.nbnetflow\\\.ads\\\.\(\?:mshow/);
+  assert.match(ads, /show\\\.login/);
   assert.doesNotMatch(ads, /(?:^|\\\/)gw\\\/\.\*|\.\*cainiao/);
 
   assert.deepEqual(sectionLines('MITM'), [
-    'hostname = %APPEND% guide-acs.m.taobao.com, acs4miniapp-inner.m.taobao.com, acs.m.taobao.com',
+    'hostname = %APPEND% guide-acs.m.taobao.com, acs4miniapp-inner.m.taobao.com, guide-acs4miniapp-inner.m.taobao.com, acs.m.taobao.com',
     'tcp-connection = true',
   ]);
   assert.doesNotMatch(moduleText, /<ip-address>/);
 });
 
-test('removes only the two Cainiao MTop hosts from a Taobao AMDC response', () => {
+test('removes only the HAR-confirmed Cainiao MTop bypass hosts from a Taobao AMDC response', () => {
   const source = {
     dns: [
       { host: 'guide-acs.m.taobao.com', ttl: 300, servers: ['59.82.44.17'] },
       { host: 'acs4miniapp-inner.m.taobao.com', ttl: 300, servers: ['112.48.116.116'] },
+      { host: 'guide-acs4miniapp-inner.m.taobao.com', ttl: 300, servers: ['203.119.238.242'] },
       { host: 'acs.m.taobao.com', ttl: 300, servers: ['203.119.238.48'] },
       { host: 'other.m.taobao.com', ttl: 60, servers: ['106.11.1.2'] },
     ],
@@ -113,7 +116,7 @@ test('removes only the two Cainiao MTop hosts from a Taobao AMDC response', () =
   });
 
   assert.deepEqual(parseBase64Json(result.body), {
-    dns: [source.dns[2], source.dns[3]],
+    dns: [source.dns[3], source.dns[4]],
     config: { keep: true },
   });
 });
@@ -123,6 +126,7 @@ test('preserves plain JSON encoding while cleaning an AMDC dns object', () => {
     dns: {
       'guide-acs.m.taobao.com': { ttl: 300, servers: ['59.82.44.17'] },
       'acs4miniapp-inner.m.taobao.com': { ttl: 300, servers: ['112.48.116.116'] },
+      'guide-acs4miniapp-inner.m.taobao.com': { ttl: 300, servers: ['203.119.204.12'] },
       'acs.m.taobao.com': { ttl: 300, servers: ['203.119.238.48'] },
     },
   };
@@ -145,6 +149,7 @@ test('round-trips a 22KB base64 AMDC response without corrupting Chinese values'
     dns: [
       { host: 'guide-acs.m.taobao.com', ttl: 300, servers: ['59.82.44.17'] },
       { host: 'acs4miniapp-inner.m.taobao.com', ttl: 300, servers: ['112.48.116.116'] },
+      { host: 'guide-acs4miniapp-inner.m.taobao.com', ttl: 300, servers: ['203.119.238.242'] },
       ...Array.from({ length: 38 }, (_, index) => ({
         host: `service-${index}.m.taobao.com`,
         ttl: 60,
@@ -164,7 +169,7 @@ test('round-trips a 22KB base64 AMDC response without corrupting Chinese values'
   const output = parseBase64Json(result.body);
 
   assert.equal(output.dns.length, 38);
-  assert.deepEqual(output.dns, source.dns.slice(2));
+  assert.deepEqual(output.dns, source.dns.slice(3));
   assert.equal(output.message, source.message);
   assert.deepEqual(output.config, source.config);
 });
@@ -252,6 +257,40 @@ test('removes confirmed ad keys and explicit ad elements while preserving real p
   assert.deepEqual(output.data.packageList, [source.data.packageList[0], source.data.packageList[4]]);
   assert.deepEqual(output.data.nested.cards, [source.data.nested.cards[1]]);
   assert.deepEqual(output.data.nested.batch, { safe: source.data.nested.batch.safe });
+  assert.deepEqual(output.ret, source.ret);
+});
+
+test('clears pit 1381 from show.login while preserving real package data', () => {
+  const source = {
+    api: 'mtop.cainiao.guoguo.nbnetflow.ads.show.login',
+    data: {
+      result: [
+        {
+          id: '67253',
+          pitId: '1381',
+          materialId: '130290',
+          materialContentMapper: {
+            title: '你有一个包裹待领取',
+            subTitle: '全自动雨伞',
+            buttonText: '免费领取',
+          },
+        },
+      ],
+      packageList: [
+        { id: '435299606435615', mailNo: '435299606435615', status: '派送中' },
+      ],
+    },
+    ret: ['SUCCESS::调用成功'],
+  };
+  const result = runScript({
+    url: 'https://guide-acs4miniapp-inner.m.taobao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.show.login/1.0/',
+    headers: { 'User-Agent': '%E6%B7%98%E5%AE%9D/57035247' },
+    body: JSON.stringify(source),
+  });
+  const output = JSON.parse(result.body);
+
+  assert.deepEqual(output.data.result, []);
+  assert.deepEqual(output.data.packageList, source.data.packageList);
   assert.deepEqual(output.ret, source.ret);
 });
 
