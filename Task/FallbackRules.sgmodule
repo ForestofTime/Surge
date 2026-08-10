@@ -1,6 +1,6 @@
 #!name=兜底规则学习
 #!desc=记录显式兜底命中的域名或 IP，并在每天 02:00 投递到私有 GitHub inbox
-#!category=工具
+#!category=System
 
 # 该模块只声明脚本，避免模块规则插入主规则顶部后改变原有策略顺序。
 # min.conf 已包含以下两行；其他主配置请把它们放到 [Rule] 正式规则末尾：

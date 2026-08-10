@@ -1,5 +1,6 @@
 #!name=滴滴开屏/弹窗去广告（精简版）
 #!desc=仅拦截滴滴乘客/车主 App 的“开屏/弹窗”相关接口与素材；不拦截上报/SDK/统计等其它请求，尽量降低副作用。
+#!category=AdBlock
 #!author=@lingyun_29 · 小龙虾
 #!version=2026.03.27-1
 
