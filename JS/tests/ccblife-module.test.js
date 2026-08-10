@@ -54,7 +54,7 @@ test('declares a parameterised v1 CCB Life module with splash enabled only', () 
   );
   assert.match(
     moduleText,
-    /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/codex\/ccb-life-ads-20260809\/Module\/CCBLife\.sgmodule$/m
+    /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/CCBLife\.sgmodule$/m
   );
 });
 

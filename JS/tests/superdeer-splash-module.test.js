@@ -48,7 +48,7 @@ test('declares a dedicated v1 Super Deer splash module', () => {
   assert.match(moduleText, /^#!desc=.*v1$/m);
   assert.match(
     moduleText,
-    /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/codex\/superdeer-splash-20260805\/Module\/SuperDeer\.sgmodule$/m
+    /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/SuperDeer\.sgmodule$/m
   );
 });
 
