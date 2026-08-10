@@ -45,8 +45,29 @@ function runMiniScript(headers, body) {
   return runResponseScript(miniScriptText, 'ICBCLifeMiniSplash.js', headers, body);
 }
 
-function runAppScript(headers, body) {
-  return runResponseScript(appScriptText, 'ICBCLifeAppSplashImage.js', headers, body);
+function runAppScript({ phase, url, headers, body, store = {} }) {
+  let completion;
+  const context = {
+    $request: { url, headers },
+    $persistentStore: {
+      read: (key) => store[key] ?? null,
+      write: (value, key) => {
+        store[key] = value;
+        return true;
+      },
+    },
+    $done: (value) => {
+      assert.equal(completion, undefined, 'the App script must call $done once');
+      completion = value;
+    },
+  };
+  if (phase === 'response') {
+    context.$response = { body };
+  }
+
+  vm.runInNewContext(appScriptText, context, { filename: 'ICBCLifeAppSplashImage.js' });
+  assert.notEqual(completion, undefined, 'the App script must finish');
+  return { result: completion, store };
 }
 
 function makeJpeg(width, height) {
@@ -62,23 +83,29 @@ function makeJpeg(width, height) {
   ]);
 }
 
-test('declares a v6 App-safe module at the existing subscription URL', () => {
+test('declares a v7 App-safe module at the existing subscription URL', () => {
   assert.match(appModuleText, /^#!name=工银e生活 App 去开屏广告$/m);
-  assert.match(appModuleText, /^#!desc=.*不解密业务域.*v6$/m);
+  assert.match(appModuleText, /^#!desc=.*不解密业务域.*v7$/m);
   assert.match(
     appModuleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/agent\/icbc-elife-splash-20260809\/Module\/ICBCLife\.sgmodule$/m
   );
 });
 
-test('the App module intercepts only full-screen JPEG responses on image hosts', () => {
+test('the App module learns splash canvases and short-circuits known requests on image hosts', () => {
   const script = sectionLines(appModuleText, 'Script');
-  assert.equal(script.length, 1);
-  assert.ok(script[0].includes('type=http-response'));
-  assert.ok(script[0].includes('image[1-4]\\.elife\\.icbc\\.com\\.cn'));
-  assert.ok(script[0].includes('/JS/ICBCLifeAppSplashImage.js?v=6'));
-  assert.ok(script[0].includes('requires-body=true'));
-  assert.ok(script[0].includes('binary-body-mode=true'));
+  assert.equal(script.length, 2);
+  const requestScript = script.find((line) => line.includes('type=http-request'));
+  const responseScript = script.find((line) => line.includes('type=http-response'));
+  assert.ok(requestScript);
+  assert.ok(responseScript);
+  for (const line of script) {
+    assert.ok(line.includes('image[1-4]\\.elife\\.icbc\\.com\\.cn'));
+    assert.ok(line.includes('/JS/ICBCLifeAppSplashImage.js?v=7'));
+  }
+  assert.ok(responseScript.includes('requires-body=true'));
+  assert.ok(responseScript.includes('binary-body-mode=true'));
+  assert.doesNotMatch(requestScript, /requires-body=true|binary-body-mode=true/);
   assert.deepEqual(sectionLines(appModuleText, 'MITM'), [
     'hostname = %APPEND% image1.elife.icbc.com.cn, image2.elife.icbc.com.cn, image3.elife.icbc.com.cn, image4.elife.icbc.com.cn',
   ]);
@@ -177,26 +204,58 @@ test('passes native App, malformed, and non-startup responses through', () => {
   );
 });
 
-test('returns 204 only for the HAR-confirmed native App splash canvas', () => {
-  const result = runAppScript(
-    { 'User-Agent': 'eLife/7.3.6 (iPhone; iOS 27.0; Scale/3.00)' },
-    makeJpeg(1125, 2436)
-  );
+test('learns a HAR-confirmed splash canvas and replaces its first response with a tiny GIF', () => {
+  const url = 'https://image3.elife.icbc.com.cn/filepath/elife/2026/08/10/08/creative.jpg';
+  const store = {};
+  const { result } = runAppScript({
+    phase: 'response',
+    url,
+    headers: { 'User-Agent': 'eLife/7.3.6 (iPhone; iOS 27.0; Scale/3.00)' },
+    body: makeJpeg(1125, 2436),
+    store,
+  });
 
-  assert.equal(result.status, 204);
-  assert.equal(JSON.stringify(result.headers), JSON.stringify({ 'Content-Length': '0' }));
-  assert.equal(result.body.byteLength, 0);
+  assert.equal(result.status, undefined);
+  assert.equal(Buffer.from(result.body).subarray(0, 6).toString('ascii'), 'GIF89a');
+  assert.deepEqual(JSON.parse(store['icbc-elife-app-splash-urls-v7']), [url]);
+});
+
+test('returns a direct 204 response for a learned splash request', () => {
+  const url = 'https://image3.elife.icbc.com.cn/filepath/elife/2026/08/10/08/creative.jpg';
+  const store = { 'icbc-elife-app-splash-urls-v7': JSON.stringify([url]) };
+  const { result } = runAppScript({
+    phase: 'request',
+    url,
+    headers: { 'User-Agent': 'eLife/7.3.6 (iPhone; iOS 27.0; Scale/3.00)' },
+    store,
+  });
+
+  assert.equal(JSON.stringify(result), JSON.stringify({ response: { status: 204 } }));
 });
 
 test('passes ordinary images, non-App traffic, and malformed bodies through', () => {
   const appHeaders = { 'User-Agent': 'eLife/7.3.6 (iPhone; iOS 27.0; Scale/3.00)' };
-  assert.equal(JSON.stringify(runAppScript(appHeaders, makeJpeg(1125, 1410))), '{}');
-  assert.equal(JSON.stringify(runAppScript(appHeaders, makeJpeg(702, 240))), '{}');
+  const url = 'https://image1.elife.icbc.com.cn/filepath/elife/normal.jpg';
   assert.equal(
-    JSON.stringify(runAppScript({ 'User-Agent': 'MicroMessenger/8.0.75' }, makeJpeg(1125, 2436))),
+    JSON.stringify(runAppScript({ phase: 'response', url, headers: appHeaders, body: makeJpeg(1125, 1410) }).result),
     '{}'
   );
-  assert.equal(JSON.stringify(runAppScript(appHeaders, Uint8Array.from([1, 2, 3]))), '{}');
+  assert.equal(
+    JSON.stringify(runAppScript({ phase: 'response', url, headers: appHeaders, body: makeJpeg(702, 240) }).result),
+    '{}'
+  );
+  assert.equal(
+    JSON.stringify(runAppScript({ phase: 'response', url, headers: { 'User-Agent': 'MicroMessenger/8.0.75' }, body: makeJpeg(1125, 2436) }).result),
+    '{}'
+  );
+  assert.equal(
+    JSON.stringify(runAppScript({ phase: 'response', url, headers: appHeaders, body: Uint8Array.from([1, 2, 3]) }).result),
+    '{}'
+  );
+  assert.equal(
+    JSON.stringify(runAppScript({ phase: 'request', url, headers: appHeaders, store: {} }).result),
+    '{}'
+  );
 });
 
 test('keeps native App and mini-program interception scopes separate', () => {
