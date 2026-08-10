@@ -1,7 +1,7 @@
 #!name=朴朴超市去广告
 #!desc=过滤 QX 广告接口，接管朴朴原始 TCP 数据链，并保留开屏素材兜底。v24
 #!author=奶思(原) / ForestofTime Surge 转换
-#!category=广告过滤
+#!category=AdBlock
 #!homepage=https://github.com/fmz200/wool_scripts
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/PuPuSupermarket.sgmodule
 

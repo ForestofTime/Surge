@@ -1,7 +1,7 @@
 #!name=山姆会员商店 App 去开屏广告
 #!desc=屏蔽山姆会员商店 App 开屏广告
 #!author定制化 by Lutto
-#!category=NoAd
+#!category=AdBlock
 
 [Map Local]
 ^https:\/\/api-sams\.walmartmobile\.cn\/api\/v1\/sams\/channel\/portal\/AdgroupData\/queryAdgroup data-type=text data="{}" status-code=200

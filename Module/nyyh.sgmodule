@@ -1,7 +1,7 @@
 #!name=农业银行去开屏广告
 #!desc=屏蔽农业银行 App 开屏广告（需卸载重装生效）
 #!author=定制化 by ChatGPT
-#!category=广告净化
+#!category=AdBlock
 
 [URL Rewrite]
 ^https?:\/\/midc\.cdn-static\.abchina\.com\.cn\/distributecenterimg\/file\/download\/(ed64|74b5) - reject
