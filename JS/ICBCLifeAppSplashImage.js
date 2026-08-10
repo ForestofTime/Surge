@@ -1,12 +1,20 @@
 /**
  * 工银 e 生活原生 App 开屏素材过滤
  *
- * HAR 证实开屏是 1125x2436 的完整 JPEG 画布。按画布尺寸识别，
- * 不依赖文件名、活动 ID、日期或广告文案，也不接管业务接口。
+ * HAR 证实开屏是 1125x2436 的完整 JPEG 画布。响应阶段按尺寸学习，
+ * 后续请求阶段直接返回 204，不依赖创意文件名，也不接管业务接口。
  */
 
 const SPLASH_WIDTH = 1125;
 const SPLASH_HEIGHT = 2436;
+const STORE_KEY = 'icbc-elife-app-splash-urls-v7';
+const MAX_LEARNED_URLS = 8;
+const TINY_GIF = Uint8Array.from([
+  0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00,
+  0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0x2c,
+  0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x02,
+  0x01, 0x4c, 0x00, 0x3b,
+]);
 
 function requestHeader(name) {
   const headers = $request.headers || {};
@@ -76,17 +84,43 @@ function readJpegDimensions(body) {
   return null;
 }
 
+function canonicalUrl(url) {
+  return String(url || '').split('?')[0];
+}
+
+function readLearnedUrls() {
+  try {
+    const value = JSON.parse($persistentStore.read(STORE_KEY) || '[]');
+    return Array.isArray(value) ? value.filter((item) => typeof item === 'string') : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function rememberSplashUrl(url) {
+  const target = canonicalUrl(url);
+  const urls = [target, ...readLearnedUrls().filter((item) => item !== target)].slice(
+    0,
+    MAX_LEARNED_URLS
+  );
+  $persistentStore.write(JSON.stringify(urls), STORE_KEY);
+}
+
 try {
   if (!/\beLife\//i.test(requestHeader('User-Agent'))) {
     $done({});
+  } else if (typeof $response === 'undefined') {
+    const learned = readLearnedUrls();
+    if (learned.includes(canonicalUrl($request.url))) {
+      $done({ response: { status: 204 } });
+    } else {
+      $done({});
+    }
   } else {
     const dimensions = readJpegDimensions($response.body);
     if (dimensions?.width === SPLASH_WIDTH && dimensions?.height === SPLASH_HEIGHT) {
-      $done({
-        status: 204,
-        headers: { 'Content-Length': '0' },
-        body: new Uint8Array(0),
-      });
+      rememberSplashUrl($request.url);
+      $done({ body: TINY_GIF });
     } else {
       $done({});
     }
