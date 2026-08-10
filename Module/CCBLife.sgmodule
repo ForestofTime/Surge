@@ -1,0 +1,14 @@
+#!name=建行生活去广告
+#!desc=参数化净化开屏及各标签页广告，默认仅屏蔽开屏。v1
+#!author=ForestofTime
+#!category=AdBlock
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CCBLife.sgmodule
+#!arguments = splash:true,home:false,life:false,finance:false,profile:false,popup:false,recommendation:false,icon_skin:false,newcomer:false
+#!arguments-desc = splash: 开屏广告\nhome: 精选页广告\nlife: 生活页广告\nfinance: 金融页营销内容\nprofile: 我的页面广告\npopup: 页面弹窗\nrecommendation: 种草及信息流推荐\nicon_skin: 图标皮肤\nnewcomer: 新人礼包
+
+[Script]
+建行生活广告配置过滤 = type=http-response,pattern=^https:\/\/yunbusiness\.ccb\.com\/(?:basic_service|clp_service)\/txCtrl\?txcode=A3341(?:A009|AB03|A120|A095|MB22|A068|AB04|AB08|C147)(?:&|$),requires-body=true,max-size=1048576,timeout=20,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CCBLifeAdBlock.js?v=1,script-arguments="splash=%splash&home=%home&life=%life&finance=%finance&profile=%profile&popup=%popup&recommendation=%recommendation&icon_skin=%icon_skin&newcomer=%newcomer"
+
+[MITM]
+hostname = %APPEND% yunbusiness.ccb.com
