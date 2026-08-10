@@ -1,7 +1,7 @@
 #!name=超鹿运动去开屏广告
 #!desc=仅清空超鹿开屏配置接口 data.splashes，不依赖广告素材链接。v1
 #!author=ForestofTime
-#!category=广告过滤
+#!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/codex/superdeer-splash-20260805/Module/SuperDeer.sgmodule
 

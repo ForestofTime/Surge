@@ -1,7 +1,7 @@
 #!name=Telegram 优选 IP 覆盖
 #!desc=绕开已验证劣化的 Telegram DC2/DC5 IP，强制改用同 DC 备用地址。
 #!author=ForestofTime
-#!category=连接优化
+#!category=System
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/Telegram-DC.sgmodule
 
