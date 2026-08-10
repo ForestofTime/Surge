@@ -3,7 +3,7 @@
 #!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
-#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/codex/superdeer-splash-20260805/Module/SuperDeer.sgmodule
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/SuperDeer.sgmodule
 
 [Body Rewrite]
 # HAR 已验证：POST /app/getSplashData/V2 的 data.splashes 是开屏素材和跳转入口。
