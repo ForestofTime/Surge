@@ -6,10 +6,12 @@ const vm = require('node:vm');
 
 const appModulePath = path.resolve(__dirname, '../../Module/ICBCLife.sgmodule');
 const miniModulePath = path.resolve(__dirname, '../../Module/ICBCLifeMiniProgram.sgmodule');
-const scriptPath = path.resolve(__dirname, '../ICBCLifeMiniSplash.js');
+const miniScriptPath = path.resolve(__dirname, '../ICBCLifeMiniSplash.js');
+const appScriptPath = path.resolve(__dirname, '../ICBCLifeAppSplashImage.js');
 const appModuleText = fs.existsSync(appModulePath) ? fs.readFileSync(appModulePath, 'utf8') : '';
 const miniModuleText = fs.existsSync(miniModulePath) ? fs.readFileSync(miniModulePath, 'utf8') : '';
-const scriptText = fs.existsSync(scriptPath) ? fs.readFileSync(scriptPath, 'utf8') : '';
+const miniScriptText = fs.existsSync(miniScriptPath) ? fs.readFileSync(miniScriptPath, 'utf8') : '';
+const appScriptText = fs.existsSync(appScriptPath) ? fs.readFileSync(appScriptPath, 'utf8') : '';
 
 function sectionLines(moduleText, sectionName) {
   const section = moduleText.match(
@@ -23,7 +25,7 @@ function sectionLines(moduleText, sectionName) {
     .filter((line) => line && !line.startsWith('#'));
 }
 
-function runResponseScript(headers, body) {
+function runResponseScript(scriptText, filename, headers, body) {
   let completion;
   const context = {
     $request: { headers },
@@ -34,30 +36,55 @@ function runResponseScript(headers, body) {
     },
   };
 
-  vm.runInNewContext(scriptText, context, { filename: 'ICBCLifeMiniSplash.js' });
+  vm.runInNewContext(scriptText, context, { filename });
   assert.notEqual(completion, undefined, 'the response script must finish');
   return completion;
 }
 
-test('declares a v5 App-safe module at the existing subscription URL', () => {
+function runMiniScript(headers, body) {
+  return runResponseScript(miniScriptText, 'ICBCLifeMiniSplash.js', headers, body);
+}
+
+function runAppScript(headers, body) {
+  return runResponseScript(appScriptText, 'ICBCLifeAppSplashImage.js', headers, body);
+}
+
+function makeJpeg(width, height) {
+  return Uint8Array.from([
+    0xff, 0xd8,
+    0xff, 0xc0,
+    0x00, 0x11,
+    0x08,
+    (height >> 8) & 0xff, height & 0xff,
+    (width >> 8) & 0xff, width & 0xff,
+    0x03, 0x01, 0x11, 0x00, 0x02, 0x11, 0x00, 0x03, 0x11, 0x00,
+    0xff, 0xd9,
+  ]);
+}
+
+test('declares a v6 App-safe module at the existing subscription URL', () => {
   assert.match(appModuleText, /^#!name=工银e生活 App 去开屏广告$/m);
-  assert.match(appModuleText, /^#!desc=.*不解密业务域.*v5$/m);
+  assert.match(appModuleText, /^#!desc=.*不解密业务域.*v6$/m);
   assert.match(
     appModuleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/agent\/icbc-elife-splash-20260809\/Module\/ICBCLife\.sgmodule$/m
   );
 });
 
-test('the App module intercepts only the isolated exposure host', () => {
-  assert.deepEqual(sectionLines(appModuleText, 'Map Local'), [
-    '^https?:\\/\\/pv\\.elife\\.icbc\\.com\\.cn\\/OFSTPV\\/utm\\.gif(?:\\?|$) data-type=text data=" " status-code=200',
-  ]);
+test('the App module intercepts only full-screen JPEG responses on image hosts', () => {
+  const script = sectionLines(appModuleText, 'Script');
+  assert.equal(script.length, 1);
+  assert.ok(script[0].includes('type=http-response'));
+  assert.ok(script[0].includes('image[1-4]\\.elife\\.icbc\\.com\\.cn'));
+  assert.ok(script[0].includes('/JS/ICBCLifeAppSplashImage.js?v=6'));
+  assert.ok(script[0].includes('requires-body=true'));
+  assert.ok(script[0].includes('binary-body-mode=true'));
   assert.deepEqual(sectionLines(appModuleText, 'MITM'), [
-    'hostname = %APPEND% pv.elife.icbc.com.cn',
+    'hostname = %APPEND% image1.elife.icbc.com.cn, image2.elife.icbc.com.cn, image3.elife.icbc.com.cn, image4.elife.icbc.com.cn',
   ]);
-  assert.doesNotMatch(appModuleText, /^\[Script\]$/m);
+  assert.doesNotMatch(appModuleText, /^\[Map Local\]$/m);
   assert.doesNotMatch(appModuleText, /getStartupMantleFlatingFloor|getStartupPages|getMantlePages/);
-  assert.doesNotMatch(appModuleText, /image[1-4]\.elife\.icbc\.com\.cn/);
+  assert.doesNotMatch(appModuleText, /pv\.elife\.icbc\.com\.cn/);
   assert.doesNotMatch(appModuleText, /hostname\s*=.*(?:^|,\s*)elife\.icbc\.com\.cn(?:,|$)/m);
 });
 
@@ -104,7 +131,7 @@ test('clears only the HAR-confirmed mini-program startup items', () => {
       },
     ],
   };
-  const result = runResponseScript(
+  const result = runMiniScript(
     {
       'User-Agent': 'MicroMessenger/8.0.75',
       Referer: 'https://servicewechat.com/wxREDACTEDAPPID/108/page-frame.html',
@@ -128,7 +155,7 @@ test('passes native App, malformed, and non-startup responses through', () => {
   });
   assert.equal(
     JSON.stringify(
-      runResponseScript(
+      runMiniScript(
         { 'User-Agent': 'eLife/7.3.6 (iPhone; iOS 27.0; Scale/3.00)' },
         nativeBody
       )
@@ -136,12 +163,12 @@ test('passes native App, malformed, and non-startup responses through', () => {
     '{}'
   );
   assert.equal(
-    JSON.stringify(runResponseScript({ 'User-Agent': 'MicroMessenger/8.0.75' }, '{not json')),
+    JSON.stringify(runMiniScript({ 'User-Agent': 'MicroMessenger/8.0.75' }, '{not json')),
     '{}'
   );
   assert.equal(
     JSON.stringify(
-      runResponseScript(
+      runMiniScript(
         { 'User-Agent': 'MicroMessenger/8.0.75' },
         JSON.stringify({ data: [{ floorId: 'normal', startupDto: [] }] })
       )
@@ -150,8 +177,30 @@ test('passes native App, malformed, and non-startup responses through', () => {
   );
 });
 
-test('contains no native App image interception fallback', () => {
-  assert.doesNotMatch(appModuleText, /ICBCLifeSplashImage|binary-body-mode=true|filepath\/elife/);
+test('returns 204 only for the HAR-confirmed native App splash canvas', () => {
+  const result = runAppScript(
+    { 'User-Agent': 'eLife/7.3.6 (iPhone; iOS 27.0; Scale/3.00)' },
+    makeJpeg(1125, 2436)
+  );
+
+  assert.equal(result.status, 204);
+  assert.deepEqual(result.headers, { 'Content-Length': '0' });
+  assert.equal(result.body.byteLength, 0);
+});
+
+test('passes ordinary images, non-App traffic, and malformed bodies through', () => {
+  const appHeaders = { 'User-Agent': 'eLife/7.3.6 (iPhone; iOS 27.0; Scale/3.00)' };
+  assert.equal(JSON.stringify(runAppScript(appHeaders, makeJpeg(1125, 1410))), '{}');
+  assert.equal(JSON.stringify(runAppScript(appHeaders, makeJpeg(702, 240))), '{}');
+  assert.equal(
+    JSON.stringify(runAppScript({ 'User-Agent': 'MicroMessenger/8.0.75' }, makeJpeg(1125, 2436))),
+    '{}'
+  );
+  assert.equal(JSON.stringify(runAppScript(appHeaders, Uint8Array.from([1, 2, 3]))), '{}');
+});
+
+test('keeps native App and mini-program interception scopes separate', () => {
   assert.doesNotMatch(miniModuleText, /ICBCLifeSplashImage|binary-body-mode=true|filepath\/elife/);
-  assert.doesNotMatch(scriptText, /image[1-4]|filepath\/elife|status-code/);
+  assert.doesNotMatch(miniScriptText, /image[1-4]|filepath\/elife|status-code/);
+  assert.doesNotMatch(appScriptText, /getStartupMantleFlatingFloor|startupDto|MicroMessenger/);
 });
