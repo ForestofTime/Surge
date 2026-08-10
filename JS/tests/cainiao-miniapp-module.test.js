@@ -46,9 +46,9 @@ function parseBase64Json(value) {
   return JSON.parse(Buffer.from(value, 'base64').toString('utf8'));
 }
 
-test('declares a narrowly scoped v2 mini-program module with unique script names', () => {
+test('declares a narrowly scoped v3 mini-program module with unique script names', () => {
   assert.match(moduleText, /^#!name=菜鸟淘宝小程序去广告$/m);
-  assert.match(moduleText, /^#!desc=.*HTTPDNS.*1308.*205.*1381.*v2$/m);
+  assert.match(moduleText, /^#!desc=.*HTTPDNS.*1308.*205.*1381.*v3$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/CainiaoMiniProgram\.sgmodule$/m
@@ -60,7 +60,7 @@ test('declares a narrowly scoped v2 mini-program module with unique script names
   assert.equal(new Set(names).size, names.length, 'Surge Script names must be unique');
   assert.deepEqual(names, ['菜鸟小程序-HTTPDNS清理', '菜鸟小程序-广告位过滤']);
   for (const line of scripts) {
-    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=2'));
+    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=3'));
     assert.ok(line.includes('type=http-response'));
     assert.ok(line.includes('requires-body=true'));
   }
@@ -87,12 +87,13 @@ test('covers only the HAR-confirmed MTop hosts and advertisement APIs', () => {
   assert.match(ads, /acs4miniapp-inner\\\.m\\\.taobao\\\.com/);
   assert.match(ads, /guide-acs4miniapp-inner\\\.m\\\.taobao\\\.com/);
   assert.match(ads, /acs\\\.m\\\.taobao\\\.com/);
+  assert.match(ads, /netflow-mtop\\\.cainiao\\\.com/);
   assert.match(ads, /mtop\\\.cainiao\\\.guoguo\\\.nbnetflow\\\.ads\\\.\(\?:mshow/);
   assert.match(ads, /show\\\.login/);
   assert.doesNotMatch(ads, /(?:^|\\\/)gw\\\/\.\*|\.\*cainiao/);
 
   assert.deepEqual(sectionLines('MITM'), [
-    'hostname = %APPEND% guide-acs.m.taobao.com, acs4miniapp-inner.m.taobao.com, guide-acs4miniapp-inner.m.taobao.com, acs.m.taobao.com',
+    'hostname = %APPEND% guide-acs.m.taobao.com, acs4miniapp-inner.m.taobao.com, guide-acs4miniapp-inner.m.taobao.com, acs.m.taobao.com, netflow-mtop.cainiao.com',
     'tcp-connection = true',
   ]);
   assert.doesNotMatch(moduleText, /<ip-address>/);
@@ -104,7 +105,9 @@ test('removes only the HAR-confirmed Cainiao MTop bypass hosts from a Taobao AMD
       { host: 'guide-acs.m.taobao.com', ttl: 300, servers: ['59.82.44.17'] },
       { host: 'acs4miniapp-inner.m.taobao.com', ttl: 300, servers: ['112.48.116.116'] },
       { host: 'guide-acs4miniapp-inner.m.taobao.com', ttl: 300, servers: ['203.119.238.242'] },
+      { host: 'netflow-mtop.cainiao.com', ttl: 300, servers: ['203.119.252.113', '203.119.252.75'] },
       { host: 'acs.m.taobao.com', ttl: 300, servers: ['203.119.238.48'] },
+      { host: 'netflow-reply-mtop.cainiao.com', ttl: 300, servers: ['203.119.238.162'] },
       { host: 'other.m.taobao.com', ttl: 60, servers: ['106.11.1.2'] },
     ],
     config: { keep: true },
@@ -116,7 +119,7 @@ test('removes only the HAR-confirmed Cainiao MTop bypass hosts from a Taobao AMD
   });
 
   assert.deepEqual(parseBase64Json(result.body), {
-    dns: [source.dns[3], source.dns[4]],
+    dns: [source.dns[4], source.dns[5], source.dns[6]],
     config: { keep: true },
   });
 });
@@ -127,7 +130,9 @@ test('preserves plain JSON encoding while cleaning an AMDC dns object', () => {
       'guide-acs.m.taobao.com': { ttl: 300, servers: ['59.82.44.17'] },
       'acs4miniapp-inner.m.taobao.com': { ttl: 300, servers: ['112.48.116.116'] },
       'guide-acs4miniapp-inner.m.taobao.com': { ttl: 300, servers: ['203.119.204.12'] },
+      'netflow-mtop.cainiao.com': { ttl: 300, servers: ['203.119.252.113'] },
       'acs.m.taobao.com': { ttl: 300, servers: ['203.119.238.48'] },
+      'netflow-reply-mtop.cainiao.com': { ttl: 300, servers: ['203.119.238.162'] },
     },
   };
   const result = runScript({
@@ -139,6 +144,7 @@ test('preserves plain JSON encoding while cleaning an AMDC dns object', () => {
   assert.deepEqual(JSON.parse(result.body), {
     dns: {
       'acs.m.taobao.com': source.dns['acs.m.taobao.com'],
+      'netflow-reply-mtop.cainiao.com': source.dns['netflow-reply-mtop.cainiao.com'],
     },
   });
   assert.equal(result.body.trimStart().startsWith('{'), true);
@@ -150,6 +156,7 @@ test('round-trips a 22KB base64 AMDC response without corrupting Chinese values'
       { host: 'guide-acs.m.taobao.com', ttl: 300, servers: ['59.82.44.17'] },
       { host: 'acs4miniapp-inner.m.taobao.com', ttl: 300, servers: ['112.48.116.116'] },
       { host: 'guide-acs4miniapp-inner.m.taobao.com', ttl: 300, servers: ['203.119.238.242'] },
+      { host: 'netflow-mtop.cainiao.com', ttl: 300, servers: ['203.119.252.113'] },
       ...Array.from({ length: 38 }, (_, index) => ({
         host: `service-${index}.m.taobao.com`,
         ttl: 60,
@@ -169,7 +176,7 @@ test('round-trips a 22KB base64 AMDC response without corrupting Chinese values'
   const output = parseBase64Json(result.body);
 
   assert.equal(output.dns.length, 38);
-  assert.deepEqual(output.dns, source.dns.slice(3));
+  assert.deepEqual(output.dns, source.dns.slice(4));
   assert.equal(output.message, source.message);
   assert.deepEqual(output.config, source.config);
 });
@@ -214,7 +221,16 @@ test('removes confirmed ad keys and explicit ad elements while preserving real p
     ret: ['SUCCESS::调用成功'],
     data: {
       1308: [{ id: 1308, title: '看视频领金豆' }],
-      205: [{ adId: '205', title: '待领取推广' }],
+      205: [
+        {
+          id: '38181',
+          pitId: '205',
+          materialId: '36753',
+          materialContentMapper: {
+            floatview_url: 'https://img.alicdn.com/right-bottom-red-envelope.gif',
+          },
+        },
+      ],
       1381: [{ slotId: 1381, title: '浮动推广' }],
       1275: [{ id: 1275, title: '保留的未确认广告位' }],
       packageList: [
@@ -244,7 +260,7 @@ test('removes confirmed ad keys and explicit ad elements while preserving real p
     },
   };
   const result = runScript({
-    url: 'https://guide-acs.m.taobao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.mshow/1.0/?appKey=21380790',
+    url: 'https://netflow-mtop.cainiao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.mshow/1.0/?appKey=21380790',
     headers: { 'User-Agent': '%E6%B7%98%E5%AE%9D/57035247' },
     body: JSON.stringify(source),
   });

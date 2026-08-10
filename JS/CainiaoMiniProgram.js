@@ -2,6 +2,7 @@ const TARGET_DNS_HOSTS = new Set([
   'guide-acs.m.taobao.com',
   'acs4miniapp-inner.m.taobao.com',
   'guide-acs4miniapp-inner.m.taobao.com',
+  'netflow-mtop.cainiao.com',
 ]);
 const TARGET_AD_IDS = new Set(['1308', '205', '1381']);
 const AD_ID_FIELDS = ['id', 'positionId', 'adId', 'slotId', 'pitId'];
