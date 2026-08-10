@@ -88,7 +88,7 @@ test('declares a v7 App-safe module at the existing subscription URL', () => {
   assert.match(appModuleText, /^#!desc=.*不解密业务域.*v7$/m);
   assert.match(
     appModuleText,
-    /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/agent\/icbc-elife-splash-20260809\/Module\/ICBCLife\.sgmodule$/m
+    /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/ICBCLife\.sgmodule$/m
   );
 });
 
@@ -120,7 +120,7 @@ test('moves the exact business-domain MITM into an explicitly separate mini-prog
   assert.match(miniModuleText, /^#!desc=.*会影响原生 App.*请勿同时启用.*v1$/m);
   assert.match(
     miniModuleText,
-    /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/agent\/icbc-elife-splash-20260809\/Module\/ICBCLifeMiniProgram\.sgmodule$/m
+    /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/ICBCLifeMiniProgram\.sgmodule$/m
   );
   const script = sectionLines(miniModuleText, 'Script');
   assert.equal(script.length, 1);
