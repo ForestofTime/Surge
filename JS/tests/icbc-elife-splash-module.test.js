@@ -184,7 +184,7 @@ test('returns 204 only for the HAR-confirmed native App splash canvas', () => {
   );
 
   assert.equal(result.status, 204);
-  assert.deepEqual(result.headers, { 'Content-Length': '0' });
+  assert.equal(JSON.stringify(result.headers), JSON.stringify({ 'Content-Length': '0' }));
   assert.equal(result.body.byteLength, 0);
 });
 

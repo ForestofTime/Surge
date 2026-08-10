@@ -1,13 +1,14 @@
 #!name=工银e生活 App 去开屏广告
-#!desc=仅处理独立曝光主机，不解密业务域，避免影响 App 功能。v5
+#!desc=按全屏画布识别开屏素材，不解密业务域，避免影响 App 功能。v6
 #!author=ForestofTime
 #!category=广告过滤
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/agent/icbc-elife-splash-20260809/Module/ICBCLife.sgmodule
 
-[Map Local]
-# App 安全模式：仅处理独立曝光像素，不解密 elife.icbc.com.cn 业务域。
-^https?:\/\/pv\.elife\.icbc\.com\.cn\/OFSTPV\/utm\.gif(?:\?|$) data-type=text data=" " status-code=200
+[Script]
+# HAR 已验证 App 开屏为 1125x2436 JPEG 完整画布。
+# 按画布尺寸返回 204，不绑定素材文件名、活动 ID、日期或文案。
+工银e生活 App 开屏素材过滤 = type=http-response, pattern=^https:\/\/image[1-4]\.elife\.icbc\.com\.cn\/filepath\/elife\/.*\.jpe?g(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/agent/icbc-elife-splash-20260809/JS/ICBCLifeAppSplashImage.js?v=6, requires-body=true, binary-body-mode=true, max-size=4194304, timeout=10
 
 [MITM]
-hostname = %APPEND% pv.elife.icbc.com.cn
+hostname = %APPEND% image1.elife.icbc.com.cn, image2.elife.icbc.com.cn, image3.elife.icbc.com.cn, image4.elife.icbc.com.cn
