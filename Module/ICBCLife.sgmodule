@@ -1,5 +1,5 @@
 #!name=工银e生活 App 去开屏广告
-#!desc=按全屏画布识别开屏素材，不解密业务域，避免影响 App 功能。v6
+#!desc=自动学习全屏开屏素材并在请求前跳过，不解密业务域。v7
 #!author=ForestofTime
 #!category=广告过滤
 #!homepage=https://github.com/ForestofTime/Surge
@@ -7,8 +7,9 @@
 
 [Script]
 # HAR 已验证 App 开屏为 1125x2436 JPEG 完整画布。
-# 按画布尺寸返回 204，不绑定素材文件名、活动 ID、日期或文案。
-工银e生活 App 开屏素材过滤 = type=http-response, pattern=^https:\/\/image[1-4]\.elife\.icbc\.com\.cn\/filepath\/elife\/.*\.jpe?g(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/agent/icbc-elife-splash-20260809/JS/ICBCLifeAppSplashImage.js?v=6, requires-body=true, binary-body-mode=true, max-size=4194304, timeout=10
+# 首次按画布尺寸学习，后续同一素材在请求阶段直接返回标准 204。
+工银e生活 App 已学习开屏请求跳过 = type=http-request, pattern=^https:\/\/image[1-4]\.elife\.icbc\.com\.cn\/filepath\/elife\/.*\.jpe?g(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/agent/icbc-elife-splash-20260809/JS/ICBCLifeAppSplashImage.js?v=7, timeout=10
+工银e生活 App 开屏画布学习 = type=http-response, pattern=^https:\/\/image[1-4]\.elife\.icbc\.com\.cn\/filepath\/elife\/.*\.jpe?g(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/agent/icbc-elife-splash-20260809/JS/ICBCLifeAppSplashImage.js?v=7, requires-body=true, binary-body-mode=true, max-size=4194304, timeout=10
 
 [MITM]
 hostname = %APPEND% image1.elife.icbc.com.cn, image2.elife.icbc.com.cn, image3.elife.icbc.com.cn, image4.elife.icbc.com.cn
