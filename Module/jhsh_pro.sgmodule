@@ -1,7 +1,7 @@
 #!name=建行生活净化
 #!desc=广告净化+开屏广告拦截
 #!author=Custom
-#!category=NoAd
+#!category=AdBlock
 #!ref=https://nssurge.com/llms.txt
 
 #!arguments = block_winnow_v3_festival:true,block_hpbanner_ad_info:true,block_hpbanner_ad_info_first:true,block_hpbanner_ad_info_second:true,block_hpbanner_ad_info_third:true,block_tag_ad_info:true,block_tag_ad_info0:true,block_tag_ad_info1:true,block_tag_ad_info2:true,block_myself_entrance_ad:true,block_mebct_ad_info:true,block_through_column_info:true
