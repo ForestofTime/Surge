@@ -1,0 +1,23 @@
+#!name=闲鱼去广告
+#!desc=原生移植 11 条响应净化、2 条广告拒绝与闲鱼专属 HTTPDNS 清理。v1
+#!author=ddgksf2013 / ForestofTime Surge 原生转换
+#!category=AdBlock
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/GoofishAds.sgmodule
+
+[Rule]
+DOMAIN-SUFFIX,iyes.youku.com,REJECT
+
+[Map Local]
+^https?:\/\/(?:g-)?acs\.m\.goofish\.com\/gw\/mtop.*splash\.ads(?:\/|\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/(?:g-)?acs\.m\.goofish\.com\/gw\/mtop\.idle\.ad\.expose(?:\/|\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+[Script]
+# 仅处理闲鱼 appkey 与闲鱼 User-Agent。保持 AMDC 原编码，只移除两个已证实的闲鱼 API 直连域名。
+闲鱼-HTTPDNS清理 = type=http-response, pattern=^http:\/\/(?:amdc\.m\.taobao\.com|(?:\d+\.){3}\d+)(?::\d+)?\/amdc\/mobileDispatch\?(?:[^&#]*&)*appkey=12431167(?:&[^#]*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/GoofishAds.js?v=1, requires-body=true, max-size=1048576, timeout=10
+
+# 将原 QX 的 11 条 jq 规则合并为一个有范围的防御性响应脚本，保留未命中的业务字段。
+闲鱼-响应净化 = type=http-response, pattern=^https?:\/\/(g-)?acs\.m\.goofish\.com\/gw\/(?:mtop\.taobao\.idle\.user\.strategy\.list|mtop\.taobao\.idlehome\.home\.circle\.list|mtop\.taobao\.idlehome\.home\.nextfresh|mtop\.taobao\.idlemtopsearch\.search\.shade|mtop\.taobao\.idlemtopsearch\.item\.search\.activate|mtop\.taobao\.idlemtopsearch\.search\.discover|mtop\.idle\.user\.page\.my\.adapter|mtop\.taobao\.idle\.item\.buy\.feeds|mtop\.taobao\.idle\.local\.home|mtop\.taobao\.idlemtopsearch\.search|mtop\.taobao\.idle\.item\.recommend)(?:\/|\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/GoofishAds.js?v=1, requires-body=true, max-size=2097152, timeout=10
+
+[MITM]
+hostname = %APPEND% acs.m.goofish.com, g-acs.m.goofish.com
