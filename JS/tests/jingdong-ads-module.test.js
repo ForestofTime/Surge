@@ -58,11 +58,11 @@ test('uses local native Surge script and avoids the unavailable remote script ho
   assert.match(moduleText, /^#!name=京东去广告$/m);
   assert.match(moduleText, /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m);
   assert.match(moduleText, /^京东-广告响应净化 = type=http-response,/m);
-  assert.match(moduleText, /\/JS\/JingdongAds\.js\?v=2/);
+  assert.match(moduleText, /\/JS\/JingdongAds\.js\?v=3/);
   assert.match(moduleText, /requires-body=true/);
   assert.match(moduleText, /max-size=2097152/);
   assert.doesNotMatch(moduleText, /(?:rucu6\.pages\.dev|kelee\.one)/);
-  assert.doesNotMatch(moduleText, /PROTOCOL TCP|REJECT-NO-DROP|cartCouponRecommendGoods|recommendShop/);
+  assert.doesNotMatch(moduleText, /PROTOCOL TCP|REJECT-NO-DROP/);
   assert.deepEqual(sectionLines(moduleText, 'MITM'), ['hostname = %APPEND% api.m.jd.com, m.360buyimg.com']);
 });
 
@@ -75,8 +75,16 @@ test('uses the HAR-confirmed full-screen canvas path as a launch-material fallba
   );
 });
 
-test('handles functionId in the request body and returns valid JSON for proven recommendation endpoints', () => {
-  for (const functionId of ['searchBoxWord', 'stationPullService', 'uniformRecommend0', 'uniformRecommend6']) {
+test('handles functionId in the request body and returns valid JSON for independent recommendation endpoints', () => {
+  for (const functionId of [
+    'cartCouponRecommendGoods',
+    'recommendShop',
+    'searchBoxWord',
+    'stationPullService',
+    'uniformRecommend',
+    'uniformRecommend0',
+    'uniformRecommend6',
+  ]) {
     assert.deepEqual(runPostJson(functionId, { data: { ad: true } }), {});
   }
 });
@@ -123,6 +131,23 @@ test('removes delivery, order and service-center promotions without removing ord
   assert.deepEqual(orders.floors[0].data.virtualServiceCenters[0].serviceList, [{ serviceTitle: '物流服务' }]);
   assert.deepEqual(orders.floors[1].data, { moreText: ' ' });
   assert.equal(orders.floors[2].data.count, 2);
+});
+
+test('removes only confirmed cart recommendation fields and preserves real cart products', () => {
+  const cart = runPostJson('cart', {
+    cartLocationMap: {
+      loc_emptyCartFloor2: { floorType: 'recommend' },
+      loc_summary: { price: 188 },
+    },
+    emptyCartRecommendFloor: { items: [{ sku: 'ad' }] },
+    vendors: [{ vendorId: 'v1', products: [{ skuId: '10001', name: '真实商品' }] }],
+    couponInfo: { count: 1 },
+  });
+  assert.deepEqual(cart, {
+    cartLocationMap: { loc_summary: { price: 188 } },
+    vendors: [{ vendorId: 'v1', products: [{ skuId: '10001', name: '真实商品' }] }],
+    couponInfo: { count: 1 },
+  });
 });
 
 test('cleans known profile promotions in both response layouts and keeps wallet/order tools', () => {

@@ -59,6 +59,9 @@
     case 'queryPagePopWindow':
       changed = cleanPagePopup(response);
       break;
+    case 'cart':
+      changed = cleanCart(response);
+      break;
     default:
       break;
   }
@@ -88,15 +91,27 @@ function isManagedFunction(functionId) {
     'start',
     'welcomeHome',
     'queryPagePopWindow',
+    'cart',
+    'cartCouponRecommendGoods',
+    'recommendShop',
     'searchBoxWord',
     'stationPullService',
+    'uniformRecommend',
     'uniformRecommend0',
     'uniformRecommend6',
   ]).has(functionId);
 }
 
 function isEmptyResponseFunction(functionId) {
-  return new Set(['searchBoxWord', 'stationPullService', 'uniformRecommend0', 'uniformRecommend6']).has(functionId);
+  return new Set([
+    'cartCouponRecommendGoods',
+    'recommendShop',
+    'searchBoxWord',
+    'stationPullService',
+    'uniformRecommend',
+    'uniformRecommend0',
+    'uniformRecommend6',
+  ]).has(functionId);
 }
 
 function cleanDelivery(response) {
@@ -271,6 +286,19 @@ function cleanPagePopup(response) {
   }
   if (hasOwn(response, 'channelPoint') && (!Array.isArray(response.channelPoint) || response.channelPoint.length > 0)) {
     response.channelPoint = [];
+    changed = true;
+  }
+  return changed;
+}
+
+function cleanCart(response) {
+  let changed = false;
+  if (isObject(response.cartLocationMap) && hasOwn(response.cartLocationMap, 'loc_emptyCartFloor2')) {
+    delete response.cartLocationMap.loc_emptyCartFloor2;
+    changed = true;
+  }
+  if (hasOwn(response, 'emptyCartRecommendFloor')) {
+    delete response.emptyCartRecommendFloor;
     changed = true;
   }
   return changed;
