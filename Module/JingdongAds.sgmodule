@@ -1,23 +1,18 @@
-#!name=京东去广告
-#!desc=原生处理开屏、首页、订单、购物车和我的页面广告配置，禁用推荐缓存并保留成功响应。v10
-#!author=RuCu6 / Kelee 规则语义，ForestofTime Surge 原生实现
+#!name=京东去开屏
+#!desc=仅处理京东 App 开屏素材，不修改首页、购物车、我的页面或业务接口。v11
+#!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/JingdongAds.sgmodule
 
 [Rule]
-URL-REGEX,^http:\/\/\w{32}\.jddebug\.com\/diagnose\?,REJECT,extended-matching
-# 抓包模式将开屏素材降级为 HTTP/2 后 Map Local 才命中。正常模式禁用该主机的 QUIC，避免绕过 HTTP 引擎。
+# 正常模式禁用素材主机的 QUIC，使请求回落到可由 Map Local 处理的 HTTP/2。
 AND, ((PROTOCOL, UDP), (DOMAIN, m.360buyimg.com)), REJECT
 
 [Map Local]
-# HAR 已确认的开屏画布尺寸类路径。该规则不依赖活动素材 ID，并用最小有效 HTTP 响应阻止图片解码。
+# HAR 与真机已确认的开屏画布尺寸类路径，不依赖活动素材 ID。
 ^https?:\/\/m\.360buyimg\.com\/mobilecms\/s1125x2436_jfs(?:\/|$) data-type=text data=" " status-code=200
 
-[Script]
-# HAR 中部分 functionId 位于 POST body，旧模块仅匹配 URL 参数而完全漏过。匹配 client.action 后由本地脚本在 URL 与 POST body 中精确分派。
-京东-广告响应净化 = type=http-response, pattern=^https?:\/\/api\.m\.jd\.com\/client\.action(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongAds.js?v=10, requires-body=true, max-size=2097152, timeout=10
-
 [MITM]
-hostname = %APPEND% api.m.jd.com, m.360buyimg.com
+hostname = %APPEND% m.360buyimg.com
 tcp-connection = true
