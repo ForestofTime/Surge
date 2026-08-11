@@ -81,14 +81,12 @@ function requestFunctionId(url, body) {
 }
 
 function isEmptyResponseFunction(functionId) {
+  if (/^uniformRecommend\d*$/i.test(functionId)) return true;
   return new Set([
     'cartCouponRecommendGoods',
     'recommendShop',
     'searchBoxWord',
     'stationPullService',
-    'uniformRecommend',
-    'uniformRecommend0',
-    'uniformRecommend6',
   ]).has(functionId);
 }
 

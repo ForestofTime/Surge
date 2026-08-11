@@ -63,7 +63,7 @@ test('uses local native Surge script and avoids the unavailable remote script ho
   assert.match(moduleText, /^#!name=京东去广告$/m);
   assert.match(moduleText, /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m);
   assert.match(moduleText, /^京东-广告响应净化 = type=http-response,/m);
-  assert.match(moduleText, /\/JS\/JingdongAds\.js\?v=6/);
+  assert.match(moduleText, /\/JS\/JingdongAds\.js\?v=7/);
   assert.match(moduleText, /requires-body=true/);
   assert.match(moduleText, /max-size=2097152/);
   assert.doesNotMatch(moduleText, /(?:rucu6\.pages\.dev|kelee\.one)/);
@@ -89,6 +89,13 @@ test('handles functionId in the request body and returns valid JSON for independ
     'uniformRecommend',
     'uniformRecommend0',
     'uniformRecommend6',
+    'uniformRecommend9',
+    'uniformRecommend47',
+    'uniformRecommend52',
+    'uniformRecommend71',
+    'uniformRecommend72',
+    'uniformRecommend73',
+    'uniformRecommend78',
   ]) {
     assert.deepEqual(runPostJson(functionId, { data: { ad: true } }), {});
   }
@@ -327,6 +334,18 @@ test('replays current HAR evidence without reading or asserting request credenti
   assert.equal(basicOutput.data.JDCart.UseCartCacheData.isUseCartCacheDataDegrade, '0');
   assert.equal(basicOutput.data.JDCart.CacheConfig.open, '0');
   assert.equal(basicOutput.data.mPaaSABTest.CartCacheDataDegrade.isOn, '0');
+
+  const guardedFunctions = basicOutput.data['Eva-Upload']['jdg-switches'].jdguard_function_list;
+  const serviceUnitFunctions = basicOutput.data.JDFoundationConfig.NetSafeConfig.serviceUnitFunctionIds;
+  const numberedRecommendations = [...new Set([...guardedFunctions, ...serviceUnitFunctions])]
+    .filter((functionId) => /^uniformRecommend\d+$/i.test(functionId));
+  assert.deepEqual(
+    [...numberedRecommendations].sort(),
+    ['uniformRecommend47', 'uniformRecommend52', 'uniformRecommend71', 'uniformRecommend72', 'uniformRecommend73', 'uniformRecommend78', 'uniformRecommend9']
+  );
+  for (const functionId of numberedRecommendations) {
+    assert.deepEqual(runPostJson(functionId, { code: 0, result: { wareInfoList: [{ skuId: 'ad' }] } }), {});
+  }
 
   const popup = entries.find((entry) => /[?&]functionId=queryPagePopWindow(?:&|$)/.test(entry.request && entry.request.url || '') && entry.response && entry.response.content && entry.response.content.text);
   if (popup) {
