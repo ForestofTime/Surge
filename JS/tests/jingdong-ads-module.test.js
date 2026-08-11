@@ -8,6 +8,8 @@ const modulePath = path.resolve(__dirname, '../../Module/JingdongAds.sgmodule');
 const scriptPath = path.resolve(__dirname, '../JingdongAds.js');
 const readmePath = path.resolve(__dirname, '../../README.md');
 const harPaths = [
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-112851.har',
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-111609.har',
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-110627.har',
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-105350.har',
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-093154.har',
@@ -63,7 +65,7 @@ test('uses local native Surge script and avoids the unavailable remote script ho
   assert.match(moduleText, /^#!name=京东去广告$/m);
   assert.match(moduleText, /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m);
   assert.match(moduleText, /^京东-广告响应净化 = type=http-response,/m);
-  assert.match(moduleText, /\/JS\/JingdongAds\.js\?v=7/);
+  assert.match(moduleText, /\/JS\/JingdongAds\.js\?v=8/);
   assert.match(moduleText, /requires-body=true/);
   assert.match(moduleText, /max-size=2097152/);
   assert.doesNotMatch(moduleText, /(?:rucu6\.pages\.dev|kelee\.one)/);
@@ -83,6 +85,7 @@ test('uses the HAR-confirmed full-screen canvas path as a launch-material fallba
 test('handles functionId in the request body and returns valid JSON for independent recommendation endpoints', () => {
   for (const functionId of [
     'cartCouponRecommendGoods',
+    'cartRecommender',
     'recommendShop',
     'searchBoxWord',
     'stationPullService',
@@ -115,6 +118,9 @@ test('disables only known HTTPDNS and socket-ahead configuration fields', () => 
         mpdFirstItemCacheConfig: { value: { open: '1', keep: true } },
         cacheDataOptimizationAB: { cacheDataOptimizationAB: '1' },
       },
+      JDMyJd: {
+        useChineseTaroPageV15750: { value: '1', keep: true },
+      },
       JDFinderCache: {
         productRecommendXJ: { enable: '1' },
         personCenterDrawerXJ: { enable: '1' },
@@ -140,6 +146,11 @@ test('disables only known HTTPDNS and socket-ahead configuration fields', () => 
   assert.equal(output.data.JDUniformRecommend.mpdFirstItemCacheConfig.value.open, '0');
   assert.equal(output.data.JDUniformRecommend.mpdFirstItemCacheConfig.value.keep, true);
   assert.equal(output.data.JDUniformRecommend.cacheDataOptimizationAB.cacheDataOptimizationAB, '0');
+  assert.deepEqual(output.data.JDUniformRecommend.switchCartTaroRecommendComponentReuseV15280, {
+    recommondOpenV: '0',
+  });
+  assert.equal(output.data.JDMyJd.useChineseTaroPageV15750.value, '0');
+  assert.equal(output.data.JDMyJd.useChineseTaroPageV15750.keep, true);
   assert.equal(output.data.JDFinderCache.productRecommendXJ.enable, '0');
   assert.equal(output.data.JDFinderCache.personCenterDrawerXJ.enable, '0');
   assert.equal(output.data.JDCart.UseCartCacheData.isUseCartCacheDataDegrade, '0');
@@ -217,6 +228,11 @@ test('cleans known profile promotions in both response layouts and keeps wallet/
   const output = runJson('personinfoBusiness', {
     floors: [
       { mId: 'bigSaleFloor' },
+      { mId: 'conciseBigSaleTNFloor' },
+      { mId: 'newBigSaleFloorTN' },
+      { mId: 'conciseBigSaleFloor' },
+      { mId: 'conciseBigSaleFloorTNLarge' },
+      { mId: 'wmAttentionTN' },
       { mId: 'basefloorinfo', data: { commonPopup: {}, commonTips: ['续费'], floatLayer: {} } },
       { mId: 'orderIdFloor', data: { commentRemindInfo: { infos: [{ id: 1 }] } } },
       { mId: 'userinfo', data: { newPlusBlackCard: {}, wallet: { balance: 1 } } },
@@ -329,6 +345,11 @@ test('replays current HAR evidence without reading or asserting request credenti
   assert.equal(basicOutput.data.JDUniformRecommend.uniformRecommendCache.uniformRecommendCache, '0');
   assert.equal(basicOutput.data.JDUniformRecommend.mpdFirstItemCacheConfig.value.open, '0');
   assert.equal(basicOutput.data.JDUniformRecommend.cacheDataOptimizationAB.cacheDataOptimizationAB, '0');
+  assert.equal(
+    basicOutput.data.JDUniformRecommend.switchCartTaroRecommendComponentReuseV15280.recommondOpenV,
+    '0'
+  );
+  assert.equal(basicOutput.data.JDMyJd.useChineseTaroPageV15750.value, '0');
   assert.equal(basicOutput.data.JDFinderCache.productRecommendXJ.enable, '0');
   assert.equal(basicOutput.data.JDFinderCache.personCenterDrawerXJ.enable, '0');
   assert.equal(basicOutput.data.JDCart.UseCartCacheData.isUseCartCacheDataDegrade, '0');

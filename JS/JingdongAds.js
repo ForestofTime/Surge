@@ -84,6 +84,7 @@ function isEmptyResponseFunction(functionId) {
   if (/^uniformRecommend\d*$/i.test(functionId)) return true;
   return new Set([
     'cartCouponRecommendGoods',
+    'cartRecommender',
     'recommendShop',
     'searchBoxWord',
     'stationPullService',
@@ -156,12 +157,17 @@ function cleanProfileFloors(floors) {
   const removeIds = new Set([
     'bigSaleFloor',
     'buyOften',
+    'conciseBigSaleFloor',
+    'conciseBigSaleFloorTNLarge',
+    'conciseBigSaleTNFloor',
     'newAttentionCard',
     'newBigSaleFloor',
+    'newBigSaleFloorTN',
     'newStyleAttentionCard',
     'newsFloor',
     'noticeFloor',
     'recommendfloor',
+    'wmAttentionTN',
   ]);
   const before = floors.length;
   const retained = floors.filter((floor) => !floor || !removeIds.has(floor.mId));
@@ -251,8 +257,8 @@ function cleanBasicConfig(response) {
     changed = true;
   }
 
-  // HAR 2026-08-11 已确认：这些开关直接控制广告降级与“我的”推荐缓存。
-  // 仅在服务端原本下发该字段时改写，避免向未知版本注入新配置。
+  // HAR 2026-08-11 已确认：这些开关直接控制广告降级、推荐缓存与新版“我的”页面。
+  // 除购物车 Taro 推荐组件的明确开关外，仅改写服务端原本下发的字段。
   for (const [path, value] of [
     [['JDAdsCore', 'adDegradationConfig', 'degraded'], '1'],
     [['JDUniformRecommend', 'JDUniformRecommendmMyJdCache', 'JDUniformRecommendmMyJdCache'], '0'],
@@ -264,8 +270,23 @@ function cleanBasicConfig(response) {
     [['JDCart', 'UseCartCacheData', 'isUseCartCacheDataDegrade'], '0'],
     [['JDCart', 'CacheConfig', 'open'], '0'],
     [['mPaaSABTest', 'CartCacheDataDegrade', 'isOn'], '0'],
+    [['JDMyJd', 'useChineseTaroPageV15750', 'value'], '0'],
   ]) {
     changed = setExistingValue(data, path, value) || changed;
+  }
+
+  // 当前购物车动态包明确读取这一组 MobileConfig。服务端 basicConfig 未下发该键，
+  // 因而必须补入关闭值，才能阻止旧缓存商品流继续创建“你可能还喜欢”组件。
+  const uniformRecommend = data.JDUniformRecommend;
+  if (isObject(uniformRecommend)) {
+    const cartTaroSwitch = uniformRecommend.switchCartTaroRecommendComponentReuseV15280;
+    if (!isObject(cartTaroSwitch)) {
+      uniformRecommend.switchCartTaroRecommendComponentReuseV15280 = { recommondOpenV: '0' };
+      changed = true;
+    } else if (cartTaroSwitch.recommondOpenV !== '0') {
+      cartTaroSwitch.recommondOpenV = '0';
+      changed = true;
+    }
   }
   return changed;
 }
