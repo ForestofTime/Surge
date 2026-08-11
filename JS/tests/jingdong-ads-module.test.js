@@ -215,7 +215,7 @@ test('documents the Raw module and one-click Surge import', () => {
   assert.match(readmeText, /Module\/JingdongAds\.sgmodule/);
   assert.match(
     readmeText,
-    /api\.boxjs\.app\/surge\/install-module\?url=https%3A%2F%2Fraw\.githubusercontent\.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FJingdongAds\.sgmodule/
+    /surge:\/\/\/install-module\?url=https%3A%2F%2Fraw\.githubusercontent\.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FJingdongAds\.sgmodule/
   );
 });
 
