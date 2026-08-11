@@ -8,6 +8,7 @@ const modulePath = path.resolve(__dirname, '../../Module/JingdongAds.sgmodule');
 const scriptPath = path.resolve(__dirname, '../JingdongAds.js');
 const readmePath = path.resolve(__dirname, '../../README.md');
 const harPaths = [
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-122149.har',
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-114354.har',
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-112851.har',
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-111609.har',
@@ -16,6 +17,7 @@ const harPaths = [
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-093154.har',
 ];
 const harPath = harPaths.find((path) => fs.existsSync(path));
+const cacheHarPath = harPaths.find((candidate) => candidate.endsWith('2026-08-11-122149.har') && fs.existsSync(candidate));
 const splashHarPath = harPaths.find((candidate) => candidate.endsWith('2026-08-11-093154.har') && fs.existsSync(candidate));
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const scriptText = fs.readFileSync(scriptPath, 'utf8');
@@ -67,12 +69,19 @@ test('uses local native Surge script and avoids the unavailable remote script ho
   assert.match(moduleText, /^#!name=京东去广告$/m);
   assert.match(moduleText, /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m);
   assert.match(moduleText, /^京东-广告响应净化 = type=http-response,/m);
-  assert.match(moduleText, /\/JS\/JingdongAds\.js\?v=9/);
+  assert.match(moduleText, /\/JS\/JingdongAds\.js\?v=10/);
   assert.match(moduleText, /requires-body=true/);
   assert.match(moduleText, /max-size=2097152/);
   assert.doesNotMatch(moduleText, /(?:rucu6\.pages\.dev|kelee\.one)/);
   assert.doesNotMatch(moduleText, /PROTOCOL TCP|REJECT-NO-DROP/);
-  assert.deepEqual(sectionLines(moduleText, 'MITM'), ['hostname = %APPEND% api.m.jd.com, m.360buyimg.com']);
+  assert.deepEqual(sectionLines(moduleText, 'MITM'), [
+    'hostname = %APPEND% api.m.jd.com, m.360buyimg.com',
+    'tcp-connection = true',
+  ]);
+  assert.ok(
+    sectionLines(moduleText, 'Rule').includes('AND, ((PROTOCOL, UDP), (DOMAIN, m.360buyimg.com)), REJECT'),
+    'launch material host must reject QUIC so Map Local can inspect the fallback request'
+  );
 });
 
 test('uses the HAR-confirmed full-screen canvas path as a launch-material fallback', () => {
@@ -111,6 +120,7 @@ test('keeps a successful uniform recommendation response while clearing only its
     const output = runPostJson(functionId, {
       code: '0',
       isRetry: '1',
+      fallBackPositionNum: 2,
       requestId: 'keep-request-id',
       mainTitle: '同兴趣的用户都在看，点击查看',
       wareInfoList: [{ wareId: '10001', imageurl: 'product.jpg' }],
@@ -118,7 +128,8 @@ test('keeps a successful uniform recommendation response while clearing only its
     });
     assert.deepEqual(output, {
       code: '0',
-      isRetry: '1',
+      isRetry: '0',
+      fallBackPositionNum: 0,
       requestId: 'keep-request-id',
       mainTitle: '同兴趣的用户都在看，点击查看',
       wareInfoList: [],
@@ -137,6 +148,7 @@ test('disables only known HTTPDNS and socket-ahead configuration fields', () => 
       JDAdsCore: { adDegradationConfig: { degraded: '0', keep: true } },
       JDUniformRecommend: {
         JDUniformRecommendmMyJdCache: { JDUniformRecommendmMyJdCache: '1' },
+        JDUniformRecommendmHomelocalCache: { JDUniformRecommendmHomelocalCache: '1' },
         uniformRecommendCache: { uniformRecommendCache: '1' },
         mpdFirstItemCacheConfig: { value: { open: '1', keep: true } },
         cacheDataOptimizationAB: { cacheDataOptimizationAB: '1' },
@@ -146,10 +158,17 @@ test('disables only known HTTPDNS and socket-ahead configuration fields', () => 
         personCenterDrawerXJ: { enable: '1' },
       },
       JDCart: {
-        UseCartCacheData: { isUseCartCacheDataDegrade: '1' },
+        UseCartCacheData: { isUseCartCacheDataDegrade: '0' },
         CacheConfig: { open: '1', productCount: '5' },
       },
-      mPaaSABTest: { CartCacheDataDegrade: { isOn: '1', isClearOn: '1' } },
+      JDMyJd: { dynamicCacheDegradeV1388: { value: '0', keep: true } },
+      mPaaSABTest: {
+        CartCacheDataDegrade: { isOn: '0', isClearOn: '1' },
+        cacheStrategies: [
+          { namespace: 'mainshopcart_cache', enable: true, duration: 604800000 },
+          { namespace: 'pd_network_cache2', enable: true, duration: 86400000 },
+        ],
+      },
       other: { keep: true },
     },
   };
@@ -162,17 +181,23 @@ test('disables only known HTTPDNS and socket-ahead configuration fields', () => 
   assert.equal(output.data.JDAdsCore.adDegradationConfig.degraded, '1');
   assert.equal(output.data.JDAdsCore.adDegradationConfig.keep, true);
   assert.equal(output.data.JDUniformRecommend.JDUniformRecommendmMyJdCache.JDUniformRecommendmMyJdCache, '0');
+  assert.equal(output.data.JDUniformRecommend.JDUniformRecommendmHomelocalCache.JDUniformRecommendmHomelocalCache, '0');
   assert.equal(output.data.JDUniformRecommend.uniformRecommendCache.uniformRecommendCache, '0');
   assert.equal(output.data.JDUniformRecommend.mpdFirstItemCacheConfig.value.open, '0');
   assert.equal(output.data.JDUniformRecommend.mpdFirstItemCacheConfig.value.keep, true);
   assert.equal(output.data.JDUniformRecommend.cacheDataOptimizationAB.cacheDataOptimizationAB, '0');
   assert.equal(output.data.JDFinderCache.productRecommendXJ.enable, '0');
   assert.equal(output.data.JDFinderCache.personCenterDrawerXJ.enable, '0');
-  assert.equal(output.data.JDCart.UseCartCacheData.isUseCartCacheDataDegrade, '0');
+  assert.equal(output.data.JDCart.UseCartCacheData.isUseCartCacheDataDegrade, '1');
   assert.equal(output.data.JDCart.CacheConfig.open, '0');
   assert.equal(output.data.JDCart.CacheConfig.productCount, '5');
-  assert.equal(output.data.mPaaSABTest.CartCacheDataDegrade.isOn, '0');
+  assert.equal(output.data.JDMyJd.dynamicCacheDegradeV1388.value, '1');
+  assert.equal(output.data.JDMyJd.dynamicCacheDegradeV1388.keep, true);
+  assert.equal(output.data.mPaaSABTest.CartCacheDataDegrade.isOn, '1');
   assert.equal(output.data.mPaaSABTest.CartCacheDataDegrade.isClearOn, '1');
+  assert.equal(output.data.mPaaSABTest.cacheStrategies[0].enable, false);
+  assert.equal(output.data.mPaaSABTest.cacheStrategies[0].duration, 604800000);
+  assert.equal(output.data.mPaaSABTest.cacheStrategies[1].enable, true);
   assert.deepEqual(output.data.other, { keep: true });
 });
 
@@ -360,14 +385,20 @@ test('replays current HAR evidence without reading or asserting request credenti
   assert.equal(basicOutput.data.JDHttpToolKit.httpdns.httpdns, 0);
   assert.equal(basicOutput.data.JDAdsCore.adDegradationConfig.degraded, '1');
   assert.equal(basicOutput.data.JDUniformRecommend.JDUniformRecommendmMyJdCache.JDUniformRecommendmMyJdCache, '0');
+  assert.equal(basicOutput.data.JDUniformRecommend.JDUniformRecommendmHomelocalCache.JDUniformRecommendmHomelocalCache, '0');
   assert.equal(basicOutput.data.JDUniformRecommend.uniformRecommendCache.uniformRecommendCache, '0');
   assert.equal(basicOutput.data.JDUniformRecommend.mpdFirstItemCacheConfig.value.open, '0');
   assert.equal(basicOutput.data.JDUniformRecommend.cacheDataOptimizationAB.cacheDataOptimizationAB, '0');
   assert.equal(basicOutput.data.JDFinderCache.productRecommendXJ.enable, '0');
   assert.equal(basicOutput.data.JDFinderCache.personCenterDrawerXJ.enable, '0');
-  assert.equal(basicOutput.data.JDCart.UseCartCacheData.isUseCartCacheDataDegrade, '0');
+  assert.equal(basicOutput.data.JDCart.UseCartCacheData.isUseCartCacheDataDegrade, '1');
   assert.equal(basicOutput.data.JDCart.CacheConfig.open, '0');
-  assert.equal(basicOutput.data.mPaaSABTest.CartCacheDataDegrade.isOn, '0');
+  assert.equal(basicOutput.data.JDMyJd.dynamicCacheDegradeV1388.value, '1');
+  assert.equal(basicOutput.data.mPaaSABTest.CartCacheDataDegrade.isOn, '1');
+  assert.equal(
+    basicOutput.data.mPaaSABTest.cacheStrategies.find((strategy) => strategy.namespace === 'mainshopcart_cache').enable,
+    false
+  );
 
   const guardedFunctions = basicOutput.data['Eva-Upload']['jdg-switches'].jdguard_function_list;
   const serviceUnitFunctions = basicOutput.data.JDFoundationConfig.NetSafeConfig.serviceUnitFunctionIds;
@@ -404,4 +435,28 @@ test('replays current HAR evidence without reading or asserting request credenti
   if (popup) {
     assert.equal(JSON.stringify(runScript('queryPagePopWindow', popup.response.content.text, { url: popup.request.url })), '{}');
   }
+});
+
+test('replays v9 transport and cache bypass evidence from the latest capture', { skip: !cacheHarPath }, () => {
+  const har = JSON.parse(fs.readFileSync(cacheHarPath, 'utf8'));
+  const entries = har.log.entries;
+  const mappedSplashMaterials = entries.filter((entry) =>
+    String(entry.comment || '').includes('Matched map local rule: ^https?:\\/\\/m\\.360buyimg\\.com\\/mobilecms\\/s1125x2436_jfs')
+  );
+  assert.equal(mappedSplashMaterials.length, 4);
+  assert.ok(mappedSplashMaterials.every((entry) => String(entry.comment || '').includes('capture MITM viaride setting entry: *')));
+
+  const networkRecommendationCalls = entries.filter((entry) =>
+    /(?:^|[?&])functionId=uniformRecommend\d*(?:&|$)/i.test(
+      (entry.request && entry.request.url || '') + '&' + (entry.request && entry.request.postData && entry.request.postData.text || '')
+    )
+  );
+  assert.equal(networkRecommendationCalls.length, 0);
+
+  const cachedRecommendationImages = entries.filter((entry) =>
+    Array.isArray(entry.request && entry.request.headers) && entry.request.headers.some((header) =>
+      String(header.name || '').toLowerCase() === 'referer' && String(header.value || '').startsWith('download_JDURImageRef')
+    )
+  );
+  assert.equal(cachedRecommendationImages.length, 42);
 });

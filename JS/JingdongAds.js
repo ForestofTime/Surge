@@ -94,10 +94,24 @@ function isEmptyResponseFunction(functionId) {
 }
 
 function cleanUniformRecommend(response) {
-  if (!Array.isArray(response && response.wareInfoList) || response.wareInfoList.length === 0) {
-    return false;
+  if (!isObject(response)) return false;
+  let changed = false;
+  if (Array.isArray(response.wareInfoList) && response.wareInfoList.length > 0) {
+    response.wareInfoList = [];
+    changed = true;
   }
-  response.wareInfoList = [];
+  // 当前接口即使 code=0，仍会下发 isRetry=1 与 fallBackPositionNum>0。
+  // 商品数组被清空后继续保留这两个信号，会触发重试、转圈及缓存商品回填。
+  changed = setZeroIfPresent(response, 'isRetry') || changed;
+  changed = setZeroIfPresent(response, 'fallBackPositionNum') || changed;
+  return changed;
+}
+
+function setZeroIfPresent(object, key) {
+  if (!hasOwn(object, key)) return false;
+  const zero = typeof object[key] === 'string' ? '0' : 0;
+  if (object[key] === zero) return false;
+  object[key] = zero;
   return true;
 }
 
@@ -272,16 +286,26 @@ function cleanBasicConfig(response) {
   for (const [path, value] of [
     [['JDAdsCore', 'adDegradationConfig', 'degraded'], '1'],
     [['JDUniformRecommend', 'JDUniformRecommendmMyJdCache', 'JDUniformRecommendmMyJdCache'], '0'],
+    [['JDUniformRecommend', 'JDUniformRecommendmHomelocalCache', 'JDUniformRecommendmHomelocalCache'], '0'],
     [['JDUniformRecommend', 'uniformRecommendCache', 'uniformRecommendCache'], '0'],
     [['JDUniformRecommend', 'mpdFirstItemCacheConfig', 'value', 'open'], '0'],
     [['JDUniformRecommend', 'cacheDataOptimizationAB', 'cacheDataOptimizationAB'], '0'],
     [['JDFinderCache', 'productRecommendXJ', 'enable'], '0'],
     [['JDFinderCache', 'personCenterDrawerXJ', 'enable'], '0'],
-    [['JDCart', 'UseCartCacheData', 'isUseCartCacheDataDegrade'], '0'],
+    [['JDMyJd', 'dynamicCacheDegradeV1388', 'value'], '1'],
+    [['JDCart', 'UseCartCacheData', 'isUseCartCacheDataDegrade'], '1'],
     [['JDCart', 'CacheConfig', 'open'], '0'],
-    [['mPaaSABTest', 'CartCacheDataDegrade', 'isOn'], '0'],
+    [['mPaaSABTest', 'CartCacheDataDegrade', 'isOn'], '1'],
   ]) {
     changed = setExistingValue(data, path, value) || changed;
+  }
+  const cacheStrategies = data.mPaaSABTest && data.mPaaSABTest.cacheStrategies;
+  if (Array.isArray(cacheStrategies)) {
+    for (const strategy of cacheStrategies) {
+      if (!isObject(strategy) || strategy.namespace !== 'mainshopcart_cache' || strategy.enable === false) continue;
+      strategy.enable = false;
+      changed = true;
+    }
   }
   return changed;
 }
