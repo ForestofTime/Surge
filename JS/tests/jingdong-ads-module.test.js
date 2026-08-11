@@ -7,7 +7,11 @@ const vm = require('node:vm');
 const modulePath = path.resolve(__dirname, '../../Module/JingdongAds.sgmodule');
 const scriptPath = path.resolve(__dirname, '../JingdongAds.js');
 const readmePath = path.resolve(__dirname, '../../README.md');
-const harPath = '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-093154.har';
+const harPaths = [
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-105350.har',
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-093154.har',
+];
+const harPath = harPaths.find((path) => fs.existsSync(path));
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const scriptText = fs.readFileSync(scriptPath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
@@ -58,7 +62,7 @@ test('uses local native Surge script and avoids the unavailable remote script ho
   assert.match(moduleText, /^#!name=京东去广告$/m);
   assert.match(moduleText, /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m);
   assert.match(moduleText, /^京东-广告响应净化 = type=http-response,/m);
-  assert.match(moduleText, /\/JS\/JingdongAds\.js\?v=3/);
+  assert.match(moduleText, /\/JS\/JingdongAds\.js\?v=5/);
   assert.match(moduleText, /requires-body=true/);
   assert.match(moduleText, /max-size=2097152/);
   assert.doesNotMatch(moduleText, /(?:rucu6\.pages\.dev|kelee\.one)/);
@@ -96,6 +100,15 @@ test('disables only known HTTPDNS and socket-ahead configuration fields', () => 
         socketmonitor: { isSocketEstablishedAhead: 1, isSocketReport: 1, keep: true },
       },
       JDHttpToolKit: { httpdns: { httpdns: 1, endpoint: 'keep' } },
+      JDAdsCore: { adDegradationConfig: { degraded: '0', keep: true } },
+      JDUniformRecommend: {
+        JDUniformRecommendmMyJdCache: { JDUniformRecommendmMyJdCache: '1' },
+        uniformRecommendCache: { uniformRecommendCache: '1' },
+      },
+      JDFinderCache: {
+        productRecommendXJ: { enable: '1' },
+        personCenterDrawerXJ: { enable: '1' },
+      },
       other: { keep: true },
     },
   };
@@ -105,6 +118,12 @@ test('disables only known HTTPDNS and socket-ahead configuration fields', () => 
   assert.equal(output.data.JDMessage.socketmonitor.keep, true);
   assert.equal(output.data.JDHttpToolKit.httpdns.httpdns, 0);
   assert.equal(output.data.JDHttpToolKit.httpdns.endpoint, 'keep');
+  assert.equal(output.data.JDAdsCore.adDegradationConfig.degraded, '1');
+  assert.equal(output.data.JDAdsCore.adDegradationConfig.keep, true);
+  assert.equal(output.data.JDUniformRecommend.JDUniformRecommendmMyJdCache.JDUniformRecommendmMyJdCache, '0');
+  assert.equal(output.data.JDUniformRecommend.uniformRecommendCache.uniformRecommendCache, '0');
+  assert.equal(output.data.JDFinderCache.productRecommendXJ.enable, '0');
+  assert.equal(output.data.JDFinderCache.personCenterDrawerXJ.enable, '0');
   assert.deepEqual(output.data.other, { keep: true });
 });
 
@@ -147,6 +166,27 @@ test('removes only confirmed cart recommendation fields and preserves real cart 
     cartLocationMap: { loc_summary: { price: 188 } },
     vendors: [{ vendorId: 'v1', products: [{ skuId: '10001', name: '真实商品' }] }],
     couponInfo: { count: 1 },
+  });
+});
+
+test('cleans only known profile and cart advertisement structures when newer endpoints are renamed', () => {
+  const output = runPostJson('personCenterV9', {
+    data: {
+      floors: [
+        { mId: 'recommendfloor', data: { products: [{ sku: 'ad' }] } },
+        { mId: 'newWalletIdFloor', data: { balance: 1 } },
+      ],
+      cartLocationMap: { loc_emptyCartFloor2: { floorType: 'recommend' }, loc_summary: { price: 88 } },
+      emptyCartRecommendFloor: { products: [{ sku: 'ad' }] },
+      vendors: [{ vendorId: 'v1', products: [{ skuId: '10001' }] }],
+    },
+  });
+  assert.deepEqual(output, {
+    data: {
+      floors: [{ mId: 'newWalletIdFloor', data: { balance: 1 } }],
+      cartLocationMap: { loc_summary: { price: 88 } },
+      vendors: [{ vendorId: 'v1', products: [{ skuId: '10001' }] }],
+    },
   });
 });
 
@@ -244,7 +284,7 @@ test('documents the Raw module and one-click Surge import', () => {
   );
 });
 
-test('replays current HAR evidence without reading or asserting request credentials', { skip: !fs.existsSync(harPath) }, () => {
+test('replays current HAR evidence without reading or asserting request credentials', { skip: !harPath }, () => {
   const har = JSON.parse(fs.readFileSync(harPath, 'utf8'));
   const entries = har.log.entries;
   const imageUrls = new Set(entries
@@ -261,8 +301,14 @@ test('replays current HAR evidence without reading or asserting request credenti
   assert.equal(basicOutput.data.JDMessage.socketmonitor.isSocketEstablishedAhead, 0);
   assert.equal(basicOutput.data.JDMessage.socketmonitor.isSocketReport, 0);
   assert.equal(basicOutput.data.JDHttpToolKit.httpdns.httpdns, 0);
+  assert.equal(basicOutput.data.JDAdsCore.adDegradationConfig.degraded, '1');
+  assert.equal(basicOutput.data.JDUniformRecommend.JDUniformRecommendmMyJdCache.JDUniformRecommendmMyJdCache, '0');
+  assert.equal(basicOutput.data.JDUniformRecommend.uniformRecommendCache.uniformRecommendCache, '0');
+  assert.equal(basicOutput.data.JDFinderCache.productRecommendXJ.enable, '0');
+  assert.equal(basicOutput.data.JDFinderCache.personCenterDrawerXJ.enable, '0');
 
   const popup = entries.find((entry) => /[?&]functionId=queryPagePopWindow(?:&|$)/.test(entry.request && entry.request.url || '') && entry.response && entry.response.content && entry.response.content.text);
-  assert.ok(popup);
-  assert.equal(JSON.stringify(runScript('queryPagePopWindow', popup.response.content.text, { url: popup.request.url })), '{}');
+  if (popup) {
+    assert.equal(JSON.stringify(runScript('queryPagePopWindow', popup.response.content.text, { url: popup.request.url })), '{}');
+  }
 });

@@ -2,7 +2,8 @@
  * 京东广告响应净化
  *
  * 来源规则：RuCu6 / Kelee 的 JD_remove_ads.js 及 QingRex 京东模块。
- * 仅处理明确列出的 functionId，未匹配的接口及字段保持原样。
+ * 先按明确列出的 functionId 分派；新版页面改名时，仅按已确认的广告字段清理，
+ * 其余接口及字段保持原样。
  */
 
 (function () {
@@ -13,11 +14,6 @@
   }
 
   const functionId = requestFunctionId($request && $request.url, $request && $request.body);
-  if (!isManagedFunction(functionId)) {
-    $done({});
-    return;
-  }
-
   if (isEmptyResponseFunction(functionId)) {
     $done({ body: '{}' });
     return;
@@ -66,6 +62,10 @@
       break;
   }
 
+  // 当前 GitHub 规则把“我的”和购物车处理绑定在旧 functionId 上。
+  // 新版 App 若只替换接口名，仍仅依据原规则已确认的广告结构处理。
+  changed = cleanKnownPageSurfaces(response) || changed;
+
   $done(changed ? { body: JSON.stringify(response) } : {});
 })();
 
@@ -78,28 +78,6 @@ function requestFunctionId(url, body) {
   } catch (_) {
     return match[1];
   }
-}
-
-function isManagedFunction(functionId) {
-  return new Set([
-    'basicConfig',
-    'deliverLayer',
-    'getTabHomeInfo',
-    'myOrderInfo',
-    'orderTrackBusiness',
-    'personinfoBusiness',
-    'start',
-    'welcomeHome',
-    'queryPagePopWindow',
-    'cart',
-    'cartCouponRecommendGoods',
-    'recommendShop',
-    'searchBoxWord',
-    'stationPullService',
-    'uniformRecommend',
-    'uniformRecommend0',
-    'uniformRecommend6',
-  ]).has(functionId);
 }
 
 function isEmptyResponseFunction(functionId) {
@@ -274,7 +252,31 @@ function cleanBasicConfig(response) {
     httpDns.httpdns = 0;
     changed = true;
   }
+
+  // HAR 2026-08-11 已确认：这些开关直接控制广告降级与“我的”推荐缓存。
+  // 仅在服务端原本下发该字段时改写，避免向未知版本注入新配置。
+  for (const [path, value] of [
+    [['JDAdsCore', 'adDegradationConfig', 'degraded'], '1'],
+    [['JDUniformRecommend', 'JDUniformRecommendmMyJdCache', 'JDUniformRecommendmMyJdCache'], '0'],
+    [['JDUniformRecommend', 'uniformRecommendCache', 'uniformRecommendCache'], '0'],
+    [['JDFinderCache', 'productRecommendXJ', 'enable'], '0'],
+    [['JDFinderCache', 'personCenterDrawerXJ', 'enable'], '0'],
+  ]) {
+    changed = setExistingValue(data, path, value) || changed;
+  }
   return changed;
+}
+
+function setExistingValue(root, path, value) {
+  let parent = root;
+  for (const key of path.slice(0, -1)) {
+    if (!isObject(parent[key])) return false;
+    parent = parent[key];
+  }
+  const key = path.at(-1);
+  if (!hasOwn(parent, key) || parent[key] === value) return false;
+  parent[key] = value;
+  return true;
 }
 
 function cleanPagePopup(response) {
@@ -300,6 +302,16 @@ function cleanCart(response) {
   if (hasOwn(response, 'emptyCartRecommendFloor')) {
     delete response.emptyCartRecommendFloor;
     changed = true;
+  }
+  return changed;
+}
+
+function cleanKnownPageSurfaces(response) {
+  let changed = false;
+  for (const candidate of [response, response && response.data]) {
+    if (!isObject(candidate)) continue;
+    changed = cleanCart(candidate) || changed;
+    changed = cleanProfile(candidate) || changed;
   }
   return changed;
 }
