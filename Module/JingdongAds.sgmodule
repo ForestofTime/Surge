@@ -1,5 +1,5 @@
 #!name=京东去广告
-#!desc=原生处理开屏、首页、订单、购物车和我的页面广告配置，启用广告降级并关闭推荐缓存。v5
+#!desc=原生处理开屏、首页、订单、购物车和我的页面广告配置，禁用已确认的商品推荐缓存。v6
 #!author=RuCu6 / Kelee 规则语义，ForestofTime Surge 原生实现
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
@@ -14,7 +14,7 @@ URL-REGEX,^http:\/\/\w{32}\.jddebug\.com\/diagnose\?,REJECT,extended-matching
 
 [Script]
 # HAR 中部分 functionId 位于 POST body，旧模块仅匹配 URL 参数而完全漏过。匹配 client.action 后由本地脚本在 URL 与 POST body 中精确分派。
-京东-广告响应净化 = type=http-response, pattern=^https?:\/\/api\.m\.jd\.com\/client\.action(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongAds.js?v=5, requires-body=true, max-size=2097152, timeout=10
+京东-广告响应净化 = type=http-response, pattern=^https?:\/\/api\.m\.jd\.com\/client\.action(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongAds.js?v=6, requires-body=true, max-size=2097152, timeout=10
 
 [MITM]
 hostname = %APPEND% api.m.jd.com, m.360buyimg.com

@@ -259,8 +259,13 @@ function cleanBasicConfig(response) {
     [['JDAdsCore', 'adDegradationConfig', 'degraded'], '1'],
     [['JDUniformRecommend', 'JDUniformRecommendmMyJdCache', 'JDUniformRecommendmMyJdCache'], '0'],
     [['JDUniformRecommend', 'uniformRecommendCache', 'uniformRecommendCache'], '0'],
+    [['JDUniformRecommend', 'mpdFirstItemCacheConfig', 'value', 'open'], '0'],
+    [['JDUniformRecommend', 'cacheDataOptimizationAB', 'cacheDataOptimizationAB'], '0'],
     [['JDFinderCache', 'productRecommendXJ', 'enable'], '0'],
     [['JDFinderCache', 'personCenterDrawerXJ', 'enable'], '0'],
+    [['JDCart', 'UseCartCacheData', 'isUseCartCacheDataDegrade'], '0'],
+    [['JDCart', 'CacheConfig', 'open'], '0'],
+    [['mPaaSABTest', 'CartCacheDataDegrade', 'isOn'], '0'],
   ]) {
     changed = setExistingValue(data, path, value) || changed;
   }

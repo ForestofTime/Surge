@@ -8,6 +8,7 @@ const modulePath = path.resolve(__dirname, '../../Module/JingdongAds.sgmodule');
 const scriptPath = path.resolve(__dirname, '../JingdongAds.js');
 const readmePath = path.resolve(__dirname, '../../README.md');
 const harPaths = [
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-110627.har',
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-105350.har',
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-093154.har',
 ];
@@ -62,7 +63,7 @@ test('uses local native Surge script and avoids the unavailable remote script ho
   assert.match(moduleText, /^#!name=京东去广告$/m);
   assert.match(moduleText, /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m);
   assert.match(moduleText, /^京东-广告响应净化 = type=http-response,/m);
-  assert.match(moduleText, /\/JS\/JingdongAds\.js\?v=5/);
+  assert.match(moduleText, /\/JS\/JingdongAds\.js\?v=6/);
   assert.match(moduleText, /requires-body=true/);
   assert.match(moduleText, /max-size=2097152/);
   assert.doesNotMatch(moduleText, /(?:rucu6\.pages\.dev|kelee\.one)/);
@@ -104,11 +105,18 @@ test('disables only known HTTPDNS and socket-ahead configuration fields', () => 
       JDUniformRecommend: {
         JDUniformRecommendmMyJdCache: { JDUniformRecommendmMyJdCache: '1' },
         uniformRecommendCache: { uniformRecommendCache: '1' },
+        mpdFirstItemCacheConfig: { value: { open: '1', keep: true } },
+        cacheDataOptimizationAB: { cacheDataOptimizationAB: '1' },
       },
       JDFinderCache: {
         productRecommendXJ: { enable: '1' },
         personCenterDrawerXJ: { enable: '1' },
       },
+      JDCart: {
+        UseCartCacheData: { isUseCartCacheDataDegrade: '1' },
+        CacheConfig: { open: '1', productCount: '5' },
+      },
+      mPaaSABTest: { CartCacheDataDegrade: { isOn: '1', isClearOn: '1' } },
       other: { keep: true },
     },
   };
@@ -122,8 +130,16 @@ test('disables only known HTTPDNS and socket-ahead configuration fields', () => 
   assert.equal(output.data.JDAdsCore.adDegradationConfig.keep, true);
   assert.equal(output.data.JDUniformRecommend.JDUniformRecommendmMyJdCache.JDUniformRecommendmMyJdCache, '0');
   assert.equal(output.data.JDUniformRecommend.uniformRecommendCache.uniformRecommendCache, '0');
+  assert.equal(output.data.JDUniformRecommend.mpdFirstItemCacheConfig.value.open, '0');
+  assert.equal(output.data.JDUniformRecommend.mpdFirstItemCacheConfig.value.keep, true);
+  assert.equal(output.data.JDUniformRecommend.cacheDataOptimizationAB.cacheDataOptimizationAB, '0');
   assert.equal(output.data.JDFinderCache.productRecommendXJ.enable, '0');
   assert.equal(output.data.JDFinderCache.personCenterDrawerXJ.enable, '0');
+  assert.equal(output.data.JDCart.UseCartCacheData.isUseCartCacheDataDegrade, '0');
+  assert.equal(output.data.JDCart.CacheConfig.open, '0');
+  assert.equal(output.data.JDCart.CacheConfig.productCount, '5');
+  assert.equal(output.data.mPaaSABTest.CartCacheDataDegrade.isOn, '0');
+  assert.equal(output.data.mPaaSABTest.CartCacheDataDegrade.isClearOn, '1');
   assert.deepEqual(output.data.other, { keep: true });
 });
 
@@ -304,8 +320,13 @@ test('replays current HAR evidence without reading or asserting request credenti
   assert.equal(basicOutput.data.JDAdsCore.adDegradationConfig.degraded, '1');
   assert.equal(basicOutput.data.JDUniformRecommend.JDUniformRecommendmMyJdCache.JDUniformRecommendmMyJdCache, '0');
   assert.equal(basicOutput.data.JDUniformRecommend.uniformRecommendCache.uniformRecommendCache, '0');
+  assert.equal(basicOutput.data.JDUniformRecommend.mpdFirstItemCacheConfig.value.open, '0');
+  assert.equal(basicOutput.data.JDUniformRecommend.cacheDataOptimizationAB.cacheDataOptimizationAB, '0');
   assert.equal(basicOutput.data.JDFinderCache.productRecommendXJ.enable, '0');
   assert.equal(basicOutput.data.JDFinderCache.personCenterDrawerXJ.enable, '0');
+  assert.equal(basicOutput.data.JDCart.UseCartCacheData.isUseCartCacheDataDegrade, '0');
+  assert.equal(basicOutput.data.JDCart.CacheConfig.open, '0');
+  assert.equal(basicOutput.data.mPaaSABTest.CartCacheDataDegrade.isOn, '0');
 
   const popup = entries.find((entry) => /[?&]functionId=queryPagePopWindow(?:&|$)/.test(entry.request && entry.request.url || '') && entry.response && entry.response.content && entry.response.content.text);
   if (popup) {
