@@ -29,37 +29,41 @@
 
   let changed = false;
 
-  switch (functionId) {
-    case 'deliverLayer':
-    case 'orderTrackBusiness':
-      changed = cleanDelivery(response);
-      break;
-    case 'getTabHomeInfo':
-      changed = cleanTabHome(response);
-      break;
-    case 'myOrderInfo':
-      changed = cleanOrder(response);
-      break;
-    case 'personinfoBusiness':
-      changed = cleanProfile(response);
-      break;
-    case 'start':
-      changed = cleanStart(response);
-      break;
-    case 'welcomeHome':
-      changed = cleanWelcomeHome(response);
-      break;
-    case 'basicConfig':
-      changed = cleanBasicConfig(response);
-      break;
-    case 'queryPagePopWindow':
-      changed = cleanPagePopup(response);
-      break;
-    case 'cart':
-      changed = cleanCart(response);
-      break;
-    default:
-      break;
+  if (/^uniformRecommend\d*$/i.test(functionId)) {
+    changed = cleanUniformRecommend(response);
+  } else {
+    switch (functionId) {
+      case 'deliverLayer':
+      case 'orderTrackBusiness':
+        changed = cleanDelivery(response);
+        break;
+      case 'getTabHomeInfo':
+        changed = cleanTabHome(response);
+        break;
+      case 'myOrderInfo':
+        changed = cleanOrder(response);
+        break;
+      case 'personinfoBusiness':
+        changed = cleanProfile(response);
+        break;
+      case 'start':
+        changed = cleanStart(response);
+        break;
+      case 'welcomeHome':
+        changed = cleanWelcomeHome(response);
+        break;
+      case 'basicConfig':
+        changed = cleanBasicConfig(response);
+        break;
+      case 'queryPagePopWindow':
+        changed = cleanPagePopup(response);
+        break;
+      case 'cart':
+        changed = cleanCart(response);
+        break;
+      default:
+        break;
+    }
   }
 
   // 当前 GitHub 规则把“我的”和购物车处理绑定在旧 functionId 上。
@@ -81,14 +85,20 @@ function requestFunctionId(url, body) {
 }
 
 function isEmptyResponseFunction(functionId) {
-  if (/^uniformRecommend\d*$/i.test(functionId)) return true;
   return new Set([
     'cartCouponRecommendGoods',
-    'cartRecommender',
     'recommendShop',
     'searchBoxWord',
     'stationPullService',
   ]).has(functionId);
+}
+
+function cleanUniformRecommend(response) {
+  if (!Array.isArray(response && response.wareInfoList) || response.wareInfoList.length === 0) {
+    return false;
+  }
+  response.wareInfoList = [];
+  return true;
 }
 
 function cleanDelivery(response) {
@@ -257,8 +267,8 @@ function cleanBasicConfig(response) {
     changed = true;
   }
 
-  // HAR 2026-08-11 已确认：这些开关直接控制广告降级、推荐缓存与新版“我的”页面。
-  // 除购物车 Taro 推荐组件的明确开关外，仅改写服务端原本下发的字段。
+  // HAR 2026-08-11 已确认：这些开关直接控制广告降级与推荐缓存。
+  // 仅在服务端原本下发该字段时改写，避免向未知版本注入新配置。
   for (const [path, value] of [
     [['JDAdsCore', 'adDegradationConfig', 'degraded'], '1'],
     [['JDUniformRecommend', 'JDUniformRecommendmMyJdCache', 'JDUniformRecommendmMyJdCache'], '0'],
@@ -270,23 +280,8 @@ function cleanBasicConfig(response) {
     [['JDCart', 'UseCartCacheData', 'isUseCartCacheDataDegrade'], '0'],
     [['JDCart', 'CacheConfig', 'open'], '0'],
     [['mPaaSABTest', 'CartCacheDataDegrade', 'isOn'], '0'],
-    [['JDMyJd', 'useChineseTaroPageV15750', 'value'], '0'],
   ]) {
     changed = setExistingValue(data, path, value) || changed;
-  }
-
-  // 当前购物车动态包明确读取这一组 MobileConfig。服务端 basicConfig 未下发该键，
-  // 因而必须补入关闭值，才能阻止旧缓存商品流继续创建“你可能还喜欢”组件。
-  const uniformRecommend = data.JDUniformRecommend;
-  if (isObject(uniformRecommend)) {
-    const cartTaroSwitch = uniformRecommend.switchCartTaroRecommendComponentReuseV15280;
-    if (!isObject(cartTaroSwitch)) {
-      uniformRecommend.switchCartTaroRecommendComponentReuseV15280 = { recommondOpenV: '0' };
-      changed = true;
-    } else if (cartTaroSwitch.recommondOpenV !== '0') {
-      cartTaroSwitch.recommondOpenV = '0';
-      changed = true;
-    }
   }
   return changed;
 }

@@ -8,6 +8,7 @@ const modulePath = path.resolve(__dirname, '../../Module/JingdongAds.sgmodule');
 const scriptPath = path.resolve(__dirname, '../JingdongAds.js');
 const readmePath = path.resolve(__dirname, '../../README.md');
 const harPaths = [
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-114354.har',
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-112851.har',
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-111609.har',
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-110627.har',
@@ -15,6 +16,7 @@ const harPaths = [
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-093154.har',
 ];
 const harPath = harPaths.find((path) => fs.existsSync(path));
+const splashHarPath = harPaths.find((candidate) => candidate.endsWith('2026-08-11-093154.har') && fs.existsSync(candidate));
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const scriptText = fs.readFileSync(scriptPath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
@@ -65,7 +67,7 @@ test('uses local native Surge script and avoids the unavailable remote script ho
   assert.match(moduleText, /^#!name=京东去广告$/m);
   assert.match(moduleText, /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m);
   assert.match(moduleText, /^京东-广告响应净化 = type=http-response,/m);
-  assert.match(moduleText, /\/JS\/JingdongAds\.js\?v=8/);
+  assert.match(moduleText, /\/JS\/JingdongAds\.js\?v=9/);
   assert.match(moduleText, /requires-body=true/);
   assert.match(moduleText, /max-size=2097152/);
   assert.doesNotMatch(moduleText, /(?:rucu6\.pages\.dev|kelee\.one)/);
@@ -85,10 +87,16 @@ test('uses the HAR-confirmed full-screen canvas path as a launch-material fallba
 test('handles functionId in the request body and returns valid JSON for independent recommendation endpoints', () => {
   for (const functionId of [
     'cartCouponRecommendGoods',
-    'cartRecommender',
     'recommendShop',
     'searchBoxWord',
     'stationPullService',
+  ]) {
+    assert.deepEqual(runPostJson(functionId, { data: { ad: true } }), {});
+  }
+});
+
+test('keeps a successful uniform recommendation response while clearing only its product list', () => {
+  for (const functionId of [
     'uniformRecommend',
     'uniformRecommend0',
     'uniformRecommend6',
@@ -100,7 +108,22 @@ test('handles functionId in the request body and returns valid JSON for independ
     'uniformRecommend73',
     'uniformRecommend78',
   ]) {
-    assert.deepEqual(runPostJson(functionId, { data: { ad: true } }), {});
+    const output = runPostJson(functionId, {
+      code: '0',
+      isRetry: '1',
+      requestId: 'keep-request-id',
+      mainTitle: '同兴趣的用户都在看，点击查看',
+      wareInfoList: [{ wareId: '10001', imageurl: 'product.jpg' }],
+      tsConfig: { cardUniform: '1' },
+    });
+    assert.deepEqual(output, {
+      code: '0',
+      isRetry: '1',
+      requestId: 'keep-request-id',
+      mainTitle: '同兴趣的用户都在看，点击查看',
+      wareInfoList: [],
+      tsConfig: { cardUniform: '1' },
+    });
   }
 });
 
@@ -117,9 +140,6 @@ test('disables only known HTTPDNS and socket-ahead configuration fields', () => 
         uniformRecommendCache: { uniformRecommendCache: '1' },
         mpdFirstItemCacheConfig: { value: { open: '1', keep: true } },
         cacheDataOptimizationAB: { cacheDataOptimizationAB: '1' },
-      },
-      JDMyJd: {
-        useChineseTaroPageV15750: { value: '1', keep: true },
       },
       JDFinderCache: {
         productRecommendXJ: { enable: '1' },
@@ -146,11 +166,6 @@ test('disables only known HTTPDNS and socket-ahead configuration fields', () => 
   assert.equal(output.data.JDUniformRecommend.mpdFirstItemCacheConfig.value.open, '0');
   assert.equal(output.data.JDUniformRecommend.mpdFirstItemCacheConfig.value.keep, true);
   assert.equal(output.data.JDUniformRecommend.cacheDataOptimizationAB.cacheDataOptimizationAB, '0');
-  assert.deepEqual(output.data.JDUniformRecommend.switchCartTaroRecommendComponentReuseV15280, {
-    recommondOpenV: '0',
-  });
-  assert.equal(output.data.JDMyJd.useChineseTaroPageV15750.value, '0');
-  assert.equal(output.data.JDMyJd.useChineseTaroPageV15750.keep, true);
   assert.equal(output.data.JDFinderCache.productRecommendXJ.enable, '0');
   assert.equal(output.data.JDFinderCache.personCenterDrawerXJ.enable, '0');
   assert.equal(output.data.JDCart.UseCartCacheData.isUseCartCacheDataDegrade, '0');
@@ -326,10 +341,13 @@ test('documents the Raw module and one-click Surge import', () => {
 test('replays current HAR evidence without reading or asserting request credentials', { skip: !harPath }, () => {
   const har = JSON.parse(fs.readFileSync(harPath, 'utf8'));
   const entries = har.log.entries;
-  const imageUrls = new Set(entries
-    .map((entry) => entry.request && entry.request.url)
-    .filter((url) => /^https:\/\/m\.360buyimg\.com\/mobilecms\/s1125x2436_jfs\//.test(url || '')));
-  assert.ok(imageUrls.size >= 3, 'HAR must contain the observed three full-screen launch materials');
+  if (splashHarPath) {
+    const splashHar = JSON.parse(fs.readFileSync(splashHarPath, 'utf8'));
+    const imageUrls = new Set(splashHar.log.entries
+      .map((entry) => entry.request && entry.request.url)
+      .filter((url) => /^https:\/\/m\.360buyimg\.com\/mobilecms\/s1125x2436_jfs\//.test(url || '')));
+    assert.ok(imageUrls.size >= 3, 'splash HAR must contain the observed three full-screen launch materials');
+  }
 
   const basicConfig = entries.find((entry) => /[?&]functionId=basicConfig(?:&|$)/.test(entry.request && entry.request.url || ''));
   assert.ok(basicConfig && basicConfig.response && basicConfig.response.content && basicConfig.response.content.text);
@@ -345,11 +363,6 @@ test('replays current HAR evidence without reading or asserting request credenti
   assert.equal(basicOutput.data.JDUniformRecommend.uniformRecommendCache.uniformRecommendCache, '0');
   assert.equal(basicOutput.data.JDUniformRecommend.mpdFirstItemCacheConfig.value.open, '0');
   assert.equal(basicOutput.data.JDUniformRecommend.cacheDataOptimizationAB.cacheDataOptimizationAB, '0');
-  assert.equal(
-    basicOutput.data.JDUniformRecommend.switchCartTaroRecommendComponentReuseV15280.recommondOpenV,
-    '0'
-  );
-  assert.equal(basicOutput.data.JDMyJd.useChineseTaroPageV15750.value, '0');
   assert.equal(basicOutput.data.JDFinderCache.productRecommendXJ.enable, '0');
   assert.equal(basicOutput.data.JDFinderCache.personCenterDrawerXJ.enable, '0');
   assert.equal(basicOutput.data.JDCart.UseCartCacheData.isUseCartCacheDataDegrade, '0');
@@ -365,7 +378,26 @@ test('replays current HAR evidence without reading or asserting request credenti
     ['uniformRecommend47', 'uniformRecommend52', 'uniformRecommend71', 'uniformRecommend72', 'uniformRecommend73', 'uniformRecommend78', 'uniformRecommend9']
   );
   for (const functionId of numberedRecommendations) {
-    assert.deepEqual(runPostJson(functionId, { code: 0, result: { wareInfoList: [{ skuId: 'ad' }] } }), {});
+    assert.deepEqual(
+      runPostJson(functionId, { code: '0', wareInfoList: [{ skuId: 'ad' }], keep: true }),
+      { code: '0', wareInfoList: [], keep: true }
+    );
+  }
+
+  const uniformResponses = entries.filter((entry) =>
+    /(?:^|[?&])functionId=uniformRecommend9(?:&|$)/.test(
+      (entry.request && entry.request.url || '') + '&' + (entry.request && entry.request.postData && entry.request.postData.text || '')
+    )
+  );
+  if (harPath.endsWith('2026-08-11-114354.har')) {
+    assert.equal(uniformResponses.length, 2);
+    assert.ok(uniformResponses.every((entry) => entry.response.content.text === '{}'));
+    const escapedProductImages = entries.filter((entry) =>
+      Array.isArray(entry.request && entry.request.headers) && entry.request.headers.some((header) =>
+        String(header.name || '').toLowerCase() === 'referer' && header.value === 'uniformRecommend'
+      )
+    );
+    assert.equal(escapedProductImages.length, 12);
   }
 
   const popup = entries.find((entry) => /[?&]functionId=queryPagePopWindow(?:&|$)/.test(entry.request && entry.request.url || '') && entry.response && entry.response.content && entry.response.content.text);
