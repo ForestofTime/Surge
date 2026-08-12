@@ -4,8 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const modulePath = path.resolve(__dirname, '../../Module/PinduoduoAds.sgmodule');
-const scriptPath = path.resolve(__dirname, '../PinduoduoAds.js');
+const modulePath = path.resolve(__dirname, '../../Module/PinduoduoNative.sgmodule');
+const scriptPath = path.resolve(__dirname, '../PinduoduoNative.js');
 const readmePath = path.resolve(__dirname, '../../README.md');
 const harPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-12-164910.har';
@@ -32,16 +32,18 @@ function rewrittenBody(url, body) {
 test('is a standalone native Surge conversion of the QingRex module', () => {
   assert.match(moduleText, /^#!name=拼多多去广告（原生 Surge）$/m);
   assert.match(moduleText, /^拼多多-响应净化 = type=http-response,/m);
-  assert.match(moduleText, /\/JS\/PinduoduoAds\.js\?v=3/);
+  assert.match(moduleText, /\/JS\/PinduoduoNative\.js\?v=1/);
   assert.doesNotMatch(moduleText, /^\[Body Rewrite\]$/m);
   assert.doesNotMatch(moduleText, /http-response-jq/);
   assert.match(moduleText, /^\[Map Local\]$/m);
   assert.match(moduleText, /^hostname = %APPEND% api\.pinduoduo\.com$/m);
+  assert.equal(fs.existsSync(path.resolve(__dirname, '../../Module/PinduoduoAds.sgmodule')), false);
+  assert.equal(fs.existsSync(path.resolve(__dirname, '../PinduoduoAds.js')), false);
 });
 
 test('retains QingRex HTTPDNS and domain interception without duplicate rules', () => {
-  assert.match(moduleText, /URL-REGEX,"\^http:\\\/\\\//);
-  assert.match(moduleText, /USER-AGENT,"\*com\.xunmeng\.pinduoduo\*"/);
+  assert.ok(moduleText.includes('URL-REGEX,"^http:\\/\\/'));
+  assert.ok(moduleText.includes('USER-AGENT,"*com.xunmeng.pinduoduo*"'));
   assert.match(moduleText, /DOMAIN,meta\.pinduoduo\.com,REJECT/);
   assert.match(moduleText, /DOMAIN,cdl-1\.pddpic\.com,REJECT/);
   assert.match(moduleText, /PROTOCOL,UDP/);
@@ -57,7 +59,10 @@ test('uses explicit empty JSON Map Local responses for QingRex endpoints and spl
     'api\\/growth\\/nagato\\/app\\/index\\/gather',
     'api\\/buffon\\/nasus\\/recommend',
   ]) {
-    assert.match(moduleText, new RegExp(endpoint + '.*data="\\{\\}" status-code=200'));
+    assert.ok(
+      moduleText.includes(endpoint + '(?:\\?|$) data-type=text data="{}" status-code=200'),
+      endpoint + ' must return an explicit empty JSON object'
+    );
   }
 });
 
@@ -140,6 +145,6 @@ test('passes malformed and unrelated response bodies through once', () => {
 });
 
 test('documents only the replacement Pinduoduo module path', () => {
-  assert.match(readmeText, /`Module\/PinduoduoAds\.sgmodule` \| AdBlock \| 拼多多原生 Surge/);
-  assert.equal((readmeText.match(/Module\/PinduoduoAds\.sgmodule/g) || []).length, 1);
+  assert.match(readmeText, /`Module\/PinduoduoNative\.sgmodule` \| AdBlock \| 拼多多原生 Surge/);
+  assert.equal(readmeText.includes('Module/PinduoduoAds.sgmodule'), false);
 });
