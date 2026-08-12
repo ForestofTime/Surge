@@ -1,0 +1,21 @@
+#!name=拼多多去广告
+#!desc=开屏、首页、个人中心、订单与搜索广告净化；可按参数调整。v1
+#!author=ForestofTime
+#!category=AdBlock
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/PinduoduoAds.sgmodule
+#!arguments=splash:true,home:true,personal:true,orders:true,search:true,chat:true,fresh:false,detail:false
+#!arguments-desc=splash: 开屏广告\nhome: 首页横幅及视频入口\npersonal: 个人中心月卡和推广入口\norders: 订单页推荐商品和横幅\nsearch: 搜索热词及扩展推荐\nchat: 聊天页推广入口\nfresh: 多多买菜红包及首页买菜入口\ndetail: 商品详情页推广和评价引导
+
+[Rule]
+# 仅使已 MITM 的 API 主机回落 HTTP/2，避免 QUIC 绕过脚本。
+AND, ((PROTOCOL, UDP), (DOMAIN, api.pinduoduo.com)), REJECT
+AND, ((PROTOCOL, UDP), (DOMAIN, api.yangkeduo.com)), REJECT
+AND, ((PROTOCOL, UDP), (DOMAIN, mobile.yangkeduo.com)), REJECT
+
+[Script]
+拼多多-广告请求净化 = type=http-request,pattern=^https?:\/\/api\.(?:pinduoduo|yangkeduo)\.com\/(?:api\/cappuccino\/splash|api\/aquarius\/hungary\/global\/homepage|search_hotquery|api\/zaire_biz\/chat\/resource\/get_list_data|api\/caterham\/v3\/query\/(?:new_chat_group|personal|likes|my_order_group|order_express_group)|api\/alexa\/goods\/back_up|api\/aristotle\/(?:unrated_order_for_unreceived_tab|query_order_list_tabs_element)|api\/brand-olay\/goods_detail\/bybt_guide|api\/engels\/reviews\/require\/append)(?:\?|$),timeout=20,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PinduoduoAds.js?v=1,script-arguments="splash=%splash&home=%home&personal=%personal&orders=%orders&search=%search&chat=%chat&fresh=%fresh&detail=%detail"
+拼多多-广告响应净化 = type=http-response,pattern=^https?:\/\/(?:api\.pinduoduo\.com\/(?:api\/(?:alexa\/homepage\/hub|philo\/personal\/hub|oak\/integration\/render|caterham\/v3\/query\/order_detail_group|aristotle\/order_list_v4|growth\/nagato\/app\/index\/gather)|search|order\/)|mobile\.yangkeduo\.com\/proxy\/api\/api\/express\/post\/waybill\/red_packet\/goods_list)(?:\?|\/|$),requires-body=true,max-size=2097152,timeout=20,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PinduoduoAds.js?v=1,script-arguments="splash=%splash&home=%home&personal=%personal&orders=%orders&search=%search&chat=%chat&fresh=%fresh&detail=%detail"
+
+[MITM]
+hostname = %APPEND% api.pinduoduo.com, api.yangkeduo.com, mobile.yangkeduo.com
