@@ -33,12 +33,12 @@ function rewrittenBody(url, body) {
 
 test('is a standalone native Surge conversion of the QingRex module', () => {
   assert.match(moduleText, /^#!name=拼多多去广告（原生 Surge）$/m);
-  assert.match(moduleText, /保留首页百亿补贴卡片。v3/);
+  assert.match(moduleText, /保留首页百亿补贴卡片。v4/);
   assert.match(moduleText, /^\[Body Rewrite\]$/m);
   assert.ok(moduleText.includes('http-response-jq ^https:\\/\\/api\\.pinduoduo\\.com\\/api\\/alexa\\/homepage\\/hub'));
   assert.ok(moduleText.includes('http-response-jq ^https:\\/\\/api\\.pinduoduo\\.com\\/api\\/alexa\\/cells\\/hub\\/v3'));
   assert.match(moduleText, /^拼多多-响应净化 = type=http-response,/m);
-  assert.match(moduleText, /\/JS\/PinduoduoNative\.js\?v=3/);
+  assert.match(moduleText, /\/JS\/PinduoduoNative\.js\?v=4/);
   assert.match(moduleText, /^\[Map Local\]$/m);
   assert.match(moduleText, /^hostname = %APPEND% api\.pinduoduo\.com$/m);
   assert.equal(fs.existsSync(path.resolve(__dirname, '../../Module/PinduoduoAds.sgmodule')), false);
@@ -71,10 +71,11 @@ test('latest HAR HTTPDNS v3 endpoint is intercepted before it can bypass named-h
   });
   assert.ok(bypasses.length > 0, 'latest HAR must reproduce the unblocked /v3/d HTTPDNS path');
   assert.ok(bypasses.every((entry) => entry.response.status === 200));
-  assert.ok(
-    moduleText.includes('(?:d\\d?|v3\\/d)(?:\\?|$)'),
-    'the native module must reject both legacy /d4 and current /v3/d HTTPDNS paths'
-  );
+  const rulePattern = moduleText.match(/URL-REGEX,"([^"]*v3\\\/d[^"]*)"/);
+  assert.ok(rulePattern, 'the native module must declare the current /v3/d HTTPDNS path');
+  const ruleRegex = new RegExp(rulePattern[1]);
+  assert.ok(bypasses.every((entry) => ruleRegex.test(entry.request.url)));
+  assert.ok(ruleRegex.test('http://101.35.204.35/d4?dn=legacy'));
 });
 
 test('uses explicit empty JSON Map Local responses for QingRex endpoints and splash', () => {

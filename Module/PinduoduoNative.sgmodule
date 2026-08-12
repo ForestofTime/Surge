@@ -1,5 +1,5 @@
 #!name=拼多多去广告（原生 Surge）
-#!desc=原生 Surge 去广告；保留首页百亿补贴卡片。v3
+#!desc=原生 Surge 去广告；保留首页百亿补贴卡片。v4
 #!author=ForestofTime
 #!category=AdBlock
 #!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/PinDuoDuo.png
@@ -8,9 +8,9 @@
 #!date=2026-08-12
 
 [Rule]
-# 拼多多 App 的 Titan HTTPDNS。规则沿用 QingRex，并已由 8.20.0 HAR 证实命中 /d4。
-AND,((URL-REGEX,"^http:\/\/((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/d(\d)?",extended-matching),(USER-AGENT,"*com.xunmeng.pinduoduo*")),REJECT
-AND,((URL-REGEX,"^http:\/\/\[[0-9a-fA-F:]+\]\/d(\d)?\?",extended-matching),(USER-AGENT,"*com.xunmeng.pinduoduo*")),REJECT
+# 拼多多 App 的 Titan HTTPDNS。兼容旧 /d4 与 8.20.0 HAR 新增的 /v3/d。
+AND,((URL-REGEX,"^http:\/\/((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/(?:d\d?|v3\/d)(?:\?|$)",extended-matching),(USER-AGENT,"*com.xunmeng.pinduoduo*")),REJECT
+AND,((URL-REGEX,"^http:\/\/\[[0-9a-fA-F:]+\]\/(?:d\d?|v3\/d)(?:\?|$)",extended-matching),(USER-AGENT,"*com.xunmeng.pinduoduo*")),REJECT
 AND,((DOMAIN,api.pinduoduo.com,extended-matching),(PROTOCOL,UDP)),REJECT
 
 # 广告和遥测规则。动态组件与实验配置主机保持可达，保证百亿补贴卡片可渲染。
@@ -60,7 +60,7 @@ http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/alexa\/cells\/hub\/v3 '.ha
 ^https:\/\/api\.pinduoduo\.com\/api\/buffon\/nasus\/recommend(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 [Script]
-拼多多-响应净化 = type=http-response,pattern=^https:\/\/api\.pinduoduo\.com\/(?:api\/(?:alexa\/homepage\/hub|alexa\/cells\/hub\/v3|philo\/personal\/hub|oak\/integration\/render|caterham\/v3\/query\/order_detail_group|aristotle\/order_list_v4)|search(?:\?|$)|order\/),requires-body=true,max-size=2097152,timeout=20,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PinduoduoNative.js?v=3
+拼多多-响应净化 = type=http-response,pattern=^https:\/\/api\.pinduoduo\.com\/(?:api\/(?:alexa\/homepage\/hub|alexa\/cells\/hub\/v3|philo\/personal\/hub|oak\/integration\/render|caterham\/v3\/query\/order_detail_group|aristotle\/order_list_v4)|search(?:\?|$)|order\/),requires-body=true,max-size=2097152,timeout=20,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PinduoduoNative.js?v=4
 
 [MITM]
 hostname = %APPEND% api.pinduoduo.com
