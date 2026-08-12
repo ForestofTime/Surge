@@ -7,6 +7,8 @@ const vm = require('node:vm');
 const modulePath = path.resolve(__dirname, '../../Module/PinduoduoAds.sgmodule');
 const scriptPath = path.resolve(__dirname, '../PinduoduoAds.js');
 const readmePath = path.resolve(__dirname, '../../README.md');
+const harPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-12-090358.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const scriptText = fs.readFileSync(scriptPath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
@@ -28,16 +30,40 @@ function responseBody(result) {
   return JSON.parse(result.body);
 }
 
-test('declares a parameterised native Surge module without IP or telemetry blocking', () => {
+test('declares a parameterised native Surge module with only HAR-confirmed HTTPDNS bypass handling', () => {
   assert.match(moduleText, /^#!name=拼多多去广告$/m);
   assert.match(moduleText, /^#!arguments=splash:true,home:true,personal:true,orders:true,search:true,chat:true,fresh:false,detail:false$/m);
   assert.match(moduleText, /^拼多多-广告请求净化 = type=http-request,/m);
   assert.match(moduleText, /^拼多多-广告响应净化 = type=http-response,/m);
+  assert.match(moduleText, /\/JS\/PinduoduoAds\.js\?v=2/);
   assert.match(moduleText, /requires-body=true,max-size=2097152/);
   assert.match(moduleText, /^hostname = %APPEND% api\.pinduoduo\.com, api\.yangkeduo\.com, mobile\.yangkeduo\.com$/m);
-  for (const unsafe of ['121.5.84.85', 'titan.pinduoduo.com', 'sdk.1rtb.net', 'apm.pinduoduo.com']) {
+  assert.ok(moduleText.includes('114\\.110\\.(?:97\\.97|96\\.26)'));
+  assert.ok(moduleText.includes('101\\.35\\.(?:204|212)\\.35'));
+  assert.ok(moduleText.includes('USER-AGENT, "*com.xunmeng.pinduoduo*"'));
+  for (const unsafe of ['121.5.84.85', 'titan.pinduoduo.com', 'sdk.1rtb.net', 'apm.pinduoduo.com', '/d5']) {
     assert.equal(moduleText.includes(unsafe), false, unsafe + ' must not be blocked without HAR evidence');
   }
+});
+
+test('the latest HAR proves the four HTTPDNS endpoints bypassed the original module', { skip: !fs.existsSync(harPath) }, () => {
+  const har = JSON.parse(fs.readFileSync(harPath, 'utf8'));
+  const entries = har.log.entries.filter((entry) => {
+    const url = String(entry.request && entry.request.url || '');
+    const headers = entry.request && entry.request.headers || [];
+    const userAgent = headers.find((header) => String(header.name).toLowerCase() === 'user-agent');
+    return (
+      /^http:\/\/(?:114\.110\.(?:97\.97|96\.26)|101\.35\.(?:204|212)\.35)\/v3\/d\?type=addrs(?:&|$)/.test(url) &&
+      /BundleID\/com\.xunmeng\.pinduoduo/.test(String(userAgent && userAgent.value || ''))
+    );
+  });
+  assert.ok(entries.length >= 20, 'captured HTTPDNS requests must be present');
+  assert.deepEqual(
+    [...new Set(entries.map((entry) => new URL(entry.request.url).hostname))].sort(),
+    ['101.35.204.35', '101.35.212.35', '114.110.96.26', '114.110.97.97']
+  );
+  const scriptHits = har.log.entries.filter((entry) => /HTTP (?:request|response) script found: 拼多多-/.test(String(entry.comment || '')));
+  assert.equal(scriptHits.length, 2, 'the original module only saw splash and homepage layout requests');
 });
 
 test('returns QX-equivalent empty JSON only for enabled request categories', () => {
