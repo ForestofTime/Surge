@@ -8,133 +8,138 @@ const modulePath = path.resolve(__dirname, '../../Module/PinduoduoAds.sgmodule')
 const scriptPath = path.resolve(__dirname, '../PinduoduoAds.js');
 const readmePath = path.resolve(__dirname, '../../README.md');
 const harPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-12-090358.har';
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-12-164910.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const scriptText = fs.readFileSync(scriptPath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
-function runScript({ url, body, argument = '' }) {
+function runResponse(url, body) {
   const doneCalls = [];
-  const context = {
+  vm.runInNewContext(scriptText, {
     $request: { url },
-    $argument: argument,
+    $response: { body },
     $done: (value) => doneCalls.push(JSON.parse(JSON.stringify(value))),
-  };
-  if (body !== undefined) context.$response = { body };
-  vm.runInNewContext(scriptText, context, { filename: scriptPath });
+  }, { filename: scriptPath });
   assert.equal(doneCalls.length, 1, 'script must call $done exactly once');
   return doneCalls[0];
 }
 
-function responseBody(result) {
+function rewrittenBody(url, body) {
+  const result = runResponse(url, JSON.stringify(body));
   return JSON.parse(result.body);
 }
 
-test('declares a parameterised native Surge module with only HAR-confirmed HTTPDNS bypass handling', () => {
-  assert.match(moduleText, /^#!name=拼多多去广告$/m);
-  assert.match(moduleText, /^#!arguments=splash:true,home:true,personal:true,orders:true,search:true,chat:true,fresh:false,detail:false$/m);
-  assert.match(moduleText, /^拼多多-广告请求净化 = type=http-request,/m);
-  assert.match(moduleText, /^拼多多-广告响应净化 = type=http-response,/m);
-  assert.match(moduleText, /\/JS\/PinduoduoAds\.js\?v=2/);
-  assert.match(moduleText, /requires-body=true,max-size=2097152/);
-  assert.match(moduleText, /^hostname = %APPEND% api\.pinduoduo\.com, api\.yangkeduo\.com, mobile\.yangkeduo\.com$/m);
-  assert.ok(moduleText.includes('114\\.110\\.(?:97\\.97|96\\.26)'));
-  assert.ok(moduleText.includes('101\\.35\\.(?:204|212)\\.35'));
-  assert.ok(moduleText.includes('USER-AGENT, "*com.xunmeng.pinduoduo*"'));
-  for (const unsafe of ['121.5.84.85', 'titan.pinduoduo.com', 'sdk.1rtb.net', 'apm.pinduoduo.com', '/d5']) {
-    assert.equal(moduleText.includes(unsafe), false, unsafe + ' must not be blocked without HAR evidence');
+test('is a standalone native Surge conversion of the QingRex module', () => {
+  assert.match(moduleText, /^#!name=拼多多去广告（原生 Surge）$/m);
+  assert.match(moduleText, /^拼多多-响应净化 = type=http-response,/m);
+  assert.match(moduleText, /\/JS\/PinduoduoAds\.js\?v=3/);
+  assert.doesNotMatch(moduleText, /^\[Body Rewrite\]$/m);
+  assert.doesNotMatch(moduleText, /http-response-jq/);
+  assert.match(moduleText, /^\[Map Local\]$/m);
+  assert.match(moduleText, /^hostname = %APPEND% api\.pinduoduo\.com$/m);
+});
+
+test('retains QingRex HTTPDNS and domain interception without duplicate rules', () => {
+  assert.match(moduleText, /URL-REGEX,"\^http:\\\/\\\//);
+  assert.match(moduleText, /USER-AGENT,"\*com\.xunmeng\.pinduoduo\*"/);
+  assert.match(moduleText, /DOMAIN,meta\.pinduoduo\.com,REJECT/);
+  assert.match(moduleText, /DOMAIN,cdl-1\.pddpic\.com,REJECT/);
+  assert.match(moduleText, /PROTOCOL,UDP/);
+  assert.equal((moduleText.match(/DOMAIN,titan\.pinduoduo\.com/g) || []).length, 1);
+});
+
+test('uses explicit empty JSON Map Local responses for QingRex endpoints and splash', () => {
+  for (const endpoint of [
+    'api\\/cappuccino\\/splash',
+    'api\\/aquarius\\/hungary\\/global\\/homepage',
+    'api\\/zaire_biz\\/chat\\/resource\\/get_list_data',
+    'api\\/caterham\\/v3\\/query\\/personal',
+    'api\\/growth\\/nagato\\/app\\/index\\/gather',
+    'api\\/buffon\\/nasus\\/recommend',
+  ]) {
+    assert.match(moduleText, new RegExp(endpoint + '.*data="\\{\\}" status-code=200'));
   }
 });
 
-test('the latest HAR proves the four HTTPDNS endpoints bypassed the original module', { skip: !fs.existsSync(harPath) }, () => {
-  const har = JSON.parse(fs.readFileSync(harPath, 'utf8'));
-  const entries = har.log.entries.filter((entry) => {
-    const url = String(entry.request && entry.request.url || '');
-    const headers = entry.request && entry.request.headers || [];
-    const userAgent = headers.find((header) => String(header.name).toLowerCase() === 'user-agent');
-    return (
-      /^http:\/\/(?:114\.110\.(?:97\.97|96\.26)|101\.35\.(?:204|212)\.35)\/v3\/d\?type=addrs(?:&|$)/.test(url) &&
-      /BundleID\/com\.xunmeng\.pinduoduo/.test(String(userAgent && userAgent.value || ''))
-    );
-  });
-  assert.ok(entries.length >= 20, 'captured HTTPDNS requests must be present');
-  assert.deepEqual(
-    [...new Set(entries.map((entry) => new URL(entry.request.url).hostname))].sort(),
-    ['101.35.204.35', '101.35.212.35', '114.110.96.26', '114.110.97.97']
-  );
-  const scriptHits = har.log.entries.filter((entry) => /HTTP (?:request|response) script found: 拼多多-/.test(String(entry.comment || '')));
-  assert.equal(scriptHits.length, 2, 'the original module only saw splash and homepage layout requests');
-});
-
-test('returns QX-equivalent empty JSON only for enabled request categories', () => {
-  const splash = runScript({ url: 'https://api.pinduoduo.com/api/cappuccino/splash?x=1' });
-  assert.deepEqual(splash, { response: { status: 200, headers: { 'Content-Type': 'application/json' }, body: '{}' } });
-  assert.deepEqual(
-    runScript({ url: 'https://api.pinduoduo.com/api/caterham/v3/query/personal', argument: 'personal=false' }),
-    {}
-  );
-  assert.deepEqual(
-    runScript({ url: 'https://api.pinduoduo.com/api/brand-olay/goods_detail/bybt_guide' }),
-    {}
-  );
-});
-
-test('cleans home layout while preserving non-ad tabs and functional fields', () => {
-  const input = {
+test('keeps the billion-subsidy column while removing unwanted bottom tabs', () => {
+  const body = {
+    success: true,
     result: {
-      bottom_tabs: [{ title: '首页' }, { title: '多多视频' }, { title: '个人中心' }],
-      icon_set: { icons: [1] },
-      search_bar_hot_query: ['热词'],
-      dy_module: { irregular_banner_dy: { id: 1 }, stable: true },
-      module_order: [{ module_name: 'irregular_banner_dy' }, { module_name: 'goods' }],
-      account: { id: 'keep' },
+      bottom_tabs: [
+        { title: '首页', link: 'index.html' },
+        { title: '多多视频', link: 'pdd_video.html' },
+        { title: '百亿补贴', link: 'brand_activity_subsidy.html?access_from=home' },
+        { title: '聊天', link: 'chat_list.html' },
+        { title: '个人中心', link: 'personal.html' },
+      ],
+      buffer_bottom_tabs: [
+        { title: '首页', link: 'index.html' },
+        { title: '百亿补贴', link: 'brand_activity_subsidy.html' },
+        { title: '分类', link: 'classification.html' },
+        { title: '聊天', link: 'chat_list.html' },
+        { title: '个人中心', link: 'personal.html' },
+      ],
+      module_order: [
+        { module_name: 'irregular_banner_dy' },
+        { module_name: 'billion_subsidy_entrance_dy' },
+      ],
+      dy_module: {
+        irregular_banner_dy: { id: 1 },
+        billion_subsidy_entrance_dy: { data: { title: '百亿补贴' } },
+      },
+      icon_set: { icons: [] },
+      search_bar_hot_query: ['广告词'],
     },
   };
-  const output = responseBody(runScript({ url: 'https://api.pinduoduo.com/api/alexa/homepage/hub?x=1', body: JSON.stringify(input) }));
-  assert.deepEqual(output.result.bottom_tabs, [{ title: '首页' }, { title: '个人中心' }]);
+  const output = rewrittenBody('https://api.pinduoduo.com/api/alexa/homepage/hub?x=1', body);
+  assert.deepEqual(output.result.bottom_tabs.map((tab) => tab.title), ['首页', '百亿补贴', '聊天', '个人中心']);
+  assert.deepEqual(output.result.buffer_bottom_tabs.map((tab) => tab.title), ['首页', '百亿补贴', '聊天', '个人中心']);
+  assert.deepEqual(output.result.module_order, [
+    { module_name: 'irregular_banner_dy' },
+    { module_name: 'billion_subsidy_entrance_dy' },
+  ]);
+  assert.equal(output.result.dy_module.irregular_banner_dy, undefined);
+  assert.deepEqual(output.result.dy_module.billion_subsidy_entrance_dy, { data: { title: '百亿补贴' } });
   assert.equal(output.result.icon_set, undefined);
   assert.equal(output.result.search_bar_hot_query, undefined);
-  assert.equal(output.result.dy_module.irregular_banner_dy, undefined);
-  assert.equal(output.result.dy_module.stable, true);
-  assert.deepEqual(output.result.module_order, [{ module_name: 'goods' }]);
-  assert.deepEqual(output.result.account, { id: 'keep' });
 });
 
-test('keeps optional fresh content until the fresh parameter is enabled', () => {
-  const body = JSON.stringify({ result: { recommend_fresh_info: { id: 1 }, keep: true } });
-  assert.deepEqual(runScript({ url: 'https://api.pinduoduo.com/api/alexa/homepage/hub', body }), {});
-  const output = responseBody(runScript({ url: 'https://api.pinduoduo.com/api/alexa/homepage/hub', body, argument: 'fresh=true' }));
-  assert.equal(output.result.recommend_fresh_info, undefined);
-  assert.equal(output.result.keep, true);
+test('implements the remaining QingRex response rewrites and keeps sibling business data', () => {
+  const personal = rewrittenBody('https://api.pinduoduo.com/api/philo/personal/hub?x=1', {
+    monthly_card_entrance: {},
+    personal_center_style_v2_vo: {},
+    icon_set: { icons: [1], top_personal_icons: [2], keep: 3 },
+    user: { id: 1 },
+  });
+  assert.equal(personal.monthly_card_entrance, undefined);
+  assert.equal(personal.personal_center_style_v2_vo, undefined);
+  assert.deepEqual(personal.icon_set, { keep: 3 });
+  assert.deepEqual(personal.user, { id: 1 });
+
+  const order = rewrittenBody('https://api.pinduoduo.com/api/aristotle/order_list_v4?x=1', {
+    orders: [{ order_buttons: [{ title: '确认收货', order_growth_tip: '推广' }] }],
+  });
+  assert.deepEqual(order.orders, [{ order_buttons: [{ title: '确认收货' }] }]);
 });
 
-test('cleans personal and order advertising fields while preserving account and order data', () => {
-  const personal = responseBody(runScript({
-    url: 'https://api.pinduoduo.com/api/philo/personal/hub?x=1',
-    body: JSON.stringify({ result: { monthly_card_entrance: {}, personal_center_style_v2_vo: {}, icon_set: { icons: [1], top_personal_icons: [2], keep: 3 }, user: { id: 1 } } }),
-  }));
-  assert.equal(personal.result.monthly_card_entrance, undefined);
-  assert.equal(personal.result.personal_center_style_v2_vo, undefined);
-  assert.equal(personal.result.icon_set.icons, undefined);
-  assert.equal(personal.result.icon_set.keep, 3);
-  assert.deepEqual(personal.result.user, { id: 1 });
-
-  const order = responseBody(runScript({
-    url: 'https://api.pinduoduo.com/order/1-2/shipping?x=1',
-    body: JSON.stringify({ shipping: { banner_above_recommend: {}, carrier: 'keep' }, marketing_banner_vo: {}, order_id: 9 }),
-  }));
-  assert.equal(order.shipping.banner_above_recommend, undefined);
-  assert.equal(order.marketing_banner_vo, undefined);
-  assert.equal(order.shipping.carrier, 'keep');
-  assert.equal(order.order_id, 9);
+test('latest HAR proves the referenced QingRex rules actually ran on Pinduoduo 8.20.0', { skip: !fs.existsSync(harPath) }, () => {
+  const har = JSON.parse(fs.readFileSync(harPath, 'utf8'));
+  const entries = har.log.entries;
+  const appUserAgent = entries.flatMap((entry) => entry.request.headers || [])
+    .find((header) => String(header.name).toLowerCase() === 'user-agent' && /com\.xunmeng\.pinduoduo/.test(header.value));
+  assert.match(appUserAgent.value, /AppVersion\/8\.20\.0/);
+  assert.ok(entries.some((entry) => /\/d4\?/.test(entry.request.url) && /拼多多去广告/.test(entry.comment || '')));
+  assert.ok(entries.some((entry) => /meta\.pinduoduo\.com/.test(entry.request.url) && /拼多多去广告/.test(entry.comment || '')));
+  assert.ok(entries.some((entry) => entry.request.url.includes('/api/caterham/v3/query/personal') && entry.response.content.text === '{}'));
+  assert.ok(entries.some((entry) => entry.request.url.includes('/api/zaire_biz/chat/resource/get_list_data') && entry.response.content.text === '{}'));
 });
 
-test('passes malformed and unrelated response bodies through', () => {
-  assert.deepEqual(runScript({ url: 'https://api.pinduoduo.com/api/alexa/homepage/hub', body: 'not-json' }), {});
-  assert.deepEqual(runScript({ url: 'https://api.pinduoduo.com/api/unknown', body: JSON.stringify({ keep: true }) }), {});
+test('passes malformed and unrelated response bodies through once', () => {
+  assert.deepEqual(runResponse('https://api.pinduoduo.com/api/alexa/homepage/hub', 'not-json'), {});
+  assert.deepEqual(runResponse('https://api.pinduoduo.com/api/unknown', '{"keep":true}'), {});
 });
 
-test('documents the raw module and one-click import', () => {
-  assert.match(readmeText, /`Module\/PinduoduoAds\.sgmodule` \| AdBlock \| 拼多多/);
-  assert.match(readmeText, /PinduoduoAds\.sgmodule/);
+test('documents only the replacement Pinduoduo module path', () => {
+  assert.match(readmeText, /`Module\/PinduoduoAds\.sgmodule` \| AdBlock \| 拼多多原生 Surge/);
+  assert.equal((readmeText.match(/Module\/PinduoduoAds\.sgmodule/g) || []).length, 1);
 });
