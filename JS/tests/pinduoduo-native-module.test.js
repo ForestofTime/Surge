@@ -8,7 +8,7 @@ const modulePath = path.resolve(__dirname, '../../Module/PinduoduoNative.sgmodul
 const scriptPath = path.resolve(__dirname, '../PinduoduoNative.js');
 const readmePath = path.resolve(__dirname, '../../README.md');
 const harPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-12-164910.har';
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-12-171514.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const scriptText = fs.readFileSync(scriptPath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
@@ -31,8 +31,9 @@ function rewrittenBody(url, body) {
 
 test('is a standalone native Surge conversion of the QingRex module', () => {
   assert.match(moduleText, /^#!name=拼多多去广告（原生 Surge）$/m);
+  assert.match(moduleText, /保留首页百亿补贴卡片。v2/);
   assert.match(moduleText, /^拼多多-响应净化 = type=http-response,/m);
-  assert.match(moduleText, /\/JS\/PinduoduoNative\.js\?v=1/);
+  assert.match(moduleText, /\/JS\/PinduoduoNative\.js\?v=2/);
   assert.doesNotMatch(moduleText, /^\[Body Rewrite\]$/m);
   assert.doesNotMatch(moduleText, /http-response-jq/);
   assert.match(moduleText, /^\[Map Local\]$/m);
@@ -41,13 +42,19 @@ test('is a standalone native Surge conversion of the QingRex module', () => {
   assert.equal(fs.existsSync(path.resolve(__dirname, '../PinduoduoAds.js')), false);
 });
 
-test('retains QingRex HTTPDNS and domain interception without duplicate rules', () => {
+test('retains HTTPDNS interception without blocking homepage dynamic resources', () => {
   assert.ok(moduleText.includes('URL-REGEX,"^http:\\/\\/'));
   assert.ok(moduleText.includes('USER-AGENT,"*com.xunmeng.pinduoduo*"'));
-  assert.match(moduleText, /DOMAIN,meta\.pinduoduo\.com,REJECT/);
-  assert.match(moduleText, /DOMAIN,cdl-1\.pddpic\.com,REJECT/);
   assert.match(moduleText, /PROTOCOL,UDP/);
   assert.equal((moduleText.match(/DOMAIN,titan\.pinduoduo\.com/g) || []).length, 1);
+  for (const host of [
+    'meta.pinduoduo.com',
+    'cdl-1.pddpic.com',
+    'cdl-p2.pddpic.com',
+    'cd-1.pddpic.com',
+  ]) {
+    assert.equal(moduleText.includes(`DOMAIN,${host},REJECT`), false, `${host} must remain reachable`);
+  }
 });
 
 test('uses explicit empty JSON Map Local responses for QingRex endpoints and splash', () => {
@@ -66,10 +73,15 @@ test('uses explicit empty JSON Map Local responses for QingRex endpoints and spl
   }
 });
 
-test('keeps the billion-subsidy column while removing unwanted bottom tabs', () => {
+test('keeps only the homepage billion-subsidy card and core bottom tabs', () => {
   const body = {
     success: true,
     result: {
+      all_top_opts: [
+        { tab_id: 1, opt_name: '推荐', link: 'index.html' },
+        { tab_id: 4, opt_name: '七夕特惠', link: 'attendance.html' },
+        { tab_id: 2, opt_name: '电器' },
+      ],
       bottom_tabs: [
         { title: '首页', link: 'index.html' },
         { title: '多多视频', link: 'pdd_video.html' },
@@ -86,10 +98,16 @@ test('keeps the billion-subsidy column while removing unwanted bottom tabs', () 
       ],
       module_order: [
         { module_name: 'irregular_banner_dy' },
+        { module_name: 'icon_set' },
+        { module_name: 'new_user_zone' },
+        { module_name: 'ad_module' },
+        { module_name: 'billion_subsidy_entrance' },
         { module_name: 'billion_subsidy_entrance_dy' },
+        { module_name: 'billion_subsidy_entrance_lite' },
       ],
       dy_module: {
         irregular_banner_dy: { id: 1 },
+        recommend_fresh_info: { id: 2 },
         billion_subsidy_entrance_dy: { data: { title: '百亿补贴' } },
       },
       icon_set: { icons: [] },
@@ -97,16 +115,47 @@ test('keeps the billion-subsidy column while removing unwanted bottom tabs', () 
     },
   };
   const output = rewrittenBody('https://api.pinduoduo.com/api/alexa/homepage/hub?x=1', body);
-  assert.deepEqual(output.result.bottom_tabs.map((tab) => tab.title), ['首页', '百亿补贴', '聊天', '个人中心']);
-  assert.deepEqual(output.result.buffer_bottom_tabs.map((tab) => tab.title), ['首页', '百亿补贴', '聊天', '个人中心']);
+  assert.deepEqual(output.result.all_top_opts, [{ tab_id: 1, opt_name: '推荐', link: 'index.html' }]);
+  assert.deepEqual(output.result.bottom_tabs.map((tab) => tab.title), ['首页', '聊天', '个人中心']);
+  assert.deepEqual(output.result.buffer_bottom_tabs.map((tab) => tab.title), ['首页', '聊天', '个人中心']);
   assert.deepEqual(output.result.module_order, [
-    { module_name: 'irregular_banner_dy' },
+    { module_name: 'billion_subsidy_entrance' },
     { module_name: 'billion_subsidy_entrance_dy' },
+    { module_name: 'billion_subsidy_entrance_lite' },
   ]);
-  assert.equal(output.result.dy_module.irregular_banner_dy, undefined);
-  assert.deepEqual(output.result.dy_module.billion_subsidy_entrance_dy, { data: { title: '百亿补贴' } });
+  assert.deepEqual(output.result.dy_module, {
+    billion_subsidy_entrance_dy: { data: { title: '百亿补贴' } },
+  });
   assert.equal(output.result.icon_set, undefined);
   assert.equal(output.result.search_bar_hot_query, undefined);
+});
+
+test('replays the working Zenmo HAR and retains the exact billion-subsidy payload only', { skip: !fs.existsSync(harPath) }, () => {
+  const har = JSON.parse(fs.readFileSync(harPath, 'utf8'));
+  const entry = har.log.entries.find((item) =>
+    item.request.url.includes('/api/alexa/homepage/hub?') &&
+    item.request.url.includes('req_action_type=10')
+  );
+  assert.ok(entry, 'latest HAR must contain the homepage hub response');
+  const before = JSON.parse(entry.response.content.text);
+  const expectedCard = before.result.dy_module.billion_subsidy_entrance_dy;
+  assert.equal(expectedCard.data.data.title, '官方补贴');
+
+  const after = rewrittenBody(entry.request.url, before);
+  assert.deepEqual(after.result.dy_module, {
+    billion_subsidy_entrance_dy: expectedCard,
+  });
+  assert.deepEqual(after.result.module_order.map((item) => item.module_name), [
+    'billion_subsidy_entrance',
+    'billion_subsidy_entrance_dy',
+    'billion_subsidy_entrance_lite',
+  ]);
+  assert.deepEqual(after.result.all_top_opts.map((item) => item.opt_name), ['推荐']);
+  assert.deepEqual(after.result.bottom_tabs.map((item) => item.link), [
+    'index.html',
+    'chat_list.html',
+    'personal.html',
+  ]);
 });
 
 test('implements the remaining QingRex response rewrites and keeps sibling business data', () => {
@@ -127,16 +176,18 @@ test('implements the remaining QingRex response rewrites and keeps sibling busin
   assert.deepEqual(order.orders, [{ order_buttons: [{ title: '确认收货' }] }]);
 });
 
-test('latest HAR proves the referenced QingRex rules actually ran on Pinduoduo 8.20.0', { skip: !fs.existsSync(harPath) }, () => {
+test('latest HAR proves the working Zenmo rule preserved the homepage subsidy card', { skip: !fs.existsSync(harPath) }, () => {
   const har = JSON.parse(fs.readFileSync(harPath, 'utf8'));
   const entries = har.log.entries;
   const appUserAgent = entries.flatMap((entry) => entry.request.headers || [])
     .find((header) => String(header.name).toLowerCase() === 'user-agent' && /com\.xunmeng\.pinduoduo/.test(header.value));
   assert.match(appUserAgent.value, /AppVersion\/8\.20\.0/);
-  assert.ok(entries.some((entry) => /\/d4\?/.test(entry.request.url) && /拼多多去广告/.test(entry.comment || '')));
-  assert.ok(entries.some((entry) => /meta\.pinduoduo\.com/.test(entry.request.url) && /拼多多去广告/.test(entry.comment || '')));
-  assert.ok(entries.some((entry) => entry.request.url.includes('/api/caterham/v3/query/personal') && entry.response.content.text === '{}'));
-  assert.ok(entries.some((entry) => entry.request.url.includes('/api/zaire_biz/chat/resource/get_list_data') && entry.response.content.text === '{}'));
+  assert.ok(entries.some((entry) => /\/d4\?/.test(entry.request.url) && /拼多多净化页面布局/.test(entry.comment || '')));
+  assert.ok(entries.some((entry) => /meta\.pinduoduo\.com/.test(entry.request.url) && entry.response.status === 200));
+  assert.ok(entries.some((entry) => /cdl-1\.pddpic\.com/.test(entry.request.url) && entry.response.status === 200));
+  const homepage = entries.find((entry) => entry.request.url.includes('/api/alexa/homepage/hub?'));
+  assert.match(homepage.response.content.text, /"billion_subsidy_entrance_dy"/);
+  assert.match(homepage.response.content.text, /"title":"官方补贴"/);
 });
 
 test('passes malformed and unrelated response bodies through once', () => {
