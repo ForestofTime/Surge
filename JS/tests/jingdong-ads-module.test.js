@@ -2,13 +2,16 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const modulePath = path.resolve(__dirname, '../../Module/JingdongAds.sgmodule');
+const scriptPath = path.resolve(__dirname, '../JingdongSplash.js');
 const readmePath = path.resolve(__dirname, '../../README.md');
 const splashHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-11-093154.har';
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-12-081629.har';
 
 const moduleText = fs.readFileSync(modulePath, 'utf8');
+const scriptText = fs.readFileSync(scriptPath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
 function sectionLines(text, sectionName) {
@@ -22,17 +25,30 @@ function sectionLines(text, sectionName) {
     .filter((line) => line && !line.startsWith('#'));
 }
 
+function runRequest(url, headers) {
+  const doneCalls = [];
+  vm.runInNewContext(
+    scriptText,
+    {
+      $request: { url, headers },
+      $done: (value) => doneCalls.push(value),
+    },
+    { filename: scriptPath }
+  );
+  assert.equal(doneCalls.length, 1, 'request script must call $done exactly once');
+  return JSON.parse(JSON.stringify(doneCalls[0]));
+}
+
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
-  assert.match(moduleText, /仅处理京东 App 开屏素材/);
-  assert.match(moduleText, /v11$/m);
+  assert.match(moduleText, /仅处理京东 App 开屏图片和启动视频/);
+  assert.match(moduleText, /v12$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m
   );
 
   for (const removed of [
-    '[Script]',
     'api.m.jd.com',
     'JingdongAds.js',
     'client.action',
@@ -44,11 +60,15 @@ test('publishes a splash-only native Surge module', () => {
   ]) {
     assert.equal(moduleText.includes(removed), false, removed + ' must not remain in the splash-only module');
   }
+
+  assert.match(moduleText, /^京东-主页面启动视频跳过 = type=http-request,/m);
+  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=12/);
 });
 
-test('keeps only the QUIC fallback rule required by the confirmed splash path', () => {
+test('keeps only the two QUIC fallbacks required by the confirmed splash paths', () => {
   assert.deepEqual(sectionLines(moduleText, 'Rule'), [
     'AND, ((PROTOCOL, UDP), (DOMAIN, m.360buyimg.com)), REJECT',
+    'AND, ((PROTOCOL, UDP), (DOMAIN, vod.300hu.com)), REJECT',
   ]);
 });
 
@@ -58,21 +78,53 @@ test('maps only the HAR-confirmed full-screen canvas class', () => {
   ]);
 });
 
-test('limits MITM to the splash image host', () => {
+test('limits MITM to the two confirmed splash delivery hosts', () => {
   assert.deepEqual(sectionLines(moduleText, 'MITM'), [
-    'hostname = %APPEND% m.360buyimg.com',
+    'hostname = %APPEND% m.360buyimg.com, vod.300hu.com',
     'tcp-connection = true',
   ]);
 });
 
-test('the historical device HAR contains the stable splash canvas path', { skip: !fs.existsSync(splashHarPath) }, () => {
-  const har = JSON.parse(fs.readFileSync(splashHarPath, 'utf8'));
-  const splashUrls = new Set(
-    har.log.entries
-      .map((entry) => entry.request && entry.request.url)
-      .filter((url) => /^https:\/\/m\.360buyimg\.com\/mobilecms\/s1125x2436_jfs\//.test(url || ''))
+test('only short-circuits the HAR-confirmed JD main-page launch-player video request', () => {
+  const launchHeaders = {
+    'User-Agent': 'ffmpeg/4.0;jdmall;iphone;version/15.9.50;build/170632',
+    Referer: 'play:ijkplayerSH_JDMainPageViewController_999_161_130000-163b',
+  };
+  assert.deepEqual(
+    runRequest('https://vod.300hu.com/1030/path/creative.mp4?source=1', launchHeaders),
+    { response: { status: 204 } }
   );
-  assert.ok(splashUrls.size >= 3, 'the HAR must contain the observed full-screen launch materials');
+
+  for (const [url, headers] of [
+    ['https://vod.300hu.com/1030/path/ordinary.mp4', { ...launchHeaders, Referer: 'play:ijkplayerProductDetail' }],
+    ['https://vod.300hu.com/record/multibitrate/stream.m3u8', launchHeaders],
+    ['https://vod.300hu.com/1030/path/creative.mp4', { Referer: launchHeaders.Referer }],
+    ['https://example.com/1030/path/creative.mp4', launchHeaders],
+  ]) {
+    assert.deepEqual(runRequest(url, headers), {});
+  }
+});
+
+test('the latest device HAR proves both splash paths and the image rule result', { skip: !fs.existsSync(splashHarPath) }, () => {
+  const har = JSON.parse(fs.readFileSync(splashHarPath, 'utf8'));
+  const imageEntries = har.log.entries.filter((entry) =>
+    /^https:\/\/m\.360buyimg\.com\/mobilecms\/s1125x2436_jfs\//.test(entry.request && entry.request.url || '')
+  );
+  assert.ok(imageEntries.length >= 2, 'the HAR must contain the observed full-screen launch images');
+  assert.ok(
+    imageEntries.every((entry) => entry.response.content.mimeType === 'text/plain' && entry.response.content.size === 1),
+    'the image fallback must be observed as the one-byte Map Local response'
+  );
+
+  const videoEntries = har.log.entries.filter((entry) => {
+    const headers = entry.request && entry.request.headers || [];
+    const referer = headers.find((header) => String(header.name).toLowerCase() === 'referer');
+    return (
+      /^https:\/\/vod\.300hu\.com\/1030\/.*\.mp4(?:\?|$)/.test(entry.request && entry.request.url || '') &&
+      /play:ijkplayerSH_JDMainPageViewController_999_161_130000-/.test(referer && referer.value || '')
+    );
+  });
+  assert.ok(videoEntries.length >= 1, 'the HAR must contain the remaining launch-player video request');
 });
 
 test('README describes the reduced scope and keeps the one-click import link', () => {

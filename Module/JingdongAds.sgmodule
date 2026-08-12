@@ -1,18 +1,23 @@
 #!name=京东去开屏
-#!desc=仅处理京东 App 开屏素材，不修改首页、购物车、我的页面或业务接口。v11
+#!desc=仅处理京东 App 开屏图片和启动视频，不修改首页、购物车、我的页面或业务接口。v12
 #!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/JingdongAds.sgmodule
 
 [Rule]
-# 正常模式禁用素材主机的 QUIC，使请求回落到可由 Map Local 处理的 HTTP/2。
+# 正常模式禁用开屏素材主机的 QUIC，使请求回落到可由 Map Local 或脚本处理的 HTTP/2。
 AND, ((PROTOCOL, UDP), (DOMAIN, m.360buyimg.com)), REJECT
+AND, ((PROTOCOL, UDP), (DOMAIN, vod.300hu.com)), REJECT
 
 [Map Local]
 # HAR 与真机已确认的开屏画布尺寸类路径，不依赖活动素材 ID。
 ^https?:\/\/m\.360buyimg\.com\/mobilecms\/s1125x2436_jfs(?:\/|$) data-type=text data=" " status-code=200
 
+[Script]
+# 仅匹配 HAR 确认的主页面启动播放器标记，由脚本二次校验 UA、Referer 和 MP4 路径后返回 204。
+京东-主页面启动视频跳过 = type=http-request, pattern=^https?:\/\/vod\.300hu\.com\/(?:1030\/.*\.mp4)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=12, timeout=10
+
 [MITM]
-hostname = %APPEND% m.360buyimg.com
+hostname = %APPEND% m.360buyimg.com, vod.300hu.com
 tcp-connection = true
