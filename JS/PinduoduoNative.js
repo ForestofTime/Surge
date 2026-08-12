@@ -128,6 +128,19 @@
     }
   }
 
+  if (path === '/api/alexa/cells/hub/v3') {
+    if (isObject(body.data) && Array.isArray(body.data.goods_list)) {
+      if (body.data.goods_list.length !== 0) {
+        body.data.goods_list = [];
+        changed = true;
+      }
+      if (body.has_more !== false) {
+        body.has_more = false;
+        changed = true;
+      }
+    }
+  }
+
   if (path === '/search') {
     for (const target of roots) changed = deleteKeys(target, ['expansion']) || changed;
   }
