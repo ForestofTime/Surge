@@ -9,6 +9,8 @@ const scriptPath = path.resolve(__dirname, '../PinduoduoNative.js');
 const readmePath = path.resolve(__dirname, '../../README.md');
 const harPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-12-171514.har';
+const latestHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-12-180639.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const scriptText = fs.readFileSync(scriptPath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
@@ -56,6 +58,23 @@ test('retains HTTPDNS interception and blocks executable component delivery with
     assert.ok(moduleText.includes(`DOMAIN,${host},REJECT`), `${host} must stay blocked`);
   }
   assert.equal(moduleText.includes('DOMAIN,meta.pinduoduo.com,REJECT'), false, 'subsidy config must remain reachable');
+});
+
+test('latest HAR HTTPDNS v3 endpoint is intercepted before it can bypass named-host rewrites', { skip: !fs.existsSync(latestHarPath) }, () => {
+  const har = JSON.parse(fs.readFileSync(latestHarPath, 'utf8'));
+  const bypasses = har.log.entries.filter((entry) => {
+    if (!/^http:\/\/[^/]+\/v3\/d\?/.test(entry.request.url)) return false;
+    return (entry.request.headers || []).some((header) =>
+      String(header.name).toLowerCase() === 'user-agent' &&
+      /BundleID\/com\.xunmeng\.pinduoduo/.test(String(header.value))
+    );
+  });
+  assert.ok(bypasses.length > 0, 'latest HAR must reproduce the unblocked /v3/d HTTPDNS path');
+  assert.ok(bypasses.every((entry) => entry.response.status === 200));
+  assert.ok(
+    moduleText.includes('(?:d\\d?|v3\\/d)(?:\\?|$)'),
+    'the native module must reject both legacy /d4 and current /v3/d HTTPDNS paths'
+  );
 });
 
 test('uses explicit empty JSON Map Local responses for QingRex endpoints and splash', () => {
