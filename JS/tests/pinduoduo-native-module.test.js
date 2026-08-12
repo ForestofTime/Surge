@@ -31,30 +31,31 @@ function rewrittenBody(url, body) {
 
 test('is a standalone native Surge conversion of the QingRex module', () => {
   assert.match(moduleText, /^#!name=拼多多去广告（原生 Surge）$/m);
-  assert.match(moduleText, /保留首页百亿补贴卡片。v2/);
+  assert.match(moduleText, /保留首页百亿补贴卡片。v3/);
+  assert.match(moduleText, /^\[Body Rewrite\]$/m);
+  assert.ok(moduleText.includes('http-response-jq ^https:\\/\\/api\\.pinduoduo\\.com\\/api\\/alexa\\/homepage\\/hub'));
+  assert.ok(moduleText.includes('http-response-jq ^https:\\/\\/api\\.pinduoduo\\.com\\/api\\/alexa\\/cells\\/hub\\/v3'));
   assert.match(moduleText, /^拼多多-响应净化 = type=http-response,/m);
-  assert.match(moduleText, /\/JS\/PinduoduoNative\.js\?v=2/);
-  assert.doesNotMatch(moduleText, /^\[Body Rewrite\]$/m);
-  assert.doesNotMatch(moduleText, /http-response-jq/);
+  assert.match(moduleText, /\/JS\/PinduoduoNative\.js\?v=3/);
   assert.match(moduleText, /^\[Map Local\]$/m);
   assert.match(moduleText, /^hostname = %APPEND% api\.pinduoduo\.com$/m);
   assert.equal(fs.existsSync(path.resolve(__dirname, '../../Module/PinduoduoAds.sgmodule')), false);
   assert.equal(fs.existsSync(path.resolve(__dirname, '../PinduoduoAds.js')), false);
 });
 
-test('retains HTTPDNS interception without blocking homepage dynamic resources', () => {
+test('retains HTTPDNS interception and blocks executable component delivery without blocking subsidy config', () => {
   assert.ok(moduleText.includes('URL-REGEX,"^http:\\/\\/'));
   assert.ok(moduleText.includes('USER-AGENT,"*com.xunmeng.pinduoduo*"'));
   assert.match(moduleText, /PROTOCOL,UDP/);
   assert.equal((moduleText.match(/DOMAIN,titan\.pinduoduo\.com/g) || []).length, 1);
   for (const host of [
-    'meta.pinduoduo.com',
     'cdl-1.pddpic.com',
     'cdl-p2.pddpic.com',
     'cd-1.pddpic.com',
   ]) {
-    assert.equal(moduleText.includes(`DOMAIN,${host},REJECT`), false, `${host} must remain reachable`);
+    assert.ok(moduleText.includes(`DOMAIN,${host},REJECT`), `${host} must stay blocked`);
   }
+  assert.equal(moduleText.includes('DOMAIN,meta.pinduoduo.com,REJECT'), false, 'subsidy config must remain reachable');
 });
 
 test('uses explicit empty JSON Map Local responses for QingRex endpoints and splash', () => {
@@ -158,6 +159,21 @@ test('replays the working Zenmo HAR and retains the exact billion-subsidy payloa
   ]);
 });
 
+test('clears the shared homepage goods feed used below home, chat, and personal pages', () => {
+  const output = rewrittenBody('https://api.pinduoduo.com/api/alexa/cells/hub/v3?scene=homegoods_dy_tpl', {
+    has_more: true,
+    data: {
+      goods_list: [{ data: { goods_name: '广告商品' }, type: 0 }],
+      intel_req_rules: { keep: true },
+    },
+    org: 'arec',
+  });
+  assert.equal(output.has_more, false);
+  assert.deepEqual(output.data.goods_list, []);
+  assert.deepEqual(output.data.intel_req_rules, { keep: true });
+  assert.equal(output.org, 'arec');
+});
+
 test('implements the remaining QingRex response rewrites and keeps sibling business data', () => {
   const personal = rewrittenBody('https://api.pinduoduo.com/api/philo/personal/hub?x=1', {
     monthly_card_entrance: {},
@@ -188,6 +204,20 @@ test('latest HAR proves the working Zenmo rule preserved the homepage subsidy ca
   const homepage = entries.find((entry) => entry.request.url.includes('/api/alexa/homepage/hub?'));
   assert.match(homepage.response.content.text, /"billion_subsidy_entrance_dy"/);
   assert.match(homepage.response.content.text, /"title":"官方补贴"/);
+});
+
+test('latest v2 HAR proves the module was not applied while the shared goods feed supplied the regression', () => {
+  const latestPath =
+    '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-12-174620.har';
+  if (!fs.existsSync(latestPath)) return;
+  const har = JSON.parse(fs.readFileSync(latestPath, 'utf8'));
+  const homepage = har.log.entries.find((entry) => entry.request.url.includes('/api/alexa/homepage/hub?'));
+  const feed = har.log.entries.find((entry) => entry.request.url.includes('/api/alexa/cells/hub/v3?'));
+  assert.ok(homepage);
+  assert.ok(feed);
+  assert.doesNotMatch(homepage.comment || '', /Script found|Response body is modified|Body Rewrite/i);
+  assert.match(feed.response.content.text, /"goods_list":\[/);
+  assert.ok(JSON.parse(feed.response.content.text).data.goods_list.length > 0);
 });
 
 test('passes malformed and unrelated response bodies through once', () => {
