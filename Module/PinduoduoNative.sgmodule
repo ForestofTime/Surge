@@ -1,5 +1,5 @@
 #!name=拼多多去广告（原生 Surge）
-#!desc=QingRex 规则的原生 Surge 实现；去开屏、推广入口与页面广告，保留百亿补贴栏目。v1
+#!desc=原生 Surge 去广告；保留首页百亿补贴卡片。v2
 #!author=ForestofTime
 #!category=AdBlock
 #!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/PinDuoDuo.png
@@ -13,19 +13,15 @@ AND,((URL-REGEX,"^http:\/\/((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]
 AND,((URL-REGEX,"^http:\/\/\[[0-9a-fA-F:]+\]\/d(\d)?\?",extended-matching),(USER-AGENT,"*com.xunmeng.pinduoduo*")),REJECT
 AND,((DOMAIN,api.pinduoduo.com,extended-matching),(PROTOCOL,UDP)),REJECT
 
-# QingRex 的广告、遥测和动态资源规则。去掉重复 titan 项，保留原有 pre-matching 语义。
+# 广告和遥测规则。动态组件与实验配置主机保持可达，保证百亿补贴卡片可渲染。
 DOMAIN,titan.pinduoduo.com,REJECT-NO-DROP,extended-matching,pre-matching
 DOMAIN,xg.pinduoduo.com,REJECT,extended-matching,pre-matching
-DOMAIN,cdl-1.pddpic.com,REJECT,extended-matching,pre-matching
-DOMAIN,cdl-p2.pddpic.com,REJECT,extended-matching,pre-matching
-DOMAIN,cd-1.pddpic.com,REJECT,extended-matching,pre-matching
 DOMAIN,apm.pinduoduo.com,REJECT,extended-matching,pre-matching
 DOMAIN,th-b.pinduoduo.com,REJECT,extended-matching,pre-matching
 DOMAIN,ta.pinduoduo.com,REJECT,extended-matching,pre-matching
 DOMAIN,th.pinduoduo.com,REJECT,extended-matching,pre-matching
 DOMAIN,th-a.pinduoduo.com,REJECT,extended-matching,pre-matching
 DOMAIN,ta-a.pinduoduo.com,REJECT,extended-matching,pre-matching
-DOMAIN,meta.pinduoduo.com,REJECT,extended-matching,pre-matching
 DOMAIN,apm-a.pinduoduo.com,REJECT,extended-matching,pre-matching
 
 [Map Local]
@@ -54,7 +50,7 @@ DOMAIN,apm-a.pinduoduo.com,REJECT,extended-matching,pre-matching
 ^https:\/\/api\.pinduoduo\.com\/api\/buffon\/nasus\/recommend(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 [Script]
-拼多多-响应净化 = type=http-response,pattern=^https:\/\/api\.pinduoduo\.com\/(?:api\/(?:alexa\/homepage\/hub|philo\/personal\/hub|oak\/integration\/render|caterham\/v3\/query\/order_detail_group|aristotle\/order_list_v4)|search(?:\?|$)|order\/),requires-body=true,max-size=2097152,timeout=20,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PinduoduoNative.js?v=1
+拼多多-响应净化 = type=http-response,pattern=^https:\/\/api\.pinduoduo\.com\/(?:api\/(?:alexa\/homepage\/hub|philo\/personal\/hub|oak\/integration\/render|caterham\/v3\/query\/order_detail_group|aristotle\/order_list_v4)|search(?:\?|$)|order\/),requires-body=true,max-size=2097152,timeout=20,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PinduoduoNative.js?v=2
 
 [MITM]
 hostname = %APPEND% api.pinduoduo.com

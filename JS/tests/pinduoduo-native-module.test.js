@@ -115,7 +115,7 @@ test('keeps only the homepage billion-subsidy card and core bottom tabs', () => 
     },
   };
   const output = rewrittenBody('https://api.pinduoduo.com/api/alexa/homepage/hub?x=1', body);
-  assert.deepEqual(output.result.all_top_opts, [{ tab_id: 1, opt_name: '推荐', link: 'index.html' }]);
+  assert.deepEqual(output.result.all_top_opts, []);
   assert.deepEqual(output.result.bottom_tabs.map((tab) => tab.title), ['首页', '聊天', '个人中心']);
   assert.deepEqual(output.result.buffer_bottom_tabs.map((tab) => tab.title), ['首页', '聊天', '个人中心']);
   assert.deepEqual(output.result.module_order, [
@@ -150,7 +150,7 @@ test('replays the working Zenmo HAR and retains the exact billion-subsidy payloa
     'billion_subsidy_entrance_dy',
     'billion_subsidy_entrance_lite',
   ]);
-  assert.deepEqual(after.result.all_top_opts.map((item) => item.opt_name), ['推荐']);
+  assert.deepEqual(after.result.all_top_opts, []);
   assert.deepEqual(after.result.bottom_tabs.map((item) => item.link), [
     'index.html',
     'chat_list.html',

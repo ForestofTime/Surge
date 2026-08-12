@@ -2,7 +2,7 @@
  * 拼多多原生 Surge 响应净化
  *
  * 将 QingRex 模块的 http-response-jq 逐条改写为 Surge JavaScript。
- * 首页底栏保留：首页、百亿补贴、聊天、个人中心。
+ * 首页仅保留百亿补贴卡片；底栏保留：首页、聊天、个人中心。
  */
 
 (function () {
@@ -33,10 +33,8 @@
 
   function isAllowedBottomTab(tab) {
     if (!isObject(tab)) return false;
-    const title = String(tab.title || '');
     const link = String(tab.link || '');
-    if (['index.html', 'chat_list.html', 'personal.html'].includes(link)) return true;
-    return title.includes('百亿补贴') || /(?:brand_activity_)?subsidy\.html(?:\?|$)/i.test(link);
+    return ['index.html', 'chat_list.html', 'personal.html'].includes(link);
   }
 
   function filterBottomTabs(target, key) {
@@ -45,6 +43,43 @@
     if (filtered.length === target[key].length) return false;
     target[key] = filtered;
     return true;
+  }
+
+  function keepHomepageSubsidyCard(target) {
+    let changed = false;
+    const subsidyModuleNames = new Set([
+      'billion_subsidy_entrance',
+      'billion_subsidy_entrance_dy',
+      'billion_subsidy_entrance_lite',
+    ]);
+
+    if (Array.isArray(target.module_order)) {
+      const filtered = target.module_order.filter((item) =>
+        isObject(item) && subsidyModuleNames.has(String(item.module_name || ''))
+      );
+      if (filtered.length !== target.module_order.length) {
+        target.module_order = filtered;
+        changed = true;
+      }
+    }
+
+    if (isObject(target.dy_module)) {
+      for (const key of Object.keys(target.dy_module)) {
+        if (key !== 'billion_subsidy_entrance_dy') {
+          delete target.dy_module[key];
+          changed = true;
+        }
+      }
+    }
+
+    if (Array.isArray(target.all_top_opts)) {
+      if (target.all_top_opts.length !== 0) {
+        target.all_top_opts = [];
+        changed = true;
+      }
+    }
+
+    return changed;
   }
 
   function stripOrderGrowthTips(value) {
@@ -80,9 +115,7 @@
   if (path === '/api/alexa/homepage/hub') {
     for (const target of roots) {
       changed = deleteKeys(target, ['icon_set', 'search_bar_hot_query']) || changed;
-      if (isObject(target.dy_module)) {
-        changed = deleteKeys(target.dy_module, ['irregular_banner_dy']) || changed;
-      }
+      changed = keepHomepageSubsidyCard(target) || changed;
       changed = filterBottomTabs(target, 'bottom_tabs') || changed;
       changed = filterBottomTabs(target, 'buffer_bottom_tabs') || changed;
       if (Array.isArray(target.all_top_opts)) {

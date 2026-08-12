@@ -59,7 +59,7 @@
 | 19 | `Module/CCBLife.sgmodule` | AdBlock | 建行生活开屏默认拦截，其它页面广告可按模块参数启用 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CCBLife.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FCCBLife.sgmodule) |
 | 20 | `Module/CainiaoMiniProgram.sgmodule` | AdBlock | 菜鸟淘宝小程序定向清理 HTTPDNS，并过滤抓包曝光的 1308、205、1381 广告位 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CainiaoMiniProgram.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FCainiaoMiniProgram.sgmodule) |
 | 21 | `Module/GoofishAds.sgmodule` | AdBlock | 闲鱼开屏、曝光接口及 11 处页面广告响应净化，使用闲鱼专属 HTTPDNS 清理 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/GoofishAds.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FGoofishAds.sgmodule) |
-| 22 | `Module/PinduoduoNative.sgmodule` | AdBlock | 拼多多原生 Surge 去广告，保留百亿补贴栏目 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/PinduoduoNative.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FPinduoduoNative.sgmodule) |
+| 22 | `Module/PinduoduoNative.sgmodule` | AdBlock | 拼多多原生 Surge 去广告，保留首页百亿补贴卡片 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/PinduoduoNative.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FPinduoduoNative.sgmodule) |
 
 ### 连接与工具
 
