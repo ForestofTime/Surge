@@ -48,9 +48,9 @@ function parseBase64Json(value) {
   return JSON.parse(Buffer.from(value, 'base64').toString('utf8'));
 }
 
-test('declares a narrowly scoped v3 mini-program module with unique script names', () => {
+test('declares a narrowly scoped v4 mini-program module with unique script names', () => {
   assert.match(moduleText, /^#!name=菜鸟淘宝小程序去广告$/m);
-  assert.match(moduleText, /^#!desc=.*HTTPDNS.*1308.*205.*1381.*v3$/m);
+  assert.match(moduleText, /^#!desc=.*HTTPDNS.*1308.*205.*1381.*2018.*v4$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/CainiaoMiniProgram\.sgmodule$/m
@@ -62,7 +62,7 @@ test('declares a narrowly scoped v3 mini-program module with unique script names
   assert.equal(new Set(names).size, names.length, 'Surge Script names must be unique');
   assert.deepEqual(names, ['菜鸟小程序-HTTPDNS清理', '菜鸟小程序-广告位过滤']);
   for (const line of scripts) {
-    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=3'));
+    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=4'));
     assert.ok(line.includes('type=http-response'));
     assert.ok(line.includes('requires-body=true'));
   }
@@ -91,7 +91,7 @@ test('covers only the HAR-confirmed MTop hosts and advertisement APIs', () => {
   assert.match(ads, /acs\\\.m\\\.taobao\\\.com/);
   assert.match(ads, /netflow-mtop\\\.cainiao\\\.com/);
   assert.match(ads, /mtop\\\.cainiao\\\.guoguo\\\.nbnetflow\\\.ads\\\.\(\?:mshow/);
-  assert.match(ads, /show\\\.login/);
+  assert.match(ads, /show\(\?:\\\.login\)\?/);
   assert.doesNotMatch(ads, /(?:^|\\\/)gw\\\/\.\*|\.\*cainiao/);
 
   assert.deepEqual(sectionLines('MITM'), [
@@ -268,9 +268,9 @@ test('removes confirmed ad keys and explicit ad elements while preserving real p
   });
   const output = JSON.parse(result.body);
 
-  assert.equal(output.data['1308'], undefined);
-  assert.equal(output.data['205'], undefined);
-  assert.equal(output.data['1381'], undefined);
+  assert.deepEqual(output.data['1308'], []);
+  assert.deepEqual(output.data['205'], []);
+  assert.deepEqual(output.data['1381'], []);
   assert.deepEqual(output.data['1275'], source.data['1275']);
   assert.deepEqual(output.data.packageList, [source.data.packageList[0], source.data.packageList[4]]);
   assert.deepEqual(output.data.nested.cards, [source.data.nested.cards[1]]);
