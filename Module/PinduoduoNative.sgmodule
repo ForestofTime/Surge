@@ -1,5 +1,5 @@
 #!name=拼多多去广告（QingRex 原生兼容）
-#!desc=完整保留 QingRex 原生净化；仅修正百亿补贴卡片的首页渲染顺序。v6
+#!desc=完整保留 QingRex 原生净化；恢复其历史版本中 meta 配置可达行为。v7
 #!author=ForestofTime
 #!category=AdBlock
 #!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/PinDuoDuo.png
@@ -25,10 +25,6 @@ DOMAIN,th.pinduoduo.com,REJECT,extended-matching,pre-matching
 DOMAIN,th-a.pinduoduo.com,REJECT,extended-matching,pre-matching
 DOMAIN,ta-a.pinduoduo.com,REJECT,extended-matching,pre-matching
 DOMAIN,apm-a.pinduoduo.com,REJECT,extended-matching,pre-matching
-
-[URL Rewrite]
-# meta 原域名规则改为 HTTP 层白名单。仅实验接口交给脚本筛出两个百亿补贴键，其余路径继续拒绝。
-^https:\/\/meta\.pinduoduo\.com\/(?!api\/app\/v2\/experiment(?:\?|$)).* - reject
 
 [Body Rewrite]
 http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/alexa\/homepage\/hub\? 'delpaths([["result","dy_module","irregular_banner_dy"]])'
@@ -88,8 +84,5 @@ http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/aristotle\/order_list_v4\?
 
 ^https:\/\/api\.pinduoduo\.com\/api\/buffon\/nasus\/recommend\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
-[Script]
-拼多多-百亿补贴渲染 = type=http-response,pattern=^https:\/\/(?:meta\.pinduoduo\.com\/api\/app\/v2\/experiment|api\.pinduoduo\.com\/api\/alexa\/homepage\/hub)(?:\?|$),requires-body=true,max-size=2097152,timeout=10,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PinduoduoSubsidy.js?v=6
-
 [MITM]
-hostname = %APPEND% api.pinduoduo.com, meta.pinduoduo.com
+hostname = %APPEND% api.pinduoduo.com
