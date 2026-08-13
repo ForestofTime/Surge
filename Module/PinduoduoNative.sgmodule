@@ -1,5 +1,5 @@
 #!name=拼多多去广告（QingRex 原生兼容）
-#!desc=保留首页业务入口与百亿补贴；补齐 v2/v3 HTTPDNS，清理聊天与个人中心商品流。v10
+#!desc=首页 homepage/hub 完全透传，保留业务入口与百亿补贴；清理聊天与个人中心商品流。v11
 #!author=ForestofTime
 #!category=AdBlock
 #!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/PinDuoDuo.png
@@ -27,10 +27,6 @@ DOMAIN,ta-a.pinduoduo.com,REJECT,extended-matching,pre-matching
 DOMAIN,apm-a.pinduoduo.com,REJECT,extended-matching,pre-matching
 
 [Body Rewrite]
-http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/alexa\/homepage\/hub\? 'delpaths([["result","dy_module","irregular_banner_dy"]])'
-http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/alexa\/homepage\/hub\? 'delpaths([["result","search_bar_hot_query"]])'
-http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/alexa\/homepage\/hub\? 'delpaths([["result","dy_module","irregular_banner_dy"]])'
-http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/alexa\/homepage\/hub\? '.result.bottom_tabs? |= map(select(.link | IN("index.html", "chat_list.html", "personal.html"))) | .result.buffer_bottom_tabs? |= map(select(.link | IN("index.html", "chat_list.html", "personal.html"))) | .result.all_top_opts |= map(del(.selected_image, .image, .height, .width))'
 # 8.20.0 HAR：个人中心 refer_page_sn=10001，聊天 refer_page_sn=10031。首页请求不带这两个来源参数。
 http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/alexa\/cells\/hub\/v3\?(?:[^#&]*&)*refer_page_sn=(?:10001|10031)(?:&|$) '.has_more = false | .data.goods_list = []'
 http-response-jq ^https:\/\/api\.pinduoduo\.com\/search\? 'delpaths([["expansion"]])'

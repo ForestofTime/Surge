@@ -20,6 +20,8 @@ const latestPersonalHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-140744.har';
 const latestV9RegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-143611.har';
+const latestV10RegressionHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-145210.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
@@ -34,22 +36,22 @@ function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
-test('uses QingRex native rules and restores the homepage business entries in v10', () => {
+test('uses QingRex native rules and fully passes through homepage hub in v11', () => {
   assert.match(moduleText, /^#!name=拼多多去广告（QingRex 原生兼容）$/m);
-  assert.match(moduleText, /保留首页业务入口与百亿补贴；补齐 v2\/v3 HTTPDNS，清理聊天与个人中心商品流。v10/);
+  assert.match(moduleText, /首页 homepage\/hub 完全透传，保留业务入口与百亿补贴；清理聊天与个人中心商品流。v11/);
 
-  // Excluding the page-scoped feed rule and the faulty icon_set deletion, all v9 rules stay byte-identical.
+  // Excluding the scoped cells rule and removed homepage rewrites, all other v10 rewrites stay byte-identical.
   const unchangedBodyRewrite = section('Body Rewrite', 'Map Local')
     .split('\n')
     .filter((line) =>
       !line.includes('8.20.0 HAR') &&
       !line.includes('api\\/alexa\\/cells\\/hub\\/v3') &&
-      !line.includes('["result","icon_set"]')
+      !line.includes('api\\/alexa\\/homepage\\/hub')
     )
     .join('\n');
   assert.equal(
     sha256(unchangedBodyRewrite),
-    '574e399229412967c2f637e6ca1433660cd60abc868d4ecfc92d81b7fd5d8fcc'
+    'ee9a62070e611a19a1110d44533f1f19a049d43e2284547e6eef14fcfb9f02fc'
   );
   assert.equal(
     sha256(section('Map Local', 'MITM')),
@@ -57,15 +59,58 @@ test('uses QingRex native rules and restores the homepage business entries in v1
   );
 });
 
-test('keeps homepage icon_set and the billion-subsidy payload reachable', () => {
+test('has zero homepage hub rewrites', () => {
   const homepageRules = section('Body Rewrite', 'Map Local')
     .split('\n')
     .filter((line) => line.includes('api\\/alexa\\/homepage\\/hub'));
 
-  assert.ok(homepageRules.length > 0);
-  assert.ok(homepageRules.every((line) => !line.includes('["result","icon_set"]')));
-  assert.ok(homepageRules.every((line) => !line.includes('icon_fold_zone')));
-  assert.ok(homepageRules.every((line) => !line.includes('billion_subsidy_entrance_dy')));
+  assert.deepEqual(homepageRules, []);
+});
+
+test('v11 fully passes through homepage hub after v10 still modified complete payloads', {
+  skip: !fs.existsSync(latestV10RegressionHarPath),
+}, () => {
+  const homepageRules = section('Body Rewrite', 'Map Local')
+    .split('\n')
+    .filter((line) => line.includes('api\\/alexa\\/homepage\\/hub'));
+  assert.deepEqual(homepageRules, []);
+
+  const har = JSON.parse(fs.readFileSync(latestV10RegressionHarPath, 'utf8'));
+  const homepages = har.log.entries.filter((entry) =>
+    entry.response?.status === 200 && entry.request.url.includes('/api/alexa/homepage/hub?')
+  );
+  assert.equal(homepages.length, 4);
+
+  for (const entry of homepages) {
+    const payload = JSON.parse(entry.response.content.text);
+    assert.equal(payload.result.icon_set.length, 18);
+    assert.ok(payload.result.icon_fold_zone);
+    assert.equal(
+      payload.result.dy_module.billion_subsidy_entrance_dy.data.data.goods_list.length,
+      4
+    );
+    assert.ok(payload.result.module_order.some(({ module_name }) => module_name === 'icon_set'));
+    assert.ok(payload.result.module_order.some(
+      ({ module_name }) => module_name === 'billion_subsidy_entrance_dy'
+    ));
+    assert.equal(
+      String(entry.comment).match(/Response body is modified by body rewrite rule/g)?.length,
+      4
+    );
+  }
+
+  const httpDns = har.log.entries.filter((entry) =>
+    /^http:\/\/(?:\d{1,3}(?:\.\d{1,3}){3}|\[[0-9a-fA-F:]+\])\/(?:d\d?|v[23]\/d)(?:\?|$)/
+      .test(entry.request.url) &&
+    entry.request.headers?.some(({ name, value }) =>
+      name.toLowerCase() === 'user-agent' && value.includes('com.xunmeng.pinduoduo')
+    )
+  );
+  assert.equal(httpDns.length, 224);
+  assert.ok(httpDns.every((entry) => entry.response === undefined));
+  assert.ok(httpDns.every((entry) =>
+    String(entry.comment).includes('拼多多去广告（QingRex 原生兼容）')
+  ));
 });
 
 test('clears only chat and personal cells feeds while leaving homepage cells untouched', () => {
