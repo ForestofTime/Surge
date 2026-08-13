@@ -6,10 +6,14 @@ const path = require('node:path');
 
 const modulePath = path.resolve(__dirname, '../../Module/PinduoduoNative.sgmodule');
 const obsoleteScriptPath = path.resolve(__dirname, '../PinduoduoNative.js');
+const subsidyScriptPath = path.resolve(__dirname, '../PinduoduoSubsidy.js');
 const readmePath = path.resolve(__dirname, '../../README.md');
 const latestHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-100425.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
+const subsidyScriptText = fs.existsSync(subsidyScriptPath)
+  ? fs.readFileSync(subsidyScriptPath, 'utf8')
+  : '';
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
 function section(name, nextName) {
@@ -25,11 +29,22 @@ function sha256(value) {
 
 function rewritePattern() {
   const line = moduleText.split('\n').find((item) =>
-    item.includes('meta\\.pinduoduo\\.com') && item.includes('component') && item.includes(' - reject')
+    item.includes('meta\\.pinduoduo\\.com') && item.includes('experiment') && item.includes(' - reject')
   );
   assert.ok(line, 'missing the narrow meta URL rewrite');
   const pattern = line.slice(0, line.lastIndexOf(' - reject'));
   return new RegExp(pattern);
+}
+
+function runSubsidyResponse(url, body) {
+  const doneCalls = [];
+  require('node:vm').runInNewContext(subsidyScriptText, {
+    $request: { url },
+    $response: { body },
+    $done: (value) => doneCalls.push(JSON.parse(JSON.stringify(value))),
+  }, { filename: subsidyScriptPath });
+  assert.equal(doneCalls.length, 1);
+  return doneCalls[0];
 }
 
 test('uses QingRex native rules as the baseline with only a narrow subsidy renderer exception', () => {
@@ -69,23 +84,46 @@ test('restores every QingRex ad-domain block and keeps meta blocked at HTTP leve
   assert.match(moduleText, /^hostname = %APPEND% api\.pinduoduo\.com, meta\.pinduoduo\.com$/m);
 });
 
-test('allows only component fetch and pull on meta while rejecting experiments and reports', () => {
+test('allows only the filtered experiment response on meta and rejects every other path', () => {
   const rejected = rewritePattern();
   for (const url of [
     'https://meta.pinduoduo.com/api/app/v2/abtest?pdduid=1',
-    'https://meta.pinduoduo.com/api/app/v2/experiment?pdduid=1',
     'https://meta.pinduoduo.com/api/app/v1/component/manual/query?pdduid=1',
     'https://meta.pinduoduo.com/api/lamer/uuid/report?pdduid=1',
     'https://meta.pinduoduo.com/api/app/info/report/wrapper?pdduid=1',
-  ]) {
-    assert.equal(rejected.test(url), true, `${url} must be rejected`);
-  }
-  for (const url of [
     'https://meta.pinduoduo.com/api/one-gateway-client/zone/v1/component/fetch?pdduid=1',
     'https://meta.pinduoduo.com/api/one-gateway-client/zone/v1/component/pull?pdduid=1',
   ]) {
+    assert.equal(rejected.test(url), true, `${url} must be rejected`);
+  }
+  for (const url of ['https://meta.pinduoduo.com/api/app/v2/experiment?pdduid=1']) {
     assert.equal(rejected.test(url), false, `${url} must stay reachable`);
   }
+});
+
+test('keeps only the two homepage subsidy experiments', () => {
+  assert.ok(subsidyScriptText.length > 0);
+  const input = {
+    p: '1',
+    digest: 'keep-envelope',
+    ks: {
+      index_pdd_home_billion_subsidy_entry_pdd_lego_reportm1_6900: { v: 'true' },
+      pdd_home_shorter_billion_5300: { v: 'false' },
+      pdd_home_dynamic_monitor_7390: { v: '["billion_subsidy_entrance_dy","recommend_fresh_info"]' },
+      home_goods_list_show_lego_header_7700: { v: 'true' },
+      live_fix_track_ad_watch_duration_65500: { v: 'true' },
+    },
+  };
+  const result = runSubsidyResponse(
+    'https://meta.pinduoduo.com/api/app/v2/experiment?pdduid=1',
+    JSON.stringify(input)
+  );
+  const output = JSON.parse(result.body);
+  assert.equal(output.digest, 'keep-envelope');
+  assert.deepEqual(Object.keys(output.ks).sort(), [
+    'index_pdd_home_billion_subsidy_entry_pdd_lego_reportm1_6900',
+    'pdd_home_shorter_billion_5300',
+  ]);
 });
 
 test('does not retain the previous broad custom response pipeline', () => {
@@ -93,7 +131,9 @@ test('does not retain the previous broad custom response pipeline', () => {
   assert.equal(moduleText.includes('.result.module_order? |='), false);
   assert.equal(moduleText.includes('.result.dy_module? |='), false);
   assert.equal(moduleText.includes('api\\/cappuccino\\/splash'), false);
-  assert.equal(moduleText.includes('[Script]'), false);
+  assert.match(moduleText, /^拼多多-百亿补贴实验 = type=http-response,/m);
+  assert.equal((moduleText.match(/type=http-response/g) || []).length, 1);
+  assert.equal(moduleText.includes('api\\/alexa\\/homepage'), false);
   assert.equal(fs.existsSync(obsoleteScriptPath), false);
 });
 
