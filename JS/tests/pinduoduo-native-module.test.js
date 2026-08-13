@@ -12,8 +12,6 @@ const fullMetaHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-100425.har';
 const latestV6HarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-111547.har';
-const pageFeedsHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-104410.har';
 const latestChatHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-122121.har';
 const latestPersonalHarPath =
@@ -22,6 +20,8 @@ const latestV9RegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-143611.har';
 const latestV10RegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-145210.har';
+const latestV11RegressionHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-150719.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
@@ -36,11 +36,11 @@ function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
-test('uses QingRex native rules and fully passes through homepage hub in v11', () => {
+test('uses QingRex native rules and passes through homepage products and search in v12', () => {
   assert.match(moduleText, /^#!name=拼多多去广告（QingRex 原生兼容）$/m);
-  assert.match(moduleText, /首页 homepage\/hub 完全透传，保留业务入口与百亿补贴；清理聊天与个人中心商品流。v11/);
+  assert.match(moduleText, /首页配置与商品流、搜索完全透传；清理聊天与个人中心商品广告。v12/);
 
-  // Excluding the scoped cells rule and removed homepage rewrites, all other v10 rewrites stay byte-identical.
+  // All retained v12 body rewrites and map-local rules stay byte-identical.
   const unchangedBodyRewrite = section('Body Rewrite', 'Map Local')
     .split('\n')
     .filter((line) =>
@@ -51,11 +51,11 @@ test('uses QingRex native rules and fully passes through homepage hub in v11', (
     .join('\n');
   assert.equal(
     sha256(unchangedBodyRewrite),
-    'ee9a62070e611a19a1110d44533f1f19a049d43e2284547e6eef14fcfb9f02fc'
+    '6e5fcac7da482172fa13f9d6fcfea36b71388085dd0a3a1beb6a24b2f5aac4cc'
   );
   assert.equal(
     sha256(section('Map Local', 'MITM')),
-    '702c9419ae77b78002485f01f0ebaf561f54a072a430095611e78659093d8ce1'
+    '4d7f7fdab6c3c2bfe3ed902c770752b30a3da6f1f76d80a2a2d81782042fa087'
   );
 });
 
@@ -113,54 +113,98 @@ test('v11 fully passes through homepage hub after v10 still modified complete pa
   ));
 });
 
-test('clears only chat and personal cells feeds while leaving homepage cells untouched', () => {
-  const scopedRule = moduleText.split('\n').find((line) =>
-    line.includes('api\\/alexa\\/cells\\/hub\\/v3')
-  );
-  assert.ok(scopedRule, 'missing scoped cells feed body rewrite');
-  assert.match(scopedRule, /refer_page_sn=\(\?:10001\|10031\)/);
-  assert.match(scopedRule, /\.has_more = false \| \.data\.goods_list = \[\]/);
+test('fully passes through shared homepage cells while retaining dedicated chat and personal rules', () => {
+  assert.equal(moduleText.includes('api\\/alexa\\/cells\\/hub\\/v3'), false);
 
-  const patternText = scopedRule.split(" '", 1)[0]
-    .replace(/^http-response-jq /, '')
-    .replaceAll('\\/', '/');
-  const pattern = new RegExp(patternText);
-
-  assert.equal(pattern.test(
-    'https://api.pinduoduo.com/api/alexa/cells/hub/v3?count=20&refer_page_sn=10001&page_sn=10002'
-  ), true);
-  assert.equal(pattern.test(
-    'https://api.pinduoduo.com/api/alexa/cells/hub/v3?refer_page_sn=10031&count=20'
-  ), true);
-  assert.equal(pattern.test(
-    'https://api.pinduoduo.com/api/alexa/cells/hub/v3?scene=homegoods_dy_tpl&page_sn=10002'
-  ), false);
+  const mapLocal = section('Map Local', 'MITM');
+  for (const endpoint of [
+    'api\\/zaire_biz\\/chat\\/resource\\/get_list_data',
+    'api\\/caterham\\/v3\\/query\\/new_chat_group',
+    'api\\/alexa\\/goods\\/back_up',
+    'api\\/caterham\\/v3\\/query\\/personal',
+  ]) {
+    assert.ok(mapLocal.includes(endpoint), `${endpoint} protection must stay`);
+  }
 });
 
-test('HAR identifies the shared feed by page source instead of product content', {
-  skip: !fs.existsSync(pageFeedsHarPath),
+test('v12 passes through search results and homepage product refreshes exposed by v11 HAR', {
+  skip: !fs.existsSync(latestV11RegressionHarPath),
 }, () => {
-  const har = JSON.parse(fs.readFileSync(pageFeedsHarPath, 'utf8'));
+  const rewrites = section('Body Rewrite', 'Map Local').split('\n');
+  assert.equal(rewrites.some((line) =>
+    line.startsWith('http-response-jq ^https:\\/\\/api\\.pinduoduo\\.com\\/search\\?')
+  ), false);
+  assert.equal(section('Map Local', 'MITM').includes('search_hotquery'), false);
+
+  const har = JSON.parse(fs.readFileSync(latestV11RegressionHarPath, 'utf8'));
+  const search = har.log.entries.find((entry) =>
+    entry.request.method === 'POST' && new URL(entry.request.url).pathname === '/search'
+  );
+  assert.equal(search.response.status, 200);
+  assert.equal(JSON.parse(search.response.content.text).items.length, 20);
+  assert.ok(String(search.comment).includes('Response body is modified by body rewrite rule'));
+
+  const hotQueries = har.log.entries.filter((entry) =>
+    new URL(entry.request.url).pathname === '/search_hotquery'
+  );
+  assert.equal(hotQueries.length, 2);
+  assert.ok(hotQueries.every((entry) => entry.response?.status === 200));
+  assert.ok(hotQueries.every((entry) => entry.response.content.text === '{}'));
+  assert.ok(hotQueries.every((entry) =>
+    String(entry.comment).includes('Matched map local rule')
+  ));
+
+  const homeFeeds = har.log.entries.filter((entry) =>
+    entry.response?.status === 200 && entry.request.url.includes('/api/alexa/cells/hub/v3?')
+  );
+  const initial = homeFeeds.find((entry) =>
+    !new URL(entry.request.url).searchParams.has('refer_page_sn')
+  );
+  assert.equal(JSON.parse(initial.response.content.text).data.goods_list.length, 10);
+  assert.equal(String(initial.comment).includes('modified by body rewrite rule'), false);
+
+  const refreshes = homeFeeds.filter((entry) => {
+    const params = new URL(entry.request.url).searchParams;
+    return params.get('refer_page_sn') === '10001' &&
+      ['10', '109'].includes(params.get('req_action_type'));
+  });
+  assert.equal(refreshes.length, 2);
+  assert.ok(refreshes.every((entry) => JSON.parse(entry.response.content.text).data.goods_list.length === 0));
+  assert.ok(refreshes.every((entry) => JSON.parse(entry.response.content.text).has_more === false));
+  assert.ok(refreshes.every((entry) =>
+    String(entry.comment).includes('Response body is modified by body rewrite rule')
+  ));
+
+  const subsidyRefresh = har.log.entries.find((entry) =>
+    new URL(entry.request.url).pathname === '/api/alexa/homepage/hub/refresh'
+  );
+  const subsidyPayload = JSON.parse(subsidyRefresh.response.content.text);
+  assert.equal(subsidyRefresh.response.status, 200);
+  assert.equal(subsidyPayload.success, true);
+  assert.equal(
+    subsidyPayload.result.dy_module.billion_subsidy_entrance_dy.data.data.goods_list.length,
+    4
+  );
+  assert.equal(String(subsidyRefresh.comment).includes('[Rewrite]'), false);
+});
+
+test('HAR proves refer_page_sn alone cannot distinguish the shared homepage product feed', {
+  skip: !fs.existsSync(latestV9RegressionHarPath),
+}, () => {
+  const har = JSON.parse(fs.readFileSync(latestV9RegressionHarPath, 'utf8'));
   const feeds = har.log.entries.filter((entry) =>
     entry.request.url.includes('/api/alexa/cells/hub/v3?')
   );
-  const personal = feeds.filter((entry) =>
-    new URL(entry.request.url).searchParams.get('refer_page_sn') === '10001'
-  );
-  const chat = feeds.filter((entry) =>
-    new URL(entry.request.url).searchParams.get('refer_page_sn') === '10031'
-  );
-  const homepage = feeds.filter((entry) =>
-    !new URL(entry.request.url).searchParams.has('refer_page_sn')
-  );
-
-  assert.ok(personal.length > 0);
-  assert.ok(chat.length > 0);
-  assert.ok(homepage.length > 0);
-  for (const entry of [...personal, ...chat]) {
-    const body = JSON.parse(entry.response.content.text);
-    assert.ok(body.data.goods_list.length > 0);
+  assert.ok(feeds.length > 0);
+  for (const entry of feeds) {
+    const params = new URL(entry.request.url).searchParams;
+    assert.equal(params.get('page_sn'), '10002');
+    assert.equal(params.get('page_id'), 'index_list.html');
+    assert.equal(params.get('scene'), 'homegoods_dy_tpl');
   }
+  assert.ok(feeds.some((entry) =>
+    new URL(entry.request.url).searchParams.get('refer_page_sn') === '10001'
+  ));
 });
 
 test('keeps QingRex ad blocks but leaves meta fully reachable like the July 2025 history', () => {
@@ -262,7 +306,7 @@ test('latest HAR proves v8 leaked the Pinduoduo v2 HTTPDNS endpoint', {
   }
 });
 
-test('latest v9 HAR proves the homepage regression and the retained v9 protections', {
+test('latest v9 HAR proves the homepage regression and retained HTTPDNS protection', {
   skip: !fs.existsSync(latestV9RegressionHarPath),
 }, () => {
   const har = JSON.parse(fs.readFileSync(latestV9RegressionHarPath, 'utf8'));
@@ -305,14 +349,18 @@ test('latest v9 HAR proves the homepage regression and the retained v9 protectio
     String(entry.comment).includes('拼多多去广告（QingRex 原生兼容）')
   ));
 
-  const personalFeeds = har.log.entries.filter((entry) =>
+  const misclassifiedHomepageFeeds = har.log.entries.filter((entry) =>
     entry.response?.status === 200 &&
     entry.request.url.includes('/api/alexa/cells/hub/v3?') &&
     new URL(entry.request.url).searchParams.get('refer_page_sn') === '10001'
   );
-  assert.equal(personalFeeds.length, 2);
-  for (const entry of personalFeeds) {
+  assert.equal(misclassifiedHomepageFeeds.length, 2);
+  for (const entry of misclassifiedHomepageFeeds) {
     const payload = JSON.parse(entry.response.content.text);
+    const params = new URL(entry.request.url).searchParams;
+    assert.equal(params.get('page_sn'), '10002');
+    assert.equal(params.get('page_id'), 'index_list.html');
+    assert.equal(params.get('scene'), 'homegoods_dy_tpl');
     assert.equal(payload.has_more, false);
     assert.deepEqual(payload.data.goods_list, []);
     assert.ok(String(entry.comment).includes('Response body is modified by body rewrite rule'));

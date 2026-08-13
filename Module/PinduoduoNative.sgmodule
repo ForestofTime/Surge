@@ -1,5 +1,5 @@
 #!name=拼多多去广告（QingRex 原生兼容）
-#!desc=首页 homepage/hub 完全透传，保留业务入口与百亿补贴；清理聊天与个人中心商品流。v11
+#!desc=首页配置与商品流、搜索完全透传；清理聊天与个人中心商品广告。v12
 #!author=ForestofTime
 #!category=AdBlock
 #!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/PinDuoDuo.png
@@ -27,9 +27,6 @@ DOMAIN,ta-a.pinduoduo.com,REJECT,extended-matching,pre-matching
 DOMAIN,apm-a.pinduoduo.com,REJECT,extended-matching,pre-matching
 
 [Body Rewrite]
-# 8.20.0 HAR：个人中心 refer_page_sn=10001，聊天 refer_page_sn=10031。首页请求不带这两个来源参数。
-http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/alexa\/cells\/hub\/v3\?(?:[^#&]*&)*refer_page_sn=(?:10001|10031)(?:&|$) '.has_more = false | .data.goods_list = []'
-http-response-jq ^https:\/\/api\.pinduoduo\.com\/search\? 'delpaths([["expansion"]])'
 http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/philo\/personal\/hub\? 'delpaths([["monthly_card_entrance"]])'
 http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/philo\/personal\/hub\? 'delpaths([["personal_center_style_v2_vo"]])'
 http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/philo\/personal\/hub\? 'delpaths([["icon_set","icons"]])'
@@ -50,8 +47,6 @@ http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/aristotle\/order_list_v4\?
 ^https:\/\/api\.pinduoduo\.com\/api\/aquarius\/hungary\/global\/homepage\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 ^https:\/\/api\.pinduoduo\.com\/api\/caterham\/v3\/query\/order_express_group\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
-
-^https:\/\/api\.pinduoduo\.com\/search_hotquery\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 ^https:\/\/api\.pinduoduo\.com\/api\/zaire_biz\/chat\/resource\/get_list_data\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
