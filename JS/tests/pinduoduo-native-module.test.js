@@ -8,14 +8,11 @@ const modulePath = path.resolve(__dirname, '../../Module/PinduoduoNative.sgmodul
 const obsoleteScriptPath = path.resolve(__dirname, '../PinduoduoNative.js');
 const subsidyScriptPath = path.resolve(__dirname, '../PinduoduoSubsidy.js');
 const readmePath = path.resolve(__dirname, '../../README.md');
-const latestHarPath =
+const fullMetaHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-100425.har';
-const latestV5HarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-104410.har';
+const latestV6HarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-111547.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
-const subsidyScriptText = fs.existsSync(subsidyScriptPath)
-  ? fs.readFileSync(subsidyScriptPath, 'utf8')
-  : '';
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
 function section(name, nextName) {
@@ -29,29 +26,9 @@ function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
-function rewritePattern() {
-  const line = moduleText.split('\n').find((item) =>
-    item.includes('meta\\.pinduoduo\\.com') && item.includes('experiment') && item.includes(' - reject')
-  );
-  assert.ok(line, 'missing the narrow meta URL rewrite');
-  const pattern = line.slice(0, line.lastIndexOf(' - reject'));
-  return new RegExp(pattern);
-}
-
-function runSubsidyResponse(url, body) {
-  const doneCalls = [];
-  require('node:vm').runInNewContext(subsidyScriptText, {
-    $request: { url },
-    $response: { body },
-    $done: (value) => doneCalls.push(JSON.parse(JSON.stringify(value))),
-  }, { filename: subsidyScriptPath });
-  assert.equal(doneCalls.length, 1);
-  return doneCalls[0];
-}
-
-test('uses QingRex native rules as the baseline with only a narrow subsidy renderer exception', () => {
+test('uses QingRex native rules and restores its last pre-meta-block behavior', () => {
   assert.match(moduleText, /^#!name=拼多多去广告（QingRex 原生兼容）$/m);
-  assert.match(moduleText, /完整保留 QingRex 原生净化；仅修正百亿补贴卡片的首页渲染顺序。v6/);
+  assert.match(moduleText, /完整保留 QingRex 原生净化；恢复其历史版本中 meta 配置可达行为。v7/);
 
   // These hashes are the current QingRex upstream Body Rewrite and Map Local sections.
   assert.equal(
@@ -59,12 +36,12 @@ test('uses QingRex native rules as the baseline with only a narrow subsidy rende
     '4d2a8f0357468223975ff3a4ca596d2cc2fdca74c0948e5021d087db48aa0f16'
   );
   assert.equal(
-    sha256(section('Map Local', 'Script')),
+    sha256(section('Map Local', 'MITM')),
     '702c9419ae77b78002485f01f0ebaf561f54a072a430095611e78659093d8ce1'
   );
 });
 
-test('restores every QingRex ad-domain block and keeps meta blocked at HTTP level', () => {
+test('keeps QingRex ad blocks but leaves meta fully reachable like the July 2025 history', () => {
   for (const host of [
     'titan.pinduoduo.com',
     'xg.pinduoduo.com',
@@ -82,96 +59,37 @@ test('restores every QingRex ad-domain block and keeps meta blocked at HTTP leve
     assert.ok(moduleText.includes(`DOMAIN,${host},REJECT`), `${host} must stay blocked`);
   }
   assert.equal(moduleText.includes('DOMAIN,meta.pinduoduo.com,REJECT'), false);
-  assert.match(moduleText, /^\[URL Rewrite\]$/m);
-  assert.match(moduleText, /^hostname = %APPEND% api\.pinduoduo\.com, meta\.pinduoduo\.com$/m);
+  assert.equal(moduleText.includes('[URL Rewrite]'), false);
+  assert.match(moduleText, /^hostname = %APPEND% api\.pinduoduo\.com$/m);
 });
 
-test('allows only the filtered experiment response on meta and rejects every other path', () => {
-  const rejected = rewritePattern();
-  for (const url of [
-    'https://meta.pinduoduo.com/api/app/v2/abtest?pdduid=1',
-    'https://meta.pinduoduo.com/api/app/v1/component/manual/query?pdduid=1',
-    'https://meta.pinduoduo.com/api/lamer/uuid/report?pdduid=1',
-    'https://meta.pinduoduo.com/api/app/info/report/wrapper?pdduid=1',
-    'https://meta.pinduoduo.com/api/one-gateway-client/zone/v1/component/fetch?pdduid=1',
-    'https://meta.pinduoduo.com/api/one-gateway-client/zone/v1/component/pull?pdduid=1',
-  ]) {
-    assert.equal(rejected.test(url), true, `${url} must be rejected`);
-  }
-  for (const url of ['https://meta.pinduoduo.com/api/app/v2/experiment?pdduid=1']) {
-    assert.equal(rejected.test(url), false, `${url} must stay reachable`);
-  }
-});
-
-test('keeps only the two homepage subsidy experiments', () => {
-  assert.ok(subsidyScriptText.length > 0);
-  const input = {
-    p: '1',
-    digest: 'keep-envelope',
-    ks: {
-      index_pdd_home_billion_subsidy_entry_pdd_lego_reportm1_6900: { v: 'true' },
-      pdd_home_shorter_billion_5300: { v: 'false' },
-      pdd_home_dynamic_monitor_7390: { v: '["billion_subsidy_entrance_dy","recommend_fresh_info"]' },
-      home_goods_list_show_lego_header_7700: { v: 'true' },
-      live_fix_track_ad_watch_duration_65500: { v: 'true' },
-    },
-  };
-  const result = runSubsidyResponse(
-    'https://meta.pinduoduo.com/api/app/v2/experiment?pdduid=1',
-    JSON.stringify(input)
-  );
-  const output = JSON.parse(result.body);
-  assert.equal(output.digest, 'keep-envelope');
-  assert.deepEqual(Object.keys(output.ks).sort(), [
-    'index_pdd_home_billion_subsidy_entry_pdd_lego_reportm1_6900',
-    'pdd_home_shorter_billion_5300',
-  ]);
-});
-
-test('latest v5 HAR moves the subsidy card ahead of removed QingRex modules', {
-  skip: !fs.existsSync(latestV5HarPath),
-}, () => {
-  const har = JSON.parse(fs.readFileSync(latestV5HarPath, 'utf8'));
-  const homepage = har.log.entries.find((entry) =>
-    entry.response && entry.response.content &&
-    typeof entry.response.content.text === 'string' &&
-    entry.request.url.includes('/api/alexa/homepage/hub?')
-  );
-  assert.ok(homepage);
-
-  const captured = JSON.parse(homepage.response.content.text);
-  assert.equal(
-    captured.result.module_order.findIndex(
-      (item) => item.module_name === 'billion_subsidy_entrance_dy'
-    ),
-    13,
-    'v5 left the card behind thirteen module references whose payloads were removed'
-  );
-
-  const result = runSubsidyResponse(homepage.request.url, homepage.response.content.text);
-  const output = JSON.parse(result.body);
-  assert.deepEqual(output.result.module_order, [
-    { module_name: 'billion_subsidy_entrance' },
-    { module_name: 'billion_subsidy_entrance_dy', show_type: 0 },
-    { module_name: 'billion_subsidy_entrance_lite' },
-  ]);
-  assert.deepEqual(Object.keys(output.result.dy_module), ['billion_subsidy_entrance_dy']);
-  assert.equal(
-    output.result.dy_module.billion_subsidy_entrance_dy.data.data.title,
-    '官方补贴'
-  );
-});
-
-test('uses one narrow script for the subsidy experiment and homepage order only', () => {
-  assert.equal(moduleText.includes('/api/alexa/cells/hub/v3'), false);
-  assert.equal(moduleText.includes('.result.module_order? |='), false);
-  assert.equal(moduleText.includes('.result.dy_module? |='), false);
-  assert.equal(moduleText.includes('api\\/cappuccino\\/splash'), false);
-  assert.match(moduleText, /^拼多多-百亿补贴渲染 = type=http-response,/m);
-  assert.equal((moduleText.match(/type=http-response/g) || []).length, 1);
-  assert.match(moduleText, /api\\\.pinduoduo\\\.com\\\/api\\\/alexa\\\/homepage\\\/hub/);
-  assert.equal(moduleText.includes('/api/alexa/cells/hub/v3'), false);
+test('removes the custom meta filter and homepage ordering script', () => {
+  assert.equal(moduleText.includes('[Script]'), false);
+  assert.equal(moduleText.includes('type=http-response'), false);
+  assert.equal(fs.existsSync(subsidyScriptPath), false);
   assert.equal(fs.existsSync(obsoleteScriptPath), false);
+});
+
+test('latest v6 HAR proves the filtered meta response still failed on device', {
+  skip: !fs.existsSync(latestV6HarPath),
+}, () => {
+  const har = JSON.parse(fs.readFileSync(latestV6HarPath, 'utf8'));
+  const abtests = har.log.entries.filter((entry) =>
+    entry.request.url.includes('/api/app/v2/abtest')
+  );
+  assert.ok(abtests.length > 0);
+  assert.ok(abtests.every((entry) =>
+    !entry.response && String(entry.comment).includes('Matched URL rewrite rule')
+  ));
+
+  const experiments = har.log.entries.filter((entry) =>
+    entry.response && entry.request.url.includes('/api/app/v2/experiment')
+  );
+  assert.ok(experiments.length > 0);
+  assert.ok(experiments.every((entry) =>
+    Object.keys(JSON.parse(entry.response.content.text).ks).length === 2 &&
+    String(entry.comment).includes('Response is modified by script')
+  ));
 });
 
 test('keeps current Pinduoduo HTTPDNS endpoints from bypassing named-host rewrites', () => {
@@ -179,10 +97,10 @@ test('keeps current Pinduoduo HTTPDNS endpoints from bypassing named-host rewrit
   assert.match(moduleText, /PROTOCOL,QUIC/);
 });
 
-test('latest HAR proves the previous regression and the homepage still carries the subsidy card', {
-  skip: !fs.existsSync(latestHarPath),
+test('full-meta HAR proves both config families and the subsidy card were delivered together', {
+  skip: !fs.existsSync(fullMetaHarPath),
 }, () => {
-  const har = JSON.parse(fs.readFileSync(latestHarPath, 'utf8'));
+  const har = JSON.parse(fs.readFileSync(fullMetaHarPath, 'utf8'));
   const entries = har.log.entries;
   const experiments = entries.filter((entry) =>
     /^https:\/\/meta\.pinduoduo\.com\/api\/app\/v2\/(?:abtest|experiment)/.test(entry.request.url)
@@ -190,20 +108,6 @@ test('latest HAR proves the previous regression and the homepage still carries t
   assert.equal(experiments.length, 2);
   assert.ok(experiments.every((entry) => entry.response.status === 200));
   assert.ok(experiments.reduce((sum, entry) => sum + entry.response.content.text.length, 0) > 700000);
-
-  const experiment = experiments.find((entry) => entry.request.url.includes('/experiment?'));
-  const filteredExperiment = JSON.parse(
-    runSubsidyResponse(experiment.request.url, experiment.response.content.text).body
-  );
-  assert.deepEqual(Object.keys(filteredExperiment.ks).sort(), [
-    'index_pdd_home_billion_subsidy_entry_pdd_lego_reportm1_6900',
-    'pdd_home_shorter_billion_5300',
-  ]);
-  assert.equal(filteredExperiment.ks.pdd_home_shorter_billion_5300.v, 'false');
-  assert.equal(
-    filteredExperiment.ks.index_pdd_home_billion_subsidy_entry_pdd_lego_reportm1_6900.v,
-    'true'
-  );
 
   const homepage = entries.find((entry) => entry.request.url.includes('/api/alexa/homepage/hub?'));
   assert.ok(homepage);
