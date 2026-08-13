@@ -4,7 +4,7 @@ const TARGET_DNS_HOSTS = new Set([
   'guide-acs4miniapp-inner.m.taobao.com',
   'netflow-mtop.cainiao.com',
 ]);
-const TARGET_AD_IDS = new Set(['1308', '205', '1381']);
+const TARGET_AD_IDS = new Set(['1308', '205', '1381', '2018']);
 const AD_ID_FIELDS = ['id', 'positionId', 'adId', 'slotId', 'pitId'];
 const requestUrl = String(($request && $request.url) || '');
 const requestHeaders = ($request && $request.headers) || {};
@@ -32,7 +32,7 @@ function isTaobaoUserAgent(ua) {
 }
 
 function isAdvertisementRequest(url) {
-  return /\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.(?:mshow(?:\.cn)?|show\.login)(?:\/|\?|$)/i.test(url);
+  return /\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.(?:mshow(?:\.cn)?|show(?:\.login)?)(?:\/|\?|$)/i.test(url);
 }
 
 function cleanAmdcResponse(body) {
@@ -86,15 +86,18 @@ function cleanMshowResponse(body) {
   }
 
   let changed = false;
-  for (const id of TARGET_AD_IDS) {
-    if (!Object.prototype.hasOwnProperty.call(payload.data, id)) continue;
-    delete payload.data[id];
-    changed = true;
-  }
-
+  const presentTargetIds = Array.from(TARGET_AD_IDS).filter((id) => {
+    return Object.prototype.hasOwnProperty.call(payload.data, id);
+  });
   payload.data = cleanAdArrays(payload.data, () => {
     changed = true;
   });
+  for (const id of presentTargetIds) {
+    if (!Array.isArray(payload.data[id]) || payload.data[id].length !== 0) {
+      payload.data[id] = [];
+      changed = true;
+    }
+  }
   return changed ? { body: JSON.stringify(payload) } : {};
 }
 
