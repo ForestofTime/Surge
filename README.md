@@ -30,6 +30,14 @@
 
 仅使用兜底规则学习功能时，可导入 `Task/FallbackRules.sgmodule`。该模块只声明脚本，`SCRIPT,fallback-capture,Proxy` 必须放在主配置的正式规则末尾，并位于 `FINAL` 之前。首次使用还需要按照 [操作说明](docs/fallback-rule-learning-operation.md) 配置私有 GitHub Inbox 和 Token。
 
+## 最近更新
+
+- 拼多多原生模块已更新到 v12：恢复首页、商品流、搜索和刷新链路，只保留已验证的聊天与个人中心广告接口清理，并继续拦截确认过的 HTTPDNS 绕过。
+- 菜鸟淘宝小程序模块已更新到 v4：继续限制在菜鸟应用标识和已抓包的 MTop 接口范围内，并清理确认过的视频卡广告位。
+- 闲鱼、京东原生模块已纳入主目录；建行生活仅保留当前的参数化模块，工银 e 生活 App 与小程序继续分开维护。
+- 规则产物已统一收敛到 `main`，发布流程只允许更新 `Source/Auto/`、`Rule/Direct+.list`、`Rule/Proxy+.list`、`manifest.json` 和 `proposals/processed.json`。
+- 每次模块修复都配套保留回归测试，重点覆盖 HTTPDNS、搜索/首页透传、广告字段清理和异常响应透传。
+
 ## 模块索引
 
 ### 广告过滤与响应改写
@@ -65,12 +73,12 @@
 
 | 序号 | 模块 | 分类 | 作用 | RAW 链接 | 一键导入 Surge |
 | ---: | --- | --- | --- | --- | --- |
-| 21 | `Module/Telegram-DC.sgmodule` | System | 将已验证的 Telegram DC2、DC5 劣化 IP 改写到同数据中心的备用地址 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/Telegram-DC.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FTelegram-DC.sgmodule) |
-| 22 | `Module/GoogleRewrite.sgmodule` | System | iOS Safari 将 Google.cn 重定向到 Google.com | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/GoogleRewrite.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FGoogleRewrite.sgmodule) |
-| 23 | `Module/panel/Flush-DNS.sgmodule` | Pannel | Surge iOS 面板一键清理 DNS 缓存 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/panel/Flush-DNS.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2Fpanel%2FFlush-DNS.sgmodule) |
-| 24 | `Task/Task.sgmodule` | System | 欧可林、贴吧等定时签到任务集合 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Task/Task.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FTask%2FTask.sgmodule) |
-| 25 | `Task/FallbackRules.sgmodule` | System | 兜底命中采集、上传和配置脚本集合 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Task/FallbackRules.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FTask%2FFallbackRules.sgmodule) |
-| 26 | `Module/boxjs/smzdm.boxjs.json` | 不适用 | 什么值得买 BoxJS 配置模板，当前仍含占位链接 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/boxjs/smzdm.boxjs.json) | 不适用 |
+| 23 | `Module/Telegram-DC.sgmodule` | System | 将已验证的 Telegram DC2、DC5 劣化 IP 改写到同数据中心的备用地址 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/Telegram-DC.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FTelegram-DC.sgmodule) |
+| 24 | `Module/GoogleRewrite.sgmodule` | System | iOS Safari 将 Google.cn 重定向到 Google.com | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/GoogleRewrite.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FGoogleRewrite.sgmodule) |
+| 25 | `Module/panel/Flush-DNS.sgmodule` | Pannel | Surge iOS 面板一键清理 DNS 缓存 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/panel/Flush-DNS.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2Fpanel%2FFlush-DNS.sgmodule) |
+| 26 | `Task/Task.sgmodule` | System | 欧可林、贴吧等定时签到任务集合 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Task/Task.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FTask%2FTask.sgmodule) |
+| 27 | `Task/FallbackRules.sgmodule` | System | 兜底命中采集、上传和配置脚本集合 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Task/FallbackRules.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FTask%2FFallbackRules.sgmodule) |
+| 28 | `Module/boxjs/smzdm.boxjs.json` | 不适用 | 什么值得买 BoxJS 配置模板，当前仍含占位链接 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/boxjs/smzdm.boxjs.json) | 不适用 |
 
 ## 目录导航
 
@@ -151,6 +159,13 @@ git diff --name-only | node Automation/check-generated-diff.mjs
 - Telegram Host 映射只应保留已验证的劣化地址和同数据中心备用地址。
 - 自动化流程中的 Token 只能保存在 Surge 持久存储或 GitHub Secrets，不要写入仓库文件、日志或 issue。
 - `Module/boxjs/smzdm.boxjs.json` 仍含 `YourUsername/YourRepo` 等占位内容，发布前需要替换为真实链接。
+
+## 敏感数据与脱敏
+
+- 仓库只允许提交公开规则、模块源码和不含凭据的示例配置；节点密码、私钥、Cookie、Token、订阅 URL 和第三方 API 密钥不得进入 Git。
+- Surge 持久化数据应留在设备安全存储，GitHub 凭据应使用 Actions Secrets 或本地环境变量。示例文件只保留占位符。
+- 提交前可使用 `gitleaks detect --source . --redact` 检查提交历史，使用 `gitleaks detect --source . --no-git --redact` 检查当前工作树。
+- 如果凭据曾经进入公开历史，仅删除文件并不能撤销风险；应先在对应服务端轮换凭据，再按维护流程清理 Git 历史。
 
 ## 维护说明
 
