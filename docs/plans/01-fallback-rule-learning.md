@@ -33,7 +33,7 @@
 | 手机等待“分类并公开发布完成”后才删除 batch | 外部来源失败或公开 Workflow 失败会让手机长期重试；私有 Runner 轮询会浪费分钟 | 手机只等待私有 inbox **持久化成功**；分类和发布由后续 Workflow 异步处理 |
 | 原始 batch 写入 Git 历史 | 域名可能长期留在不可轻易清除的私有 Git 历史中，仓库也会持续膨胀 | 不提交原始 payload；只提交规范化、分片后的观察状态和 batch 哈希账本 |
 | `days`、`count` 由手机上传 | 字段可伪造；并且与“同一目标每天只持久写一次”矛盾 | V1 payload 移除 `days` 和 `count`；服务端按实际接收日期聚合 `seen_days` |
-| 上游每次从浮动分支解析最新 commit | 结果不可复现，且上游被接管时可能立即污染分类 | 分类只使用已审核的 `sources.lock.json`；来源更新由独立 Workflow 创建 PR，不自动改锁 |
+| 上游每次从浮动分支解析最新 commit | 结果不可复现，且上游被接管时可能立即污染分类 | 分类只使用已审核的 `sources.lock.json`；来源更新由独立 Workflow 检查并报告，人工审核后提交，不自动改锁 |
 | 手机 PAT 的 `Actions: write` 被描述成“仅能 dispatch” | 该权限还可取消、重跑、启停 Workflow，并读取 Actions 数据 | inbox 必须是专用仓库；只允许一个对手机开放的 intake Workflow；不得放置可被输入直接利用的其他特权 Workflow |
 | 未保护 GitHub、规则源和上传请求自身 | 自动规则可能改变控制面路由，造成递归捕获或自我失联 | 增加不可学习的 control-plane allowlist，并为上传请求指定固定策略 |
 
@@ -78,7 +78,7 @@ flowchart LR
     H --> I["私有 REVIEW / DEFERRED"]
     H --> J["最小公开 proposal"]
     J --> K["公开 verify + generate Workflow"]
-    K --> L["generated 分支规则产物"]
+    K --> L["main 分支规则产物"]
     L --> M["Surge 刷新 RULE-SET"]
 ```
 
@@ -87,17 +87,16 @@ flowchart LR
 | 位置 | 可见性 | 保存内容 | 写入者 |
 |---|---|---|---|
 | `Surge-Rule-Inbox` | Private | 观察状态、REVIEW、DEFERRED、私有决定、batch 哈希 | 私有 Workflow 的 `GITHUB_TOKEN` |
-| 公开 Surge 仓库 `main` | Public | 分类器、生成器、测试、人工 source、来源锁 | 人工 PR；自动发布不得写入 |
-| 公开 Surge 仓库 `generated` | Public | `Rule/Direct+.list`、`Rule/Proxy+.list`、自动 source、manifest | publish Workflow |
+| 公开 Surge 仓库 `main` | Public | 分类器、生成器、测试、人工 source、来源锁与生成规则产物 | 人工 PR；publish Workflow 只能写产物白名单 |
 
-推荐把生成产物写入独立 `generated` 分支，而不是让自动化直接修改 `main`：
+当前仓库将生成产物收敛到 `main`，并用以下门禁限制自动写入：
 
-1. `main` ruleset 禁止 `github-actions[bot]` 直接更新。
-2. `generated` 分支只保存数据产物，不保存 Workflow 和可执行代码。
-3. Surge 的远程规则 URL 指向 `generated` 分支。
-4. publish Workflow 从受保护的 `main` 读取代码和人工配置，再更新 `generated`。
+1. `main` 禁止 force push 和删除，只接受 publish Workflow 的普通 fast-forward push。
+2. publish Workflow 写入前重新验证事件、kill switch、来源锁、PSL、规则语法、symlink 与 diff 白名单。
+3. Surge 的远程规则 URL 指向 `main`。
+4. 自动提交只包含 `Source/Auto/`、Direct/Proxy 规则、manifest 和 proposal ledger。
 
-若不使用独立分支，最低要求是 publish 脚本在提交前验证允许路径，并确保主分支 ruleset 不允许 Workflow 绕过保护；但该方案仍弱于代码与产物分支隔离。
+任何额外路径变化、非 fast-forward push 或校验失败都会停止发布。源码和人工配置仍通过人工提交维护。
 
 ### 4.2 手机凭据的真实权限边界
 
@@ -374,7 +373,7 @@ V1 的公网 IPv4/IPv6 自动发布关闭，全部进入 REVIEW。IP 可能是�
 规则：
 
 1. 分类时禁止解析 `main`、`master` 或其他浮动 ref。
-2. 独立 source-update Workflow 检查新版本、差异、许可证、大小和语法，并创建 PR 更新 lock。
+2. 独立 source-update Workflow 检查新版本、差异、许可证、大小和语法，并在 Job Summary 中提示人工审核和提交 lock。
 3. 只允许 HTTPS 和固定 host allowlist。
 4. Node `fetch` 使用 `redirect: "manual"`；若允许重定向，逐跳重新检查 host。
 5. 校验响应大小、超时、内容 hash、语法和条目数量变化。
@@ -478,10 +477,10 @@ PSL 必须包含 ICANN 与 PRIVATE 区段，例如 `github.io`、`pages.dev`、`
 | `Automation/control-plane.json` | 永不自动学习的控制面目标 |
 | `Automation/vendor/public_suffix_list.dat` | 固定 PSL 快照 |
 | `Automation/tests/` | 规范化、PSL、suffix、CIDR、安全和幂等测试 |
-| `.github/workflows/publish-fallback.yml` | 复验 proposal 并更新 generated 分支 |
-| `.github/workflows/update-source-locks.yml` | 检查来源更新并创建 PR |
+| `.github/workflows/publish-fallback.yml` | 复验 proposal 并更新 main 中的产物白名单 |
+| `.github/workflows/update-source-locks.yml` | 检查来源更新并报告人工审核步骤，不创建额外分支 |
 
-### `generated` 分支
+### `main` 中的生成产物
 
 | 路径 | 职责 |
 |---|---|
@@ -532,9 +531,9 @@ PSL 必须包含 ICANN 与 PRIVATE 区段，例如 `github.io`、`pages.dev`、`
 
 1. 只接收准备公开的 proposal。
 2. 使用受保护 `main` 的当前代码复验策略、scope、锁摘要和冲突。
-3. 只更新 `generated` 分支。
+3. 只更新 `main` 中的产物白名单。
 4. proposal 与当前 lock digest 不一致时标记 DEFERRED，不猜测。
-5. 非 fast-forward 时重新读取最新 generated、重新生成，最多重试两次。
+5. 非 fast-forward 时安全失败，基于最新 `main` 重新运行并生成。
 6. 禁止 force push。
 7. 生成产物和 proposal ledger 在同一 commit 更新。
 
@@ -558,11 +557,11 @@ PSL 必须包含 ICANN 与 PRIVATE 区段，例如 `github.io`、`pages.dev`、`
 1. 建立专用私有 inbox。
 2. 创建手机 Actions token。
 3. 建立 control-plane allowlist。
-4. 保护公开 `main`，创建 `generated` 分支。
+4. 保护公开 `main`，配置只允许产物白名单的发布 Workflow。
 5. 定义三个 kill switch：停止 capture、停止 classify、停止 publish。
 6. 写明 token 撤销、公开规则回滚和私有数据删除流程。
 
-验收：手机 token 无 Contents 权限；公开 main 不可由 publish bot 修改。
+验收：手机 token 无 Contents 权限；publish bot 只能通过受检的普通提交更新产物白名单。
 
 ### Phase 1：规则编译器和真实 profile baseline
 
@@ -595,7 +594,7 @@ PSL 必须包含 ICANN 与 PRIVATE 区段，例如 `github.io`、`pages.dev`、`
 ### Phase 4：公开发布 dry-run
 
 1. 私有 classify 生成最小公开 proposal。
-2. 公开 Workflow 独立复验并生成临时 diff，不写 generated。
+2. 公开 Workflow 独立复验并生成临时 diff，不提交任何变更。
 3. 验证乱序、重放、来源变化和并发提交。
 
 验收：相同 proposal 不产生重复变更；lock 不一致时停止。
@@ -606,7 +605,7 @@ PSL 必须包含 ICANN 与 PRIVATE 区段，例如 `github.io`、`pages.dev`、`
 2. DIRECT、IP、观察式父 suffix 继续 REVIEW。
 3. 无正文变化不提交。
 
-验收：新规则回流后对应请求不再进入兜底；单次 generated commit 可直接回滚。
+验收：新规则回流后对应请求不再进入兜底；单次 `chore(rules)` 提交可直接 revert。
 
 ### Phase 6：评估 DIRECT 和父 suffix
 
@@ -644,7 +643,7 @@ PSL 必须包含 ICANN 与 PRIVATE 区段，例如 `github.io`、`pages.dev`、`
 4. 服务端使用接收日期计算观察天数，不信任客户端 `days/count`。
 5. 分类只使用已审核固定 source lock。
 6. 上游故障进入 DEFERRED，不生成规则。
-7. 公开 main 与 generated 产物隔离，publish bot 不能更新 main。
+7. 公开 `main` 的自动产物提交严格限制在允许路径，且不能 force push。
 8. control-plane 目标不会被捕获、自动分类或改写策略。
 9. DIRECT 与 PROXY 使用非对称门槛，公网 IP 默认 REVIEW。
 10. Direct、Proxy、Reject、SYSTEM、LAN、模块和内联规则没有未声明冲突。

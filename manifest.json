@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "generator_version": "1.0.0",
+  "node_version": "v22.14.0",
+  "source_lock_sha256": "c050fae04cf5215f13a1188314c66ec5cec220968639f272e88b117e05d1cdc2",
+  "rules": {
+    "Direct": {
+      "count": 4,
+      "counts": {
+        "DOMAIN": 0,
+        "DOMAIN-SUFFIX": 2,
+        "DOMAIN-KEYWORD": 0,
+        "IP-CIDR": 2,
+        "IP-CIDR6": 0
+      },
+      "sha256": "26beceedc6a08f36f2b3d5531c796e0377b4076b140c15669dbc7abacc70c468"
+    },
+    "Proxy": {
+      "count": 16,
+      "counts": {
+        "DOMAIN": 0,
+        "DOMAIN-SUFFIX": 13,
+        "DOMAIN-KEYWORD": 0,
+        "IP-CIDR": 3,
+        "IP-CIDR6": 0
+      },
+      "sha256": "34bb814159171676af257367f9db0f482ac9d91a2d88557b2a3f2a1e626b75a1"
+    },
+    "Reject": {
+      "count": 0,
+      "counts": {
+        "DOMAIN": 0,
+        "DOMAIN-SUFFIX": 0,
+        "DOMAIN-KEYWORD": 0,
+        "IP-CIDR": 0,
+        "IP-CIDR6": 0
+      },
+      "sha256": "61beff5221230fde38e0e23f1ec059d40cd7d706ca72541d630a1b69a020c1d3"
+    }
+  }
+}

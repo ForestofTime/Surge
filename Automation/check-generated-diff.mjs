@@ -4,8 +4,7 @@ const allowed = [
   /^Source\/Auto\/(Direct|Proxy)\+\.list$/,
   /^Rule\/(Direct|Proxy)\+\.list$/,
   /^manifest\.json$/,
-  /^proposals\/processed\.json$/,
-  /^README\.md$/
+  /^proposals\/processed\.json$/
 ];
 const names = readFileSync(0, 'utf8').split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
 for (const name of names) {

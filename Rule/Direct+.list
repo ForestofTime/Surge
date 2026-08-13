@@ -2,7 +2,7 @@
 # Policy: Direct
 # Rules: 4
 # Counts: DOMAIN=0,DOMAIN-SUFFIX=2,DOMAIN-KEYWORD=0,IP-CIDR=2,IP-CIDR6=0
-# Source lock: none
+# Source lock: c050fae04cf5215f13a1188314c66ec5cec220968639f272e88b117e05d1cdc2
 DOMAIN-SUFFIX,9867361.xyz
 DOMAIN-SUFFIX,sntp.me
 IP-CIDR,129.150.35.245/32,no-resolve

@@ -3,7 +3,7 @@
   "enabled": true,
   "inbox_repository": "OWNER/Surge-Rule-Inbox",
   "public_repository": "ForestofTime/Surge",
-  "generated_branch": "generated",
+  "artifact_branch": "main",
   "never_capture_hosts": [
     "api.github.com",
     "github.com",

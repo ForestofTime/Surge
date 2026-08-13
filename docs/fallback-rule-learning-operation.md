@@ -6,7 +6,7 @@
 
 1. iPhone 上的 Surge 负责低成本采集和上传。
 2. 私有 `Surge-Rule-Inbox` 负责入库、聚合、分类、REVIEW 和 DEFERRED。
-3. 公开 Surge 仓库负责独立复验并写入 `generated` 分支。
+3. 公开 Surge 仓库负责独立复验，并只更新 `main` 中经过白名单限制的规则产物。
 
 原始 batch 不写入 Git、artifact 或 cache。公开仓库只接收已经准备公开的规则提案。
 
@@ -19,10 +19,10 @@
 当前公开仓库地址为 `ForestofTime/Surge`。如果使用自己的 fork，需要同步修改：
 
 - `docs/private-inbox-template/Automation/config.json` 的 `public_repository`
-- `min.conf` 中 `raw.githubusercontent.com` 的脚本和 `generated` 分支地址
+- `min.conf` 中 `raw.githubusercontent.com` 的脚本和 `main` 规则地址
 - `Task/FallbackRules.sgmodule` 中的脚本地址
 
-公开仓库的 `main` 应启用分支保护，禁止 force push 和删除。发布 Workflow 只能写 `generated` 分支。
+公开仓库的 `main` 应启用分支保护，禁止 force push 和删除。发布 Workflow 只能通过普通 fast-forward push 更新规则产物白名单；任何非 fast-forward 或额外路径变化都会失败。
 
 ### 2.2 私有 Inbox
 
@@ -70,7 +70,7 @@ Inbox/deferred/
   "publish_enabled": false,
   "public_repository": "ForestofTime/Surge",
   "classifier_commit": "公开仓库 main 中经过审核的 40 位 commit SHA",
-  "generated_branch": "generated",
+  "artifact_branch": "main",
   "observation_retention_days": 180,
   "review_retention_days": 365
 }
@@ -118,9 +118,9 @@ Inbox/deferred/
 
 不要只修改 `ready`，必须同时核对快照内容、commit 和 SHA-256。
 
-## 5. 初始化 generated 分支
+## 5. 初始化 main 规则产物
 
-发布 Workflow 要求 `generated` 分支只包含生成产物。它允许的文件为：
+发布 Workflow 只允许更新以下生成产物：
 
 ```text
 Source/Auto/Direct+.list
@@ -129,13 +129,12 @@ Rule/Direct+.list
 Rule/Proxy+.list
 manifest.json
 proposals/processed.json
-README.md
 ```
 
 首次初始化时，先完成 PSL 配置，再用空 proposal 生成一套种子产物。下面的命令在公开仓库根目录执行：
 
 ```bash
-mkdir -p .work bootstrap-generated
+mkdir -p .work bootstrap-rules
 node --input-type=module <<'NODE'
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -153,10 +152,10 @@ NODE
 node Automation/generate-rules.mjs \
   --proposal-file .work/fallback-proposal.json \
   --source-root . \
-  --output-root bootstrap-generated
+  --output-root bootstrap-rules
 ```
 
-将 `bootstrap-generated` 中允许的文件提交到 `generated` 分支。不要把 `Automation/`、`JS/`、原始观察数据或 `.work/` 放入该分支。
+将 `bootstrap-rules` 中允许的文件复制到 `main` 的对应路径，经 Pull Request 审核后合并。后续自动发布仍会在提交前复验路径白名单，不能修改 `Automation/`、`JS/`、原始观察数据、`.work/` 或 README。
 
 ## 6. 配置 Surge
 
@@ -165,7 +164,7 @@ node Automation/generate-rules.mjs \
 当前 [min.conf](../min.conf) 已包含：
 
 - 4 个脚本定义
-- `generated` 分支的 Direct+ 和 Proxy+ 远程 RULE-SET
+- `main` 分支的 Direct+ 和 Proxy+ 远程 RULE-SET
 - 位于正式规则末尾的 `SCRIPT,fallback-capture,Proxy`
 - 最后的 `FINAL,Proxy,dns-failed`
 
@@ -176,8 +175,8 @@ node Automation/generate-rules.mjs \
 从 `min.conf` 复制 `[Script]` 中的 4 行，并加入自己的 `[Rule]`：
 
 ```text
-RULE-SET,https://raw.githubusercontent.com/ForestofTime/Surge/generated/Rule/Direct+.list,DIRECT
-RULE-SET,https://raw.githubusercontent.com/ForestofTime/Surge/generated/Rule/Proxy+.list,Proxy
+RULE-SET,https://raw.githubusercontent.com/ForestofTime/Surge/main/Rule/Direct+.list,DIRECT
+RULE-SET,https://raw.githubusercontent.com/ForestofTime/Surge/main/Rule/Proxy+.list,Proxy
 SCRIPT,fallback-capture,Proxy
 FINAL,Proxy,dns-failed
 ```
@@ -255,7 +254,7 @@ capture=true&upload=true
 确认 dry-run 结果后：
 
 1. 公开仓库先合并人工 source、来源锁和 PSL PR。
-2. 确认 `generated` 分支存在且只有允许文件。
+2. 确认 `main` 中的规则产物与 `manifest.json` 一致，且工作区没有额外变化。
 3. 私有配置设置：
 
    ```json
@@ -284,7 +283,7 @@ capture=true&upload=true
     ↓
 公开 publish Workflow 重新校验
     ↓
-generated 分支更新 RULE-SET
+main 分支更新 RULE-SET 产物
 ```
 
 上传批次只有在私有 intake run 为 `completed/success` 后才会从手机删除。401、权限错误、404、422 会进入 blocked 状态；限流、429、5xx、网络错误会退避重试。
@@ -313,8 +312,8 @@ SURGE=/Applications/Surge.app/Contents/Applications/surge-cli
 
 1. 私有 `intake fallback observations` 是否成功。
 2. 私有 `classify fallback observations` 是否只更新允许路径。
-3. 公开 `publish fallback rules` 是否通过 PSL、source lock 和 generated diff 校验。
-4. `generated` 分支是否产生预期的 `Rule/Direct+.list` 或 `Rule/Proxy+.list` 变化。
+3. 公开 `publish fallback rules` 是否通过 PSL、source lock 和产物 diff 校验。
+4. `main` 是否只产生预期的 `Rule/Direct+.list`、`Rule/Proxy+.list` 或清单变化。
 
 ## 12. 手工重试和故障处理
 
@@ -345,7 +344,7 @@ SURGE=/Applications/Surge.app/Contents/Applications/surge-cli
 1. PSL `ready` 是否为 `true`。
 2. PSL 快照 SHA-256 是否匹配。
 3. proposal 的 `lock_digest` 是否与公开 `sources.lock.json` 匹配。
-4. `generated` 分支是否包含未允许文件或 symlink。
+4. 产物 diff 是否包含未允许文件或 symlink。
 5. 是否出现跨策略 overlap。
 
 ## 13. Kill switch、撤销和回滚
@@ -370,14 +369,14 @@ capture=false&upload=false
 
 ### 回滚规则
 
-回滚 `generated` 分支上一条经过验证的提交。不要修改公开 `main` 的分类器代码来回滚规则产物。
+在 `main` revert 上一条经过验证的 `chore(rules)` 产物提交。不要连带回退分类器代码。
 
 ### Token 泄露
 
 1. 立即在 GitHub 撤销泄露 Token。
 2. 在 Surge 中重新运行 setup 写入新 Token。
 3. 检查私有 Inbox 的 Actions 历史，确认没有异常 dispatch、取消或重跑。
-4. 如果公开 proposal 已提交，按正常 generated 分支回滚流程处理。
+4. 如果公开 proposal 已提交，按正常 `main` 产物提交回滚流程处理。
 
 ## 14. 不应自动化的内容
 
@@ -400,7 +399,7 @@ capture=false&upload=false
 - [ ] 原始 payload 没有进入 Git、日志、artifact 或 cache
 - [ ] 私有 intake、classify 和公开 publish 均通过安全测试
 - [x] PSL 快照已人工审核，`ready=true` 且 SHA-256 匹配
-- [ ] generated 分支只包含允许产物
+- [ ] 自动发布对 `main` 的修改只包含允许产物
 - [ ] 已完成至少 7 天 dry-run
 - [ ] 已验证锁屏、断网、Surge 重启和 Token 轮换
-- [ ] 已验证一次成功发布和一次 generated 回滚
+- [ ] 已验证一次成功发布和一次 `main` 产物提交回滚

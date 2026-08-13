@@ -50,12 +50,12 @@ jobs:
           path: public-classifier
           persist-credentials: false
 
-      - name: Checkout generated rules at fixed branch
+      - name: Checkout published rules from main
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: ${{ steps.classifier.outputs.repository }}
-          ref: generated
-          path: public-generated
+          ref: main
+          path: public-rules
           persist-credentials: false
 
       - name: Verify checked out classifier commit
@@ -75,8 +75,8 @@ jobs:
             --sources ../public-classifier/Automation/sources.json \
             --locks ../public-classifier/Automation/sources.lock.json \
             --control-plane ../public-classifier/Automation/control-plane.json \
-            --existing-direct ../public-generated/Rule/Direct+.list \
-            --existing-proxy ../public-generated/Rule/Proxy+.list \
+            --existing-direct ../public-rules/Rule/Direct+.list \
+            --existing-proxy ../public-rules/Rule/Proxy+.list \
             --existing-reject ../public-classifier/Rule/Reject+.list \
             --psl ../public-classifier/Automation/vendor/public_suffix_list.dat \
             --psl-lock ../public-classifier/Automation/vendor/public_suffix_list.lock.json \

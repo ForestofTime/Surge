@@ -5,7 +5,7 @@
   "publish_enabled": false,
   "public_repository": "ForestofTime/Surge",
   "classifier_commit": "REPLACE_WITH_REVIEWED_40_CHAR_SHA",
-  "generated_branch": "generated",
+  "artifact_branch": "main",
   "observation_retention_days": 180,
   "review_retention_days": 365
 }

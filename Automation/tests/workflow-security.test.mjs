@@ -30,18 +30,29 @@ function assertWorkflowSafety(relativePath, expectedWriteBranch) {
   assert.doesNotMatch(workflow, /\$\{\{\s*(?:inputs|github\.event\.inputs)\.[^}]+\}\}/, `${relativePath} must not interpolate event input`);
   assert.doesNotMatch(workflow, /toJSON\(github\)|set\s+-x|echo\s+.*(?:payload|candidate|proposal)/i, `${relativePath} may log raw input`);
   assert.match(workflow, /GITHUB_EVENT_PATH/);
-  assert.match(workflow, new RegExp(`generated`));
   assert.match(workflow, new RegExp(expectedWriteBranch));
   assert.match(workflow, /concurrency:/);
   assert.match(workflow, /cancel-in-progress:\s*false/);
   assert.match(workflow, /kill[_-]?switch|auto[_-]?write|enabled/i);
-  assert.match(workflow, /symlink|isSymbolicLink/);
+  assert.match(workflow, /verify-generated-tree\.mjs|symlink|isSymbolicLink/);
   assert.match(workflow, /git diff|diff --exit-code/);
   assert.match(workflow, /allowlist|allowed path|ALLOWED_PATH/i);
 }
 
-assertWorkflowSafety('.github/workflows/publish-fallback.yml', 'generated');
+assertWorkflowSafety('.github/workflows/publish-fallback.yml', 'main');
 assertWorkflowSafety('.github/workflows/update-source-locks.yml', 'main');
+
+const publishWorkflow = read('.github/workflows/publish-fallback.yml');
+assert.match(publishWorkflow, /push origin HEAD:main/);
+assert.doesNotMatch(publishWorkflow, /ref:\s*generated|HEAD:generated|GENERATED_BRANCH/);
+assert.match(publishWorkflow, /Source\/Auto\/Direct\+\.list/);
+assert.match(publishWorkflow, /proposals\/processed\.json/);
+assert.match(publishWorkflow, /node Automation\/verify-generated-tree\.mjs --root \. --allow-main-tree/);
+
+const sourceLockWorkflow = read('.github/workflows/update-source-locks.yml');
+assert.match(sourceLockWorkflow, /contents:\s*read/);
+assert.doesNotMatch(sourceLockWorkflow, /git switch --create|git push|gh pr create|pull-requests:\s*write/);
+assert.match(sourceLockWorkflow, /GITHUB_STEP_SUMMARY/);
 
 for (const relativePath of [
   '.github/workflows/publish-fallback.yml',
@@ -63,7 +74,9 @@ for (const relativePath of [
 const classifyWorkflow = read('docs/private-inbox-template/.github/workflows/classify-fallback.yml');
 assert.match(classifyWorkflow, /classifier_commit|steps\.classifier\.outputs\.commit/);
 assert.match(classifyWorkflow, /PUBLIC_DISPATCH_TOKEN/);
-assert.match(classifyWorkflow, /public-generated/);
+assert.match(classifyWorkflow, /public-rules/);
+assert.match(classifyWorkflow, /ref:\s*main/);
+assert.doesNotMatch(classifyWorkflow, /ref:\s*generated|public-generated/);
 assert.match(classifyWorkflow, /dispatch-proposal\.mjs/);
 const dispatchProposal = read('docs/private-inbox-template/Automation/dispatch-proposal.mjs');
 assert.match(dispatchProposal, /https:\/\/api\.github\.com/);
@@ -75,10 +88,20 @@ assert.doesNotMatch(read('Automation/check-queue-depth.mjs'), /GITHUB_API_URL/);
 
 const controlPlane = readJson('Automation/control-plane.json');
 assert.equal(controlPlane.schema_version, 1);
+assert.equal(controlPlane.artifact_branch, 'main');
+assert.ok(!Object.hasOwn(controlPlane, 'generated_branch'));
 assert.ok(Array.isArray(controlPlane.never_capture_hosts));
 assert.ok(controlPlane.never_capture_hosts.includes('api.github.com'));
 assert.ok(Array.isArray(controlPlane.source_hosts));
 assert.ok(controlPlane.source_hosts.every((host) => /^[a-z0-9.-]+$/.test(host)));
+
+const privateConfig = readJson('docs/private-inbox-template/Automation/config.json');
+assert.equal(privateConfig.artifact_branch, 'main');
+assert.ok(!Object.hasOwn(privateConfig, 'generated_branch'));
+
+for (const relativePath of ['min.conf', 'README.md', 'docs/fallback-rule-learning-operation.md', 'docs/private-inbox-template/README.md', 'docs/plans/01-fallback-rule-learning.md']) {
+  assert.doesNotMatch(read(relativePath), /ForestofTime\/Surge\/generated\//, `${relativePath} still uses the removed branch`);
+}
 
 const sources = readJson('Automation/sources.json');
 assert.equal(sources.schema_version, 1);

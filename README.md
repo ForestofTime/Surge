@@ -9,9 +9,9 @@
 | Surge 模块 | 去广告、响应体清理、URL 重写、Host IP 覆盖、面板和定时任务 |
 | 脚本 | Surge JavaScript，包括广告字段清理、开屏处理和兜底规则采集上传 |
 | 规则集 | 代理、直连、拒绝、国内服务、工作网段、Emby、IBKR 和 ZA Bank 等场景规则 |
-| 生成规则 | `generated` 分支中的 `Direct+` 与 `Proxy+` 规则产物，供主配置远程引用 |
+| 生成规则 | `main` 分支中的 `Direct+` 与 `Proxy+` 规则产物，供主配置远程引用 |
 | 兼容配置 | Clash for Windows 配置模板 |
-| 自动化 | 上游规则锁定、提案复验、规则编译、生成分支发布和安全检查 |
+| 自动化 | 上游规则锁定、提案复验、规则编译、受限产物发布和安全检查 |
 
 ## 支持的客户端
 
@@ -96,7 +96,7 @@
 2. `fallback-upload.js` 将不可变批次投递到私有 `Surge-Rule-Inbox`。
 3. 私有 Inbox 负责入库、分类、审核和提案准备。
 4. 公开仓库的 Workflow 重新校验提案、来源锁、Public Suffix List 快照和生成目录。
-5. 通过复验后，只更新 `generated` 分支中的 `Direct+`、`Proxy+` 及清单产物。
+5. 通过复验后，只更新 `main` 中白名单限定的 `Direct+`、`Proxy+`、自动 source 及清单产物。
 
 相关入口：
 
@@ -107,7 +107,7 @@
 - `Automation/rule-compiler.mjs`：规则编译和安全门禁
 - `Automation/generate-rules.mjs`：生成规则产物
 - `Automation/verify-rules.mjs`：规则文件校验
-- `.github/workflows/publish-fallback.yml`：复验并发布到 `generated`
+- `.github/workflows/publish-fallback.yml`：复验并将白名单产物发布到 `main`
 - `.github/workflows/update-source-locks.yml`：定期准备来源锁更新
 - `docs/fallback-rule-learning-operation.md`：部署、dry-run、回滚和数据删除说明
 
@@ -123,13 +123,13 @@ git diff --check
 规则自动化还提供以下专项校验：
 
 ```bash
-node Automation/verify-rules.mjs --rule-dir /path/to/generated-tree/Rule \
+node Automation/verify-rules.mjs --rule-dir Rule \
   --psl Automation/vendor/public_suffix_list.dat \
   --policies Direct,Proxy
-node Automation/verify-generated-tree.mjs --root /path/to/generated-tree
+git diff --name-only | node Automation/check-generated-diff.mjs
 ```
 
-执行 `verify-generated-tree.mjs` 时，应将 `--root` 指向只包含生成分支允许产物的目录。主分支目录包含完整源码和文档，适合使用测试命令及针对性脚本检查。
+发布 Workflow 在写入前检查规则语法、symlink、Git diff 和允许路径，只允许修改 `Source/Auto/`、`Rule/Direct+.list`、`Rule/Proxy+.list`、`manifest.json` 与 `proposals/processed.json`。
 
 ## 外部依赖
 

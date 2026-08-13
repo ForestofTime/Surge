@@ -8,12 +8,11 @@ on:
 permissions: {}
 
 concurrency:
-  group: fallback-source-locks
+  group: fallback-source-lock-inspection
   cancel-in-progress: false
 
 env:
   NODE_VERSION: 22.14.0
-  GENERATED_BRANCH: generated
 
 jobs:
   update:
@@ -21,8 +20,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
     steps:
       - name: Checkout protected source
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -52,7 +50,7 @@ jobs:
           import { readFileSync } from 'node:fs';
           const config = JSON.parse(readFileSync('Automation/control-plane.json', 'utf8'));
           if (config.schema_version !== 1 || config.enabled !== true) process.exit(1);
-          if (config.generated_branch !== 'generated') process.exit(1);
+          if (config.artifact_branch !== 'main') process.exit(1);
           NODE
 
       - name: Prepare reviewed lock changes
@@ -72,20 +70,14 @@ jobs:
           if (paths.some((path) => !allowed.has(path))) process.exit(1);
           NODE
 
-      - name: Open a source-lock review branch and pull request
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RUN_ID: ${{ github.run_id }}
+      - name: Report source-lock updates for manual review
         run: |
           if git diff --quiet -- Automation/sources.lock.json; then
+            echo 'No source-lock updates detected.' >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          branch="automation/source-locks-${RUN_ID}"
-          git switch --create "$branch"
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- Automation/sources.lock.json
-          git commit -m 'chore(automation): update reviewed source locks'
-          AUTH_HEADER="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
-          git -c "http.extraheader=AUTHORIZATION: basic ${AUTH_HEADER}" push --set-upstream origin "$branch"
-          gh pr create --base main --head "$branch" --title 'chore(automation): update reviewed source locks' --body 'Source lock changes require human review before publish.'
+          {
+            echo '## Source-lock updates require manual review'
+            echo
+            echo 'Run `node Automation/update-source-locks.mjs` locally, review the pinned commits and hashes, then commit the approved lock file to main.'
+          } >> "$GITHUB_STEP_SUMMARY"

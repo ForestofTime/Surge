@@ -11,12 +11,11 @@ on:
 permissions: {}
 
 concurrency:
-  group: fallback-publish-generated
+  group: fallback-publish-main
   cancel-in-progress: false
 
 env:
   NODE_VERSION: 22.14.0
-  GENERATED_BRANCH: generated
 
 jobs:
   validate:
@@ -56,7 +55,7 @@ jobs:
         run: node Automation/check-queue-depth.mjs
 
   publish:
-    name: revalidate and publish generated branch
+    name: revalidate and publish rule artifacts to main
     needs: validate
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -69,13 +68,6 @@ jobs:
         with:
           ref: main
           path: source-tree
-          persist-credentials: false
-
-      - name: Checkout generated branch
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with:
-          ref: generated
-          path: generated-tree
           persist-credentials: false
 
       - name: Set up exact Node runtime
@@ -104,42 +96,41 @@ jobs:
           const locks = JSON.parse(readFileSync('Automation/sources.lock.json', 'utf8'));
           const psl = JSON.parse(readFileSync('Automation/vendor/public_suffix_list.lock.json', 'utf8'));
           if (config.schema_version !== 1 || locks.schema_version !== 1 || psl.schema_version !== 1) process.exit(1);
-          if (config.generated_branch !== 'generated' || config.psl.require_ready_snapshot !== true || psl.ready !== true) process.exit(1);
+          if (config.artifact_branch !== 'main' || config.psl.require_ready_snapshot !== true || psl.ready !== true) process.exit(1);
           if (!locks.sources.every((source) => /^[0-9a-f]{40}$/.test(source.commit) && /^[0-9a-f]{64}$/.test(source.content_sha256))) process.exit(1);
           NODE
 
-      - name: Generate into isolated generated tree
+      - name: Generate reviewed rule artifacts in main worktree
         working-directory: source-tree
         env:
           PROPOSAL_PATH: .work/fallback-proposal.json
-          OUTPUT_ROOT: ../generated-tree
+          OUTPUT_ROOT: .
         run: |
           test -f "$PROPOSAL_PATH"
           test -f Automation/generate-rules.mjs
           node Automation/generate-rules.mjs --proposal-file "$PROPOSAL_PATH" --output-root "$OUTPUT_ROOT"
 
-      - name: Verify generated tree and diff allowlist
-        working-directory: generated-tree
+      - name: Verify rule artifacts and diff allowlist
+        working-directory: source-tree
         run: |
-          # verify-generated-tree.mjs rejects symlink and non-regular entries.
-          node ../source-tree/Automation/verify-generated-tree.mjs --root .
-          node ../source-tree/Automation/verify-rules.mjs --rule-dir Rule --psl ../source-tree/Automation/vendor/public_suffix_list.dat --policies Direct,Proxy
-          git diff --name-only --exit-code -- . ':!Source/Auto/Direct+.list' ':!Source/Auto/Proxy+.list' ':!Rule/Direct+.list' ':!Rule/Proxy+.list' ':!manifest.json' ':!proposals/processed.json' ':!README.md'
-          git diff --name-only | node ../source-tree/Automation/check-generated-diff.mjs
+          node Automation/verify-generated-tree.mjs --root . --allow-main-tree
+          node Automation/verify-rules.mjs --rule-dir Rule --psl Automation/vendor/public_suffix_list.dat --policies Direct,Proxy
+          git diff --check
+          git diff --name-only | node Automation/check-generated-diff.mjs
 
-      - name: Commit generated branch only
-        working-directory: generated-tree
+      - name: Commit rule artifacts to main only
+        working-directory: source-tree
         env:
           PROPOSAL_SHA256: ${{ steps.event.outputs.proposal_sha256 }}
           GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- Source/Auto/Direct+.list Source/Auto/Proxy+.list Rule/Direct+.list Rule/Proxy+.list manifest.json proposals/processed.json README.md
-          git diff --cached --name-only | node ../source-tree/Automation/check-generated-diff.mjs
+          git add -- Source/Auto/Direct+.list Source/Auto/Proxy+.list Rule/Direct+.list Rule/Proxy+.list manifest.json proposals/processed.json
+          git diff --cached --name-only | node Automation/check-generated-diff.mjs
           if git diff --cached --quiet; then
             exit 0
           fi
-          git commit -m "chore(generated): publish fallback proposal ${PROPOSAL_SHA256}"
+          git commit -m "chore(rules): publish fallback proposal ${PROPOSAL_SHA256}"
           AUTH_HEADER="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
-          git -c "http.extraheader=AUTHORIZATION: basic ${AUTH_HEADER}" push origin HEAD:generated
+          git -c "http.extraheader=AUTHORIZATION: basic ${AUTH_HEADER}" push origin HEAD:main
