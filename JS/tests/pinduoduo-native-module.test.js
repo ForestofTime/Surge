@@ -32,9 +32,13 @@ test('uses QingRex native rules and keeps the v7 homepage behavior in v8', () =>
   assert.match(moduleText, /^#!name=拼多多去广告（QingRex 原生兼容）$/m);
   assert.match(moduleText, /首页保持 v7 行为；仅清理聊天与个人中心商品流。v8/);
 
-  // These hashes are the current QingRex upstream Body Rewrite and Map Local sections.
+  // Excluding the new page-scoped feed rule, the v7 homepage rules stay byte-identical.
+  const unchangedBodyRewrite = section('Body Rewrite', 'Map Local')
+    .split('\n')
+    .filter((line) => !line.includes('8.20.0 HAR') && !line.includes('api\\/alexa\\/cells\\/hub\\/v3'))
+    .join('\n');
   assert.equal(
-    sha256(section('Body Rewrite', 'Map Local')),
+    sha256(unchangedBodyRewrite),
     '4d2a8f0357468223975ff3a4ca596d2cc2fdca74c0948e5021d087db48aa0f16'
   );
   assert.equal(
