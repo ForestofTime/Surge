@@ -1,16 +1,19 @@
 /*
- * 拼多多首页百亿补贴最小实验配置
+ * 拼多多首页百亿补贴最小渲染修复
  *
- * QingRex 原模块会拒绝 meta.pinduoduo.com。这里仅对 experiment 接口
- * 保留两个由 8.20.0 HAR 证实的首页百亿补贴键，其他实验继续丢弃。
+ * 1. experiment 仅保留两个由 8.20.0 HAR 证实的百亿补贴键。
+ * 2. homepage 只收敛 module_order 与 dy_module，避免客户端先遇到
+ *    QingRex 已删除载荷的模块后停止渲染。
  */
 
 (function () {
   const url = String(($request && $request.url) || '');
   const bodyText = $response && $response.body;
-  const expectedUrl = /^https:\/\/meta\.pinduoduo\.com\/api\/app\/v2\/experiment(?:\?|$)/;
+  const experimentUrl = /^https:\/\/meta\.pinduoduo\.com\/api\/app\/v2\/experiment(?:\?|$)/;
+  const homepageUrl = /^https:\/\/api\.pinduoduo\.com\/api\/alexa\/homepage\/hub(?:\?|$)/;
 
-  if (!expectedUrl.test(url) || typeof bodyText !== 'string' || bodyText.length === 0) {
+  if ((!experimentUrl.test(url) && !homepageUrl.test(url)) ||
+      typeof bodyText !== 'string' || bodyText.length === 0) {
     $done({});
     return;
   }
@@ -23,8 +26,43 @@
     return;
   }
 
-  if (!body || typeof body !== 'object' || Array.isArray(body) ||
-      !body.ks || typeof body.ks !== 'object' || Array.isArray(body.ks)) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    $done({});
+    return;
+  }
+
+  if (homepageUrl.test(url)) {
+    const result = body.result;
+    if (!result || typeof result !== 'object' || Array.isArray(result)) {
+      $done({});
+      return;
+    }
+
+    const allowedModules = new Set([
+      'billion_subsidy_entrance',
+      'billion_subsidy_entrance_dy',
+      'billion_subsidy_entrance_lite',
+    ]);
+
+    if (Array.isArray(result.module_order)) {
+      result.module_order = result.module_order.filter((item) =>
+        item && typeof item === 'object' && !Array.isArray(item) &&
+        allowedModules.has(String(item.module_name || ''))
+      );
+    }
+
+    if (result.dy_module && typeof result.dy_module === 'object' &&
+        !Array.isArray(result.dy_module)) {
+      for (const key of Object.keys(result.dy_module)) {
+        if (key !== 'billion_subsidy_entrance_dy') delete result.dy_module[key];
+      }
+    }
+
+    $done({ body: JSON.stringify(body) });
+    return;
+  }
+
+  if (!body.ks || typeof body.ks !== 'object' || Array.isArray(body.ks)) {
     $done({});
     return;
   }

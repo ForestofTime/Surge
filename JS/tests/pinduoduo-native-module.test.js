@@ -51,7 +51,7 @@ function runSubsidyResponse(url, body) {
 
 test('uses QingRex native rules as the baseline with only a narrow subsidy renderer exception', () => {
   assert.match(moduleText, /^#!name=拼多多去广告（QingRex 原生兼容）$/m);
-  assert.match(moduleText, /完整保留 QingRex 原生净化；仅放行百亿补贴卡片渲染组件。v5/);
+  assert.match(moduleText, /完整保留 QingRex 原生净化；仅修正百亿补贴卡片的首页渲染顺序。v6/);
 
   // These hashes are the current QingRex upstream Body Rewrite and Map Local sections.
   assert.equal(
@@ -162,14 +162,15 @@ test('latest v5 HAR moves the subsidy card ahead of removed QingRex modules', {
   );
 });
 
-test('does not retain the previous broad custom response pipeline', () => {
+test('uses one narrow script for the subsidy experiment and homepage order only', () => {
   assert.equal(moduleText.includes('/api/alexa/cells/hub/v3'), false);
   assert.equal(moduleText.includes('.result.module_order? |='), false);
   assert.equal(moduleText.includes('.result.dy_module? |='), false);
   assert.equal(moduleText.includes('api\\/cappuccino\\/splash'), false);
-  assert.match(moduleText, /^拼多多-百亿补贴实验 = type=http-response,/m);
+  assert.match(moduleText, /^拼多多-百亿补贴渲染 = type=http-response,/m);
   assert.equal((moduleText.match(/type=http-response/g) || []).length, 1);
-  assert.equal(moduleText.includes('pattern=^https:\\/\\/api\\.pinduoduo'), false);
+  assert.match(moduleText, /api\\\.pinduoduo\\\.com\\\/api\\\/alexa\\\/homepage\\\/hub/);
+  assert.equal(moduleText.includes('/api/alexa/cells/hub/v3'), false);
   assert.equal(fs.existsSync(obsoleteScriptPath), false);
 });
 

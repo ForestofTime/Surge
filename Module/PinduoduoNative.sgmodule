@@ -1,5 +1,5 @@
 #!name=拼多多去广告（QingRex 原生兼容）
-#!desc=完整保留 QingRex 原生净化；仅放行百亿补贴卡片渲染组件。v5
+#!desc=完整保留 QingRex 原生净化；仅修正百亿补贴卡片的首页渲染顺序。v6
 #!author=ForestofTime
 #!category=AdBlock
 #!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/PinDuoDuo.png
@@ -89,7 +89,7 @@ http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/aristotle\/order_list_v4\?
 ^https:\/\/api\.pinduoduo\.com\/api\/buffon\/nasus\/recommend\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 [Script]
-拼多多-百亿补贴实验 = type=http-response,pattern=^https:\/\/meta\.pinduoduo\.com\/api\/app\/v2\/experiment(?:\?|$),requires-body=true,max-size=1048576,timeout=10,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PinduoduoSubsidy.js?v=5
+拼多多-百亿补贴渲染 = type=http-response,pattern=^https:\/\/(?:meta\.pinduoduo\.com\/api\/app\/v2\/experiment|api\.pinduoduo\.com\/api\/alexa\/homepage\/hub)(?:\?|$),requires-body=true,max-size=2097152,timeout=10,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/PinduoduoSubsidy.js?v=6
 
 [MITM]
 hostname = %APPEND% api.pinduoduo.com, meta.pinduoduo.com
