@@ -12,6 +12,8 @@ const fullMetaHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-100425.har';
 const latestV6HarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-111547.har';
+const pageFeedsHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-104410.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
@@ -26,9 +28,9 @@ function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
-test('uses QingRex native rules and restores its last pre-meta-block behavior', () => {
+test('uses QingRex native rules and keeps the v7 homepage behavior in v8', () => {
   assert.match(moduleText, /^#!name=拼多多去广告（QingRex 原生兼容）$/m);
-  assert.match(moduleText, /完整保留 QingRex 原生净化；恢复其历史版本中 meta 配置可达行为。v7/);
+  assert.match(moduleText, /首页保持 v7 行为；仅清理聊天与个人中心商品流。v8/);
 
   // These hashes are the current QingRex upstream Body Rewrite and Map Local sections.
   assert.equal(
@@ -39,6 +41,56 @@ test('uses QingRex native rules and restores its last pre-meta-block behavior', 
     sha256(section('Map Local', 'MITM')),
     '702c9419ae77b78002485f01f0ebaf561f54a072a430095611e78659093d8ce1'
   );
+});
+
+test('clears only chat and personal cells feeds while leaving homepage cells untouched', () => {
+  const scopedRule = moduleText.split('\n').find((line) =>
+    line.includes('api\\/alexa\\/cells\\/hub\\/v3')
+  );
+  assert.ok(scopedRule, 'missing scoped cells feed body rewrite');
+  assert.match(scopedRule, /refer_page_sn=\(\?:10001\|10031\)/);
+  assert.match(scopedRule, /\.has_more = false \| \.data\.goods_list = \[\]/);
+
+  const patternText = scopedRule.split(" '", 1)[0]
+    .replace(/^http-response-jq /, '')
+    .replaceAll('\\/', '/');
+  const pattern = new RegExp(patternText);
+
+  assert.equal(pattern.test(
+    'https://api.pinduoduo.com/api/alexa/cells/hub/v3?count=20&refer_page_sn=10001&page_sn=10002'
+  ), true);
+  assert.equal(pattern.test(
+    'https://api.pinduoduo.com/api/alexa/cells/hub/v3?refer_page_sn=10031&count=20'
+  ), true);
+  assert.equal(pattern.test(
+    'https://api.pinduoduo.com/api/alexa/cells/hub/v3?scene=homegoods_dy_tpl&page_sn=10002'
+  ), false);
+});
+
+test('HAR identifies the shared feed by page source instead of product content', {
+  skip: !fs.existsSync(pageFeedsHarPath),
+}, () => {
+  const har = JSON.parse(fs.readFileSync(pageFeedsHarPath, 'utf8'));
+  const feeds = har.log.entries.filter((entry) =>
+    entry.request.url.includes('/api/alexa/cells/hub/v3?')
+  );
+  const personal = feeds.filter((entry) =>
+    new URL(entry.request.url).searchParams.get('refer_page_sn') === '10001'
+  );
+  const chat = feeds.filter((entry) =>
+    new URL(entry.request.url).searchParams.get('refer_page_sn') === '10031'
+  );
+  const homepage = feeds.filter((entry) =>
+    !new URL(entry.request.url).searchParams.has('refer_page_sn')
+  );
+
+  assert.ok(personal.length > 0);
+  assert.ok(chat.length > 0);
+  assert.ok(homepage.length > 0);
+  for (const entry of [...personal, ...chat]) {
+    const body = JSON.parse(entry.response.content.text);
+    assert.ok(body.data.goods_list.length > 0);
+  }
 });
 
 test('keeps QingRex ad blocks but leaves meta fully reachable like the July 2025 history', () => {
