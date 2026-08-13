@@ -1,6 +1,6 @@
-# 仓库文件索引（逐文件说明）
+# 仓库文件索引（核心文件说明）
 
-本文覆盖当前仓库所有 Git 已跟踪文件，按目录分组说明用途、依赖与维护要点。
+本文覆盖当前仓库的核心源码、模块、规则和自动化入口，按目录分组说明用途、依赖与维护要点。新增模块和回归修复以根目录 `README.md` 的最近更新为准。
 
 ## 根目录
 
@@ -58,26 +58,39 @@
 
 ## `JS/`
 
-### `JS/JHSH_PRO.js`
-- 作用：建行生活参数化广告净化脚本，支持开关参数。
+### `JS/CCBLifeAdBlock.js`
+- 作用：建行生活参数化广告净化脚本，默认只处理开屏配置，可按参数扩展页面广告字段。
 - 适用客户端/APP：建行生活 App。
-- 依赖关系：被 `Module/jhsh_pro.sgmodule` 通过 `script-path` 引用。
-- 维护建议：保持参数名与 `.sgmodule` `#!arguments` 一致。
+- 依赖关系：被 `Module/CCBLife.sgmodule` 通过 `script-path` 引用。
+- 维护建议：保持参数名与 `.sgmodule` `#!arguments` 一致，只扩大已验证的接口范围。
+
+### `JS/CainiaoMiniProgram.js`
+- 作用：清理菜鸟淘宝小程序的定向 HTTPDNS 和已抓包确认的 MTop 广告位。
+- 适用客户端/APP：菜鸟淘宝小程序。
+- 依赖关系：被 `Module/CainiaoMiniProgram.sgmodule` 引用。
+- 维护建议：保持菜鸟应用标识、MTop 主机和广告字段的边界，回归测试覆盖视频卡广告位。
+
+### `JS/GoofishAds.js`
+- 作用：清理闲鱼 HTTPDNS 绕过和已确认的响应广告字段。
+- 适用客户端/APP：闲鱼。
+- 依赖关系：被 `Module/GoofishAds.sgmodule` 引用。
+- 维护建议：保留功能数据透传，新增接口前先用 HAR 证明。
+
+### `JS/JingdongAds.js` 与 `JS/JingdongSplash.js`
+- 作用：处理京东已确认的广告响应和主页面启动视频。
+- 适用客户端/APP：京东。
+- 依赖关系：分别被 `Module/JingdongAds.sgmodule` 引用。
+- 维护建议：京东模块保持开屏和广告响应边界，不修改商品或业务接口。
 
 ### `JS/didi_carowner.js`
 - 作用：滴滴车主端响应体清理脚本。
 - 适用客户端/APP：滴滴车主/顺风车车主端。
-- 依赖关系：被 `Module/Didichuxing-CarOwner.sgmodule` 本地引用。
+- 依赖关系：被 `Module/Didichuxing.sgmodule` 本地引用。
 
 ### `JS/jf.js`
 - 作用：京粉接口广告项过滤脚本。
 - 适用客户端/APP：京粉。
 - 依赖关系：被 `Module/jf.sgmodule` 通过 raw 链接引用。
-
-### `JS/jhsh.js`
-- 作用：建行生活基础净化脚本。
-- 适用客户端/APP：建行生活。
-- 依赖关系：被 `Module/jhsh.sgmodule` 通过 raw 链接引用。
 
 ### `JS/meiyou-body-clean.js`
 - 作用：美柚多接口字段清理共享脚本。
@@ -106,19 +119,49 @@
 
 ## `JS/tests/`
 
-### `JS/tests/jhsh_pro_toggle.test.js`
-- 作用：`JHSH_PRO.js` 参数开关烟雾测试。
+### `JS/tests/pinduoduo-native-module.test.js`
+- 作用：验证拼多多原生模块的 HTTPDNS、首页、商品流、搜索、刷新和广告字段边界。
 - 适用客户端/APP：Node 本地测试。
-- 依赖关系：`require('../JHSH_PRO.js')`。
-- 维护建议：新增参数时同步新增断言。
+- 依赖关系：对应 `Module/PinduoduoNative.sgmodule` 的当前实现。
+- 维护建议：新增规则前先增加回归样本，确保功能数据保持透传。
 
 ## `Module/`
 
-### `Module/Didichuxing-CarOwner.sgmodule`
-- 作用：滴滴车主端去广告主模块。
-- 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为滴滴车主/顺风车车主。
-- 类型：Rule + Map Local + Script + MITM。
-- 依赖关系：本地脚本 `JS/didi_carowner.js`；无外部脚本仓库依赖。
+### `Module/Didichuxing.sgmodule`
+- 作用：滴滴出行首页、活动、推荐流和个人页净化模块。
+- 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为滴滴出行。
+- 类型：Rule + Script + MITM。
+- 依赖关系：本地脚本 `JS/didi_carowner.js`。
+
+### `Module/CCBLife.sgmodule`
+- 作用：建行生活开屏默认拦截，并按参数选择性清理页面广告。
+- 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为建行生活。
+- 类型：Script + MITM。
+- 依赖关系：本地脚本 `JS/CCBLifeAdBlock.js`。
+
+### `Module/CainiaoMiniProgram.sgmodule`
+- 作用：菜鸟淘宝小程序定向 HTTPDNS 和广告位清理。
+- 适用客户端/APP：Surge iOS/Mac；小程序为菜鸟淘宝。
+- 类型：Script + MITM。
+- 依赖关系：本地脚本 `JS/CainiaoMiniProgram.js`。
+
+### `Module/GoofishAds.sgmodule`
+- 作用：闲鱼 HTTPDNS 和响应广告字段清理。
+- 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为闲鱼。
+- 类型：Script + MITM。
+- 依赖关系：本地脚本 `JS/GoofishAds.js`。
+
+### `Module/JingdongAds.sgmodule`
+- 作用：京东开屏和已确认广告响应清理。
+- 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为京东。
+- 类型：Script + MITM。
+- 依赖关系：本地脚本 `JS/JingdongAds.js`、`JS/JingdongSplash.js`。
+
+### `Module/PinduoduoNative.sgmodule`
+- 作用：拼多多原生规则移植，保留首页、商品流和搜索功能，清理已确认的广告接口。
+- 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为拼多多。
+- 类型：Rule + MITM。
+- 依赖关系：对应 `JS/tests/pinduoduo-native-module.test.js` 的回归样本。
 
 ### `Module/GoogleRewrite.sgmodule`
 - 作用：Google.cn 到 Google.com 重定向。
@@ -183,18 +226,6 @@
 - 类型：Script + Map Local + MITM。
 - 依赖关系：引用本仓库 raw 脚本 `JS/jf.js`。
 
-### `Module/jhsh.sgmodule`
-- 作用：建行生活基础广告净化模块。
-- 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为建行生活（含美团内嵌场景）。
-- 类型：Script + Map Local + MITM。
-- 依赖关系：引用本仓库 raw 脚本 `JS/jhsh.js`。
-
-### `Module/jhsh_pro.sgmodule`
-- 作用：建行生活参数化净化模块（可开关广告项）。
-- 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为建行生活。
-- 类型：Script + Map Local + MITM。
-- 依赖关系：引用本仓库 raw 脚本 `JS/JHSH_PRO.js`。
-
 ### `Module/nyyh.sgmodule`
 - 作用：农业银行开屏广告拦截。
 - 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为农业银行。
@@ -243,29 +274,19 @@
 - 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为滴滴乘客/车主。
 - 类型：URL Rewrite + MITM。
 - 依赖关系：无本地脚本、无外部脚本仓库依赖。
-- 与 `Module/Didichuxing-CarOwner.sgmodule` 的差异：本文件为关键词精简拦截，后者为接口级脚本精细清理。
+- 与 `Module/Didichuxing.sgmodule` 的差异：本文件为关键词精简拦截，后者为接口级脚本精细清理。
 
 ## `docs/`
 
-### `docs/superpowers/plans/2026-03-26-jhsh-pro-ad-toggle-plan.md`
-- 作用：建行生活参数开关改造计划文档。
-- 适用客户端/APP：维护文档。
-- 依赖关系：对应 `JS/JHSH_PRO.js`、`Module/jhsh_pro.sgmodule`。
+### `docs/fallback-rule-learning-operation.md`
+- 作用：兜底规则学习流程的部署、dry-run、发布、回滚和数据删除说明。
+- 适用客户端/APP：Surge 与 GitHub Actions。
+- 依赖关系：对应 `Task/FallbackRules.sgmodule` 和 `Automation/` 下的校验脚本。
 
-### `docs/superpowers/plans/2026-03-27-didi-carowner-plan.md`
-- 作用：滴滴车主模块改造计划文档。
+### `docs/plans/01-fallback-rule-learning.md`
+- 作用：兜底规则学习流程的威胁模型、权限边界和阶段计划。
 - 适用客户端/APP：维护文档。
-- 依赖关系：对应 `JS/didi_carowner.js`、`Module/Didichuxing-CarOwner.sgmodule`。
-
-### `docs/superpowers/specs/2026-03-26-jhsh-pro-ad-toggle-design.md`
-- 作用：建行生活参数化设计说明。
-- 适用客户端/APP：维护文档。
-- 依赖关系：对应 `JHSH_PRO` 方案设计。
-
-### `docs/superpowers/specs/2026-03-27-didi-carowner-design.md`
-- 作用：滴滴车主模块设计说明。
-- 适用客户端/APP：维护文档。
-- 依赖关系：对应滴滴车主模块设计。
+- 依赖关系：与公开 `main` 产物发布流程保持一致。
 
 ### `docs/repo-file-index.md`
 - 作用：本文件，仓库逐文件索引。
