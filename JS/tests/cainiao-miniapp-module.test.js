@@ -8,6 +8,8 @@ const modulePath = path.resolve(__dirname, '../../Module/CainiaoMiniProgram.sgmo
 const scriptPath = path.resolve(__dirname, '../CainiaoMiniProgram.js');
 const moduleText = fs.existsSync(modulePath) ? fs.readFileSync(modulePath, 'utf8') : '';
 const scriptText = fs.existsSync(scriptPath) ? fs.readFileSync(scriptPath, 'utf8') : '';
+const latestHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-085037.har';
 
 function sectionLines(sectionName) {
   const section = moduleText.match(
@@ -305,6 +307,47 @@ test('clears pit 1381 from show.login while preserving real package data', () =>
   });
   const output = JSON.parse(result.body);
 
+  assert.deepEqual(output.data.result, []);
+  assert.deepEqual(output.data.packageList, source.data.packageList);
+  assert.deepEqual(output.ret, source.ret);
+});
+
+test('latest HAR pit 2018 video-card request is filtered without touching package data', { skip: !fs.existsSync(latestHarPath) }, () => {
+  const har = JSON.parse(fs.readFileSync(latestHarPath, 'utf8'));
+  const evidence = har.log.entries.find((entry) => {
+    if (!entry.request.url.includes('gm.mmstat.com/cnux.1.0')) return false;
+    const text = entry.request.postData && entry.request.postData.text;
+    return typeof text === 'string' &&
+      text.includes('mtop.cainiao.guoguo.nbnetflow.ads.show') &&
+      text.includes('%25222018%2522');
+  });
+  assert.ok(evidence, 'latest HAR must identify the video-card source as ads.show pit 2018');
+
+  const source = {
+    api: 'mtop.cainiao.guoguo.nbnetflow.ads.show',
+    data: {
+      result: [
+        {
+          id: 'video-card',
+          pitId: '2018',
+          materialContentMapper: {
+            title: '看视频领金豆兑现金',
+            subTitle: '动动小手 点了就有',
+          },
+        },
+      ],
+      packageList: [{ id: '773436344211406', mailNo: '773436344211406' }],
+    },
+    ret: ['SUCCESS::调用成功'],
+  };
+  const result = runScript({
+    url: 'https://netflow-mtop.cainiao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.show/1.1/',
+    headers: { 'User-Agent': 'MTOPSDK/2.5.3.42' },
+    body: JSON.stringify(source),
+  });
+
+  assert.ok(result.body, 'ads.show must be intercepted and modified');
+  const output = JSON.parse(result.body);
   assert.deepEqual(output.data.result, []);
   assert.deepEqual(output.data.packageList, source.data.packageList);
   assert.deepEqual(output.ret, source.ret);
