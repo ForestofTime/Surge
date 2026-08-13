@@ -57,7 +57,7 @@ test('uses QingRex native rules as the baseline with only a narrow subsidy rende
     '4d2a8f0357468223975ff3a4ca596d2cc2fdca74c0948e5021d087db48aa0f16'
   );
   assert.equal(
-    sha256(section('Map Local', 'MITM')),
+    sha256(section('Map Local', 'Script')),
     '702c9419ae77b78002485f01f0ebaf561f54a072a430095611e78659093d8ce1'
   );
 });
@@ -133,7 +133,7 @@ test('does not retain the previous broad custom response pipeline', () => {
   assert.equal(moduleText.includes('api\\/cappuccino\\/splash'), false);
   assert.match(moduleText, /^拼多多-百亿补贴实验 = type=http-response,/m);
   assert.equal((moduleText.match(/type=http-response/g) || []).length, 1);
-  assert.equal(moduleText.includes('api\\/alexa\\/homepage'), false);
+  assert.equal(moduleText.includes('pattern=^https:\\/\\/api\\.pinduoduo'), false);
   assert.equal(fs.existsSync(obsoleteScriptPath), false);
 });
 
@@ -153,6 +153,20 @@ test('latest HAR proves the previous regression and the homepage still carries t
   assert.equal(experiments.length, 2);
   assert.ok(experiments.every((entry) => entry.response.status === 200));
   assert.ok(experiments.reduce((sum, entry) => sum + entry.response.content.text.length, 0) > 700000);
+
+  const experiment = experiments.find((entry) => entry.request.url.includes('/experiment?'));
+  const filteredExperiment = JSON.parse(
+    runSubsidyResponse(experiment.request.url, experiment.response.content.text).body
+  );
+  assert.deepEqual(Object.keys(filteredExperiment.ks).sort(), [
+    'index_pdd_home_billion_subsidy_entry_pdd_lego_reportm1_6900',
+    'pdd_home_shorter_billion_5300',
+  ]);
+  assert.equal(filteredExperiment.ks.pdd_home_shorter_billion_5300.v, 'false');
+  assert.equal(
+    filteredExperiment.ks.index_pdd_home_billion_subsidy_entry_pdd_lego_reportm1_6900.v,
+    'true'
+  );
 
   const homepage = entries.find((entry) => entry.request.url.includes('/api/alexa/homepage/hub?'));
   assert.ok(homepage);
