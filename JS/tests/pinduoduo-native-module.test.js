@@ -10,6 +10,8 @@ const subsidyScriptPath = path.resolve(__dirname, '../PinduoduoSubsidy.js');
 const readmePath = path.resolve(__dirname, '../../README.md');
 const latestHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-100425.har';
+const latestV5HarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-104410.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const subsidyScriptText = fs.existsSync(subsidyScriptPath)
   ? fs.readFileSync(subsidyScriptPath, 'utf8')
@@ -124,6 +126,40 @@ test('keeps only the two homepage subsidy experiments', () => {
     'index_pdd_home_billion_subsidy_entry_pdd_lego_reportm1_6900',
     'pdd_home_shorter_billion_5300',
   ]);
+});
+
+test('latest v5 HAR moves the subsidy card ahead of removed QingRex modules', {
+  skip: !fs.existsSync(latestV5HarPath),
+}, () => {
+  const har = JSON.parse(fs.readFileSync(latestV5HarPath, 'utf8'));
+  const homepage = har.log.entries.find((entry) =>
+    entry.response && entry.response.content &&
+    typeof entry.response.content.text === 'string' &&
+    entry.request.url.includes('/api/alexa/homepage/hub?')
+  );
+  assert.ok(homepage);
+
+  const captured = JSON.parse(homepage.response.content.text);
+  assert.equal(
+    captured.result.module_order.findIndex(
+      (item) => item.module_name === 'billion_subsidy_entrance_dy'
+    ),
+    13,
+    'v5 left the card behind thirteen module references whose payloads were removed'
+  );
+
+  const result = runSubsidyResponse(homepage.request.url, homepage.response.content.text);
+  const output = JSON.parse(result.body);
+  assert.deepEqual(output.result.module_order, [
+    { module_name: 'billion_subsidy_entrance' },
+    { module_name: 'billion_subsidy_entrance_dy', show_type: 0 },
+    { module_name: 'billion_subsidy_entrance_lite' },
+  ]);
+  assert.deepEqual(Object.keys(output.result.dy_module), ['billion_subsidy_entrance_dy']);
+  assert.equal(
+    output.result.dy_module.billion_subsidy_entrance_dy.data.data.title,
+    '官方补贴'
+  );
 });
 
 test('does not retain the previous broad custom response pipeline', () => {
