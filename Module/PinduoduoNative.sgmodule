@@ -1,5 +1,5 @@
 #!name=拼多多去广告（QingRex 原生兼容）
-#!desc=首页保持 v7 行为；仅清理聊天与个人中心商品流。v8
+#!desc=首页保持 v7 行为；补齐 v2/v3 HTTPDNS，清理聊天与个人中心商品流。v9
 #!author=ForestofTime
 #!category=AdBlock
 #!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/PinDuoDuo.png
@@ -8,9 +8,9 @@
 #!date=2026-08-13
 
 [Rule]
-# QingRex 原规则，兼容拼多多 8.20.0 HAR 证实的新 /v3/d HTTPDNS 路径。
-AND,((URL-REGEX,"^http:\/\/((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/(?:d\d?|v3\/d)(?:\?|$)",extended-matching),(USER-AGENT,"*com.xunmeng.pinduoduo*")),REJECT
-AND,((URL-REGEX,"^http:\/\/\[[0-9a-fA-F:]+\]\/(?:d\d?|v3\/d)(?:\?|$)",extended-matching),(USER-AGENT,"*com.xunmeng.pinduoduo*")),REJECT
+# QingRex 原规则，兼容拼多多 8.20.0 HAR 证实的 /v2/d 与 /v3/d HTTPDNS 路径。
+AND,((URL-REGEX,"^http:\/\/((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/(?:d\d?|v[23]\/d)(?:\?|$)",extended-matching),(USER-AGENT,"*com.xunmeng.pinduoduo*")),REJECT
+AND,((URL-REGEX,"^http:\/\/\[[0-9a-fA-F:]+\]\/(?:d\d?|v[23]\/d)(?:\?|$)",extended-matching),(USER-AGENT,"*com.xunmeng.pinduoduo*")),REJECT
 AND,((DOMAIN,api.pinduoduo.com,extended-matching),(PROTOCOL,QUIC)),REJECT
 DOMAIN,titan.pinduoduo.com,REJECT-NO-DROP,extended-matching,pre-matching
 DOMAIN,xg.pinduoduo.com,REJECT,extended-matching,pre-matching

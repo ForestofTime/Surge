@@ -14,6 +14,10 @@ const latestV6HarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-111547.har';
 const pageFeedsHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-104410.har';
+const latestChatHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-122121.har';
+const latestPersonalHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-140744.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
@@ -28,9 +32,9 @@ function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
-test('uses QingRex native rules and keeps the v7 homepage behavior in v8', () => {
+test('uses QingRex native rules and keeps the v7 homepage behavior in v9', () => {
   assert.match(moduleText, /^#!name=拼多多去广告（QingRex 原生兼容）$/m);
-  assert.match(moduleText, /首页保持 v7 行为；仅清理聊天与个人中心商品流。v8/);
+  assert.match(moduleText, /首页保持 v7 行为；补齐 v2\/v3 HTTPDNS，清理聊天与个人中心商品流。v9/);
 
   // Excluding the new page-scoped feed rule, the v7 homepage rules stay byte-identical.
   const unchangedBodyRewrite = section('Body Rewrite', 'Map Local')
@@ -149,8 +153,51 @@ test('latest v6 HAR proves the filtered meta response still failed on device', {
 });
 
 test('keeps current Pinduoduo HTTPDNS endpoints from bypassing named-host rewrites', () => {
-  assert.match(moduleText, /\\\/\(\?:d\\d\?\|v3\\\/d\)/);
+  assert.match(moduleText, /\\\/\(\?:d\\d\?\|v\[23\]\\\/d\)/);
   assert.match(moduleText, /PROTOCOL,QUIC/);
+
+  const ipv4Rule = moduleText.split('\n').find((line) =>
+    line.includes('URL-REGEX') && line.includes('25[0-5]')
+  );
+  assert.ok(ipv4Rule);
+  const patternText = ipv4Rule.match(/URL-REGEX,"([^"]+)"/)[1].replaceAll('\\/', '/');
+  const pattern = new RegExp(patternText);
+  assert.equal(pattern.test('http://114.110.96.26/v2/d?id=45237&type=addrs'), true);
+  assert.equal(pattern.test('http://101.35.212.35/v3/d?type=addrs&id=1'), true);
+  assert.equal(pattern.test('http://81.69.130.131/d4?type=ADDRS'), true);
+  assert.equal(pattern.test('http://114.110.96.26/v4/d?id=45237&type=addrs'), false);
+});
+
+test('latest HAR proves v8 leaked the Pinduoduo v2 HTTPDNS endpoint', {
+  skip: !fs.existsSync(latestChatHarPath) || !fs.existsSync(latestPersonalHarPath),
+}, () => {
+  const expectedV2DnsCounts = new Map([
+    ['2026-08-13-122121.har', 12],
+    ['2026-08-13-140744.har', 8],
+  ]);
+  for (const harPath of [latestChatHarPath, latestPersonalHarPath]) {
+    const har = JSON.parse(fs.readFileSync(harPath, 'utf8'));
+    const entries = har.log.entries;
+    const v2Dns = entries.filter((entry) =>
+      /^http:\/\/\d{1,3}(?:\.\d{1,3}){3}\/v2\/d\?/.test(entry.request.url) &&
+      entry.request.headers?.some(({ name, value }) =>
+        name.toLowerCase() === 'user-agent' && value.includes('com.xunmeng.pinduoduo')
+      )
+    );
+    assert.equal(v2Dns.length, expectedV2DnsCounts.get(path.basename(harPath)));
+    assert.ok(v2Dns.every((entry) => entry.response?.status === 200));
+    assert.ok(v2Dns.every((entry) =>
+      !String(entry.comment).includes('拼多多去广告（QingRex 原生兼容）')
+    ));
+
+    const scopedPageFeeds = entries.filter((entry) => {
+      if (!entry.request.url.includes('/api/alexa/cells/hub/v3?')) return false;
+      const source = new URL(entry.request.url).searchParams.get('refer_page_sn');
+      return source === '10001' || source === '10031';
+    });
+    assert.equal(scopedPageFeeds.length, 0,
+      `${path.basename(harPath)} cannot prove the scoped feed rewrite ran`);
+  }
 });
 
 test('full-meta HAR proves both config families and the subsidy card were delivered together', {
