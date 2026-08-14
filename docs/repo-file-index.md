@@ -214,12 +214,6 @@
 - 依赖关系：当前为占位仓库链接（`YourUsername/YourRepo`）。
 - 维护建议：发布前需替换为真实仓库与脚本 URL。
 
-### `Module/jdad.sgmodule`
-- 作用：京东去开屏补充模块。
-- 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为京东。
-- 类型：Map Local + MITM。
-- 依赖关系：无脚本依赖。
-
 ### `Module/jf.sgmodule`
 - 作用：京粉广告拦截模块。
 - 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为京粉。

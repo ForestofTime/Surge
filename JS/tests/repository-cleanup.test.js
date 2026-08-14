@@ -8,7 +8,15 @@ const readmeText = fs.readFileSync(path.join(repoRoot, 'README.md'), 'utf8');
 const indexText = fs.readFileSync(path.join(repoRoot, 'docs/repo-file-index.md'), 'utf8');
 
 test('removes the superseded JD splash module and stale documentation references', () => {
-  assert.equal(fs.existsSync(path.join(repoRoot, 'Module/jdad.sgmodule')), false);
+  for (const obsoletePath of [
+    'Module/jdad.sgmodule',
+    'JS/JingdongAds.js',
+    'JS/PuPuSplashBlocker.js',
+    'JS/didi_carowner.js',
+  ]) {
+    assert.equal(fs.existsSync(path.join(repoRoot, obsoletePath)), false, obsoletePath);
+  }
   assert.doesNotMatch(readmeText, /Module\/jdad\.sgmodule/);
   assert.doesNotMatch(indexText, /Module\/jdad\.sgmodule/);
+  assert.doesNotMatch(indexText, /JS\/JingdongAds\.js|JS\/didi_carowner\.js/);
 });
