@@ -7,10 +7,10 @@
 
 [Map Local]
 # 社区模块长期使用的开屏配置接口。显式返回 200 + {}，避免连接拒绝导致启动等待。
-^https:\/\/ms\.jr\.jd\.com\/gw\/generic\/aladdin\/(?:new)?na\/m\/getLoadingPicture(?:\?|$) data-type=json data="{}" status-code=200
+^https:\/\/ms\.jr\.jd\.com\/gw\/generic\/aladdin\/(?:new)?na\/m\/getLoadingPicture(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 # 新版京东金融使用的启动图列表接口。仅清空开屏列表，不处理同主机的首页或金融业务数据。
-^https:\/\/ms\.jr\.jd\.com\/gw\/generic\/app\/(?:new)?na\/m\/getLaunchImageList(?:\?|$) data-type=json data="{}" status-code=200
+^https:\/\/ms\.jr\.jd\.com\/gw\/generic\/app\/(?:new)?na\/m\/getLaunchImageList(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 [MITM]
 hostname = %APPEND% ms.jr.jd.com

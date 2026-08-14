@@ -11,7 +11,7 @@
 
 [Map Local]
 # `/api` 路径为独立开屏请求，显式返回 200 + {}，避免连接拒绝造成启动等待。
-^https:\/\/api\.m\.jd\.com\/api\?functionId=union_exhibition_bff data-type=json data="{}" status-code=200
+^https:\/\/api\.m\.jd\.com\/api\?functionId=union_exhibition_bff data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 [MITM]
 hostname = %APPEND% api.m.jd.com
