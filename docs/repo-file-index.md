@@ -76,6 +76,12 @@
 - 依赖关系：被 `Module/GoofishAds.sgmodule` 引用。
 - 维护建议：保留功能数据透传，新增接口前先用 HAR 证明。
 
+### `JS/TaobaoAds.js`
+- 作用：选择性删除淘宝开屏配置中的 `taobao-splash` 数据，并净化抓包命中的 PopLayer 固定配置。
+- 适用客户端/APP：淘宝。
+- 依赖关系：被 `Module/TaobaoAds.sgmodule` 引用。
+- 维护建议：保留首页兄弟字段，不要将商品视频接口并入开屏清理。
+
 ### `JS/JingdongSplash.js`
 - 作用：处理京东已确认的主页面启动视频。
 - 适用客户端/APP：京东。
@@ -146,6 +152,13 @@
 - 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为闲鱼。
 - 类型：Script + MITM。
 - 依赖关系：本地脚本 `JS/GoofishAds.js`。
+
+### `Module/TaobaoAds.sgmodule`
+- 作用：拦截淘宝抓包命中的 Tanx 广告与曝光请求，按素材路径处理开屏图片，并净化开屏和 PopLayer 配置。
+- 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为淘宝。
+- 类型：Rule + Map Local + Script + MITM。
+- 依赖关系：本地脚本 `JS/TaobaoAds.js`；规则基线参考 QingRex、ishowshu、zirawell 与 Keywos 的社区方案。
+- 维护建议：共享 CDN 只允许路径级规则；商品视频、首页通用接口和 AMDC 需要新的独立抓包证据后再评估。
 
 ### `Module/JingdongAds.sgmodule`
 - 作用：京东开屏清理。

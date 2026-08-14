@@ -68,8 +68,8 @@ test('ports the QX splash asset rejects as path-scoped empty JSON responses', ()
   assert.equal(mapLocal.length, 4);
   assert.ok(mapLocal.every((line) => line.includes('data="{}" status-code=200')));
   assert.ok(mapLocal.every((line) => line.includes('Content-Type:application/json')));
-  assert.equal(mapLocal.filter((line) => line.startsWith('^https:\/\/heic\\.alicdn\\.com')).length, 3);
-  assert.equal(mapLocal.filter((line) => line.startsWith('^https?:\\/\\/gw\\.alicdn\\.com')).length, 1);
+  assert.equal(mapLocal.filter((line) => line.startsWith(String.raw`^https:\/\/heic\.alicdn\.com`)).length, 3);
+  assert.equal(mapLocal.filter((line) => line.startsWith(String.raw`^https?:\/\/gw\.alicdn\.com`)).length, 1);
   assert.doesNotMatch(moduleText, /mtop\.taobao\.cloudvideo\.video\.query/);
   assert.doesNotMatch(moduleText, /mtop\.taobao\.wireless\.home\.newface\.awesome\.get/);
 });
@@ -176,7 +176,7 @@ test('passes malformed, unrelated, and no-op responses through unchanged', () =>
       body: JSON.stringify({ data: { containers: { home: { keep: true } } } }),
     },
   ];
-  for (const input of cases) assert.deepEqual(runScript(input), {});
+  for (const input of cases) assert.equal(JSON.stringify(runScript(input)), '{}');
 });
 
 test('README publishes the module with a BoxJS one-click import', () => {

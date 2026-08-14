@@ -1,0 +1,32 @@
+#!name=淘宝广告净化
+#!desc=净化淘宝开屏、PopLayer 与 Tanx 广告，保留首页、商品、支付和普通图片。v1
+#!author=RuCu6 / 树先生 / zirawell / ForestofTime Surge 原生整理
+#!category=AdBlock
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/TaobaoAds.sgmodule
+
+[Rule]
+# 2026-08-14 淘宝 12.5.55 抓包实际命中的 Tanx 素材与曝光接口。
+DOMAIN,df.tanx.com,REJECT,extended-matching,pre-matching
+DOMAIN,bdlog.tanx.com,REJECT,extended-matching,pre-matching
+
+# 两套社区规则共同采用的淘宝广告遥测主机。只拦截精确主机，避免扩大到淘宝业务域名。
+DOMAIN,adashx.m.taobao.com,REJECT,extended-matching,pre-matching
+DOMAIN,h-adashx.ut.taobao.com,REJECT,extended-matching,pre-matching
+
+[Map Local]
+# 将 QX 的 reject-dict 转为 Surge 显式空 JSON。共享 CDN 仅按开屏素材路径匹配。
+^https:\/\/heic\.alicdn\.com\/imgextra\/i\d\/[A-Za-z0-9_!]+-\d+-tps-\d+-\d+\.png_\d+x\d*q\d+\.jpg_\.heic$ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/heic\.alicdn\.com\/imgextra\/i\d\/[A-Za-z0-9_!]+-\d+-tps-\d+-\d+\.jpg_\d+x\d*q\d+\.jpg_\.heic$ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/heic\.alicdn\.com\/imgextra\/i\d\/\d*\/?[\w!]+-\d-(?:octopus|tps-1125-1602|tps-1080-1920|tps-1125-1950)\.(?:jpg|png)_(?:1\d{3}|9\d{2})x(?:1\d{3}|9\d{2})q[59]0 data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/gw\.alicdn\.com\/imgextra\/i\d+\/[^\/]+_!!\d+-\d+-tps-(?:720-1280|1080-1920|1125-1602|1242-2208)\.(?:jpg|png|jpeg)_[^\/]+\.webp data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+[Script]
+# 只删除 taobao-splash 数据；同一响应中的首页导航和业务区块保持原样。
+淘宝-开屏配置净化 = type=http-response, pattern=^https:\/\/guide-acs\.m\.taobao\.com\/gw\/mtop\.taobao\.wireless\.home\.splash\.awesome\.get(?:\/|\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/TaobaoAds.js?v=1, requires-body=true, max-size=2097152, timeout=10
+
+# 抓包命中的固定 PopLayer 配置文件。避免匹配该共享主机上的其它 JSON。
+淘宝-PopLayer净化 = type=http-response, pattern=^https:\/\/poplayer\.template\.alibaba\.com\/popcdn\/2\/config\.json(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/TaobaoAds.js?v=1, requires-body=true, max-size=1048576, timeout=10
+
+[MITM]
+hostname = %APPEND% heic.alicdn.com, gw.alicdn.com, guide-acs.m.taobao.com, poplayer.template.alibaba.com
