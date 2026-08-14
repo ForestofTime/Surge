@@ -76,16 +76,11 @@
 - 依赖关系：被 `Module/GoofishAds.sgmodule` 引用。
 - 维护建议：保留功能数据透传，新增接口前先用 HAR 证明。
 
-### `JS/JingdongAds.js` 与 `JS/JingdongSplash.js`
-- 作用：处理京东已确认的广告响应和主页面启动视频。
+### `JS/JingdongSplash.js`
+- 作用：处理京东已确认的主页面启动视频。
 - 适用客户端/APP：京东。
-- 依赖关系：分别被 `Module/JingdongAds.sgmodule` 引用。
-- 维护建议：京东模块保持开屏和广告响应边界，不修改商品或业务接口。
-
-### `JS/didi_carowner.js`
-- 作用：滴滴车主端响应体清理脚本。
-- 适用客户端/APP：滴滴车主/顺风车车主端。
-- 依赖关系：被 `Module/Didichuxing.sgmodule` 本地引用。
+- 依赖关系：被 `Module/JingdongAds.sgmodule` 引用。
+- 维护建议：京东模块保持开屏边界，不修改商品或业务接口。
 
 ### `JS/jf.js`
 - 作用：京粉接口广告项过滤脚本。
@@ -130,8 +125,8 @@
 ### `Module/Didichuxing.sgmodule`
 - 作用：滴滴出行首页、活动、推荐流和个人页净化模块。
 - 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为滴滴出行。
-- 类型：Rule + Script + MITM。
-- 依赖关系：本地脚本 `JS/didi_carowner.js`。
+- 类型：Rule + Map Local + Body Rewrite + MITM。
+- 依赖关系：规则与 jq 响应改写均内置于模块。
 
 ### `Module/CCBLife.sgmodule`
 - 作用：建行生活开屏默认拦截，并按参数选择性清理页面广告。
@@ -152,10 +147,10 @@
 - 依赖关系：本地脚本 `JS/GoofishAds.js`。
 
 ### `Module/JingdongAds.sgmodule`
-- 作用：京东开屏和已确认广告响应清理。
+- 作用：京东开屏清理。
 - 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为京东。
-- 类型：Script + MITM。
-- 依赖关系：本地脚本 `JS/JingdongAds.js`、`JS/JingdongSplash.js`。
+- 类型：Rule + Map Local + Script + MITM。
+- 依赖关系：本地脚本 `JS/JingdongSplash.js`。
 
 ### `Module/PinduoduoNative.sgmodule`
 - 作用：拼多多原生规则移植，保留首页、商品流和搜索功能，清理已确认的广告接口。
