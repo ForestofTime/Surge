@@ -1,0 +1,45 @@
+name: lint modules
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Module/**.sgmodule'
+      - 'Automation/lint-sgmodule.mjs'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Module/**.sgmodule'
+      - 'Automation/lint-sgmodule.mjs'
+  workflow_dispatch: {}
+
+permissions: {}
+
+concurrency:
+  group: lint-modules
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 22.14.0
+
+jobs:
+  lint:
+    name: detect duplicate [Script] rule names
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout protected source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - name: Set up exact Node runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.14.0'
+          check-latest: false
+
+      - name: Lint .sgmodule [Script] rule-name uniqueness
+        run: node Automation/lint-sgmodule.mjs .
