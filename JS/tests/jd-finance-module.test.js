@@ -34,8 +34,8 @@ test('publishes a narrowly scoped native JD Finance splash module', () => {
 
 test('returns explicit empty JSON only for the two splash configuration APIs', () => {
   assert.deepEqual(sectionLines(moduleText, 'Map Local'), [
-    '^https:\\/\\/ms\\.jr\\.jd\\.com\\/gw\\/generic\\/aladdin\\/(?:new)?na\\/m\\/getLoadingPicture(?:\\?|$) data-type=json data="{}" status-code=200',
-    '^https:\\/\\/ms\\.jr\\.jd\\.com\\/gw\\/generic\\/app\\/(?:new)?na\\/m\\/getLaunchImageList(?:\\?|$) data-type=json data="{}" status-code=200',
+    '^https:\\/\\/ms\\.jr\\.jd\\.com\\/gw\\/generic\\/aladdin\\/(?:new)?na\\/m\\/getLoadingPicture(?:\\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"',
+    '^https:\\/\\/ms\\.jr\\.jd\\.com\\/gw\\/generic\\/app\\/(?:new)?na\\/m\\/getLaunchImageList(?:\\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"',
   ]);
 });
 

@@ -43,7 +43,7 @@ test('uses current repository metadata and a bounded response script', () => {
 test('maps only the dedicated splash request to an explicit empty JSON response', () => {
   assert.ok(
     moduleText.split('\n').includes(
-      '^https:\\/\\/api\\.m\\.jd\\.com\\/api\\?functionId=union_exhibition_bff data-type=json data="{}" status-code=200'
+      '^https:\\/\\/api\\.m\\.jd\\.com\\/api\\?functionId=union_exhibition_bff data-type=text data="{}" status-code=200 header="Content-Type:application/json"'
     )
   );
 });
