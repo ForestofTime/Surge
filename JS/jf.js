@@ -1,22 +1,42 @@
-const urlReg = /^https?:\/\/api\.m\.jd\.com\/\?functionId=union_exhibition_bff&client=apple&clientVer/i
+const urlReg = /^https?:\/\/api\.m\.jd\.com\/\?functionId=union_exhibition_bff&client=apple&clientVer/i;
 
-if ($response.body && urlReg.test($request.url)) {
-    let obj = JSON.parse($response.body);
+(function () {
+  if (!urlReg.test(String($request && $request.url || ''))) {
+    $done({});
+    return;
+  }
 
-    if (obj.result && Array.isArray(obj.result)) {
-        // 过滤掉含有广告特征字段的项，比如带 url、urlList 的就判定为广告
-        obj.result = obj.result.filter(item => {
-            return !(item.url || (Array.isArray(item.urlList) && item.urlList.length > 0) || item.pcLandUrl || item.landUrl);
-        });
-    }
+  const body = $response && $response.body;
+  if (typeof body !== 'string' || body.length === 0) {
+    $done({});
+    return;
+  }
 
-    // 保留必要数据结构
-    obj.code = 200;
-    obj.message = "success";
-    obj.hasNext = false;
-    obj.totalNum = obj.result ? obj.result.length : 0;
+  let obj;
+  try {
+    obj = JSON.parse(body);
+  } catch (_) {
+    $done({});
+    return;
+  }
 
-    $done({ body: JSON.stringify(obj) });
-} else {
-    $done($response);
-}
+  if (!Array.isArray(obj && obj.result)) {
+    $done({});
+    return;
+  }
+
+  // 沿用既有规则，只移除带广告落地字段的条目，其余响应字段保持原样。
+  obj.result = obj.result.filter((item) => {
+    if (!item || typeof item !== 'object') return true;
+    return !(
+      item.url ||
+      (Array.isArray(item.urlList) && item.urlList.length > 0) ||
+      item.pcLandUrl ||
+      item.landUrl
+    );
+  });
+  obj.hasNext = false;
+  obj.totalNum = obj.result.length;
+
+  $done({ body: JSON.stringify(obj) });
+})();

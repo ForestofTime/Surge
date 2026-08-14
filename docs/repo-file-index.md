@@ -83,9 +83,10 @@
 - 维护建议：京东模块保持开屏边界，不修改商品或业务接口。
 
 ### `JS/jf.js`
-- 作用：京粉接口广告项过滤脚本。
+- 作用：京粉首页横幅响应过滤脚本，异常或无关响应保持透传。
 - 适用客户端/APP：京粉。
 - 依赖关系：被 `Module/jf.sgmodule` 通过 raw 链接引用。
+- 维护建议：只沿用已确认的落地字段判断，不扩大到普通标题、图片或功能链接。
 
 ### `JS/meiyou-body-clean.js`
 - 作用：美柚多接口字段清理共享脚本。
@@ -152,6 +153,13 @@
 - 类型：Rule + Map Local + Script + MITM。
 - 依赖关系：本地脚本 `JS/JingdongSplash.js`。
 
+### `Module/JDFinance.sgmodule`
+- 作用：京东金融开屏配置清理，只返回两个开屏接口的空 JSON。
+- 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为京东金融。
+- 类型：Map Local + MITM。
+- 依赖关系：无脚本依赖；规则基线参考 `zirawell/R-Store` 与 `fmz200/wool_scripts`。
+- 维护建议：不加入首页卡片、底部导航、通用广告接口或京东共享图片路径，新增端点前先用 HAR 证明。
+
 ### `Module/PinduoduoNative.sgmodule`
 - 作用：拼多多原生规则移植，保留首页、商品流和搜索功能，清理已确认的广告接口。
 - 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为拼多多。
@@ -210,10 +218,11 @@
 - 维护建议：发布前需替换为真实仓库与脚本 URL。
 
 ### `Module/jf.sgmodule`
-- 作用：京粉广告拦截模块。
+- 作用：京粉开屏和首页横幅广告处理模块。
 - 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为京粉。
 - 类型：Script + Map Local + MITM。
 - 依赖关系：引用本仓库 raw 脚本 `JS/jf.js`。
+- 维护建议：开屏保持显式 `200 + {}`，响应脚本保持 1 MiB 上限和异常透传。
 
 ### `Module/nyyh.sgmodule`
 - 作用：农业银行开屏广告拦截。

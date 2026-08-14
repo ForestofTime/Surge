@@ -1,16 +1,17 @@
-#!name=京粉广告拦截
-#!desc=屏蔽京粉开屏广告和首页横幅广告弹窗
-#!category=AdBlock
+#!name=京粉去广告
+#!desc=过滤京粉开屏响应及首页横幅广告，保留正常功能数据。v2
 #!author=ForestofTime
-#!update=2025-07-22
+#!category=AdBlock
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/jf.sgmodule
 
 [Script]
-# 处理首页横幅广告的响应内容（保留正常响应结构，清除广告）
-京粉-首页横幅广告 = type=http-response,pattern=^https:\/\/api\.m\.jd\.com\/\?functionId=union_exhibition_bff&client=apple&clientVer,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/jf.js,timeout=10
+# `/` 路径返回首页横幅列表，由脚本过滤既有广告特征字段；异常或无关响应保持透传。
+京粉-首页横幅广告过滤 = type=http-response, pattern=^https:\/\/api\.m\.jd\.com\/\?functionId=union_exhibition_bff&client=apple&clientVer, requires-body=true, max-size=1048576, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/jf.js?v=2, timeout=10
 
 [Map Local]
-# 拦截京粉开屏广告并返回空 JSON，避免页面卡顿
-^https:\/\/api\.m\.jd\.com\/api\?functionId=union_exhibition_bff data-type=json data="{}"
+# `/api` 路径为独立开屏请求，显式返回 200 + {}，避免连接拒绝造成启动等待。
+^https:\/\/api\.m\.jd\.com\/api\?functionId=union_exhibition_bff data-type=json data="{}" status-code=200
 
 [MITM]
 hostname = %APPEND% api.m.jd.com

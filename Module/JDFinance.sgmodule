@@ -1,0 +1,16 @@
+#!name=京东金融去开屏
+#!desc=仅拦截京东金融 App 的开屏配置接口，不修改首页、导航或金融业务接口。v1
+#!author=zirawell / 奶思 / ForestofTime Surge 原生整理
+#!category=AdBlock
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/JDFinance.sgmodule
+
+[Map Local]
+# 社区模块长期使用的开屏配置接口。显式返回 200 + {}，避免连接拒绝导致启动等待。
+^https:\/\/ms\.jr\.jd\.com\/gw\/generic\/aladdin\/(?:new)?na\/m\/getLoadingPicture(?:\?|$) data-type=json data="{}" status-code=200
+
+# 新版京东金融使用的启动图列表接口。仅清空开屏列表，不处理同主机的首页或金融业务数据。
+^https:\/\/ms\.jr\.jd\.com\/gw\/generic\/app\/(?:new)?na\/m\/getLaunchImageList(?:\?|$) data-type=json data="{}" status-code=200
+
+[MITM]
+hostname = %APPEND% ms.jr.jd.com
