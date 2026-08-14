@@ -35,6 +35,7 @@
 - 拼多多原生模块已更新到 v12：恢复首页、商品流、搜索和刷新链路，只保留已验证的聊天与个人中心广告接口清理，并继续拦截确认过的 HTTPDNS 绕过。
 - 菜鸟淘宝小程序模块已更新到 v4：继续限制在菜鸟应用标识和已抓包的 MTop 接口范围内，并清理确认过的视频卡广告位。
 - 闲鱼、京东原生模块已纳入主目录；建行生活仅保留当前的参数化模块，工银 e 生活 App 与小程序继续分开维护。
+- 已移除旧版京东补充模块、旧京东响应脚本、旧朴朴素材脚本和旧滴滴车主脚本，保留当前模块引用的最新版实现。
 - 规则产物已统一收敛到 `main`，发布流程只允许更新 `Source/Auto/`、`Rule/Direct+.list`、`Rule/Proxy+.list`、`manifest.json` 和 `proposals/processed.json`。
 - 每次模块修复都配套保留回归测试，重点覆盖 HTTPDNS、搜索/首页透传、广告字段清理和异常响应透传。
 
@@ -72,12 +73,12 @@
 
 | 序号 | 模块 | 分类 | 作用 | RAW 链接 | 一键导入 Surge |
 | ---: | --- | --- | --- | --- | --- |
-| 23 | `Module/Telegram-DC.sgmodule` | System | 将已验证的 Telegram DC2、DC5 劣化 IP 改写到同数据中心的备用地址 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/Telegram-DC.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FTelegram-DC.sgmodule) |
-| 24 | `Module/GoogleRewrite.sgmodule` | System | iOS Safari 将 Google.cn 重定向到 Google.com | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/GoogleRewrite.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FGoogleRewrite.sgmodule) |
-| 25 | `Module/panel/Flush-DNS.sgmodule` | Pannel | Surge iOS 面板一键清理 DNS 缓存 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/panel/Flush-DNS.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2Fpanel%2FFlush-DNS.sgmodule) |
-| 26 | `Task/Task.sgmodule` | System | 欧可林、贴吧等定时签到任务集合 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Task/Task.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FTask%2FTask.sgmodule) |
-| 27 | `Task/FallbackRules.sgmodule` | System | 兜底命中采集、上传和配置脚本集合 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Task/FallbackRules.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FTask%2FFallbackRules.sgmodule) |
-| 28 | `Module/boxjs/smzdm.boxjs.json` | 不适用 | 什么值得买 BoxJS 配置模板，当前仍含占位链接 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/boxjs/smzdm.boxjs.json) | 不适用 |
+| 22 | `Module/Telegram-DC.sgmodule` | System | 将已验证的 Telegram DC2、DC5 劣化 IP 改写到同数据中心的备用地址 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/Telegram-DC.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FTelegram-DC.sgmodule) |
+| 23 | `Module/GoogleRewrite.sgmodule` | System | iOS Safari 将 Google.cn 重定向到 Google.com | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/GoogleRewrite.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FGoogleRewrite.sgmodule) |
+| 24 | `Module/panel/Flush-DNS.sgmodule` | Pannel | Surge iOS 面板一键清理 DNS 缓存 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/panel/Flush-DNS.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2Fpanel%2FFlush-DNS.sgmodule) |
+| 25 | `Task/Task.sgmodule` | System | 欧可林、贴吧等定时签到任务集合 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Task/Task.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FTask%2FTask.sgmodule) |
+| 26 | `Task/FallbackRules.sgmodule` | System | 兜底命中采集、上传和配置脚本集合 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Task/FallbackRules.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FTask%2FFallbackRules.sgmodule) |
+| 27 | `Module/boxjs/smzdm.boxjs.json` | 不适用 | 什么值得买 BoxJS 配置模板，当前仍含占位链接 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/boxjs/smzdm.boxjs.json) | 不适用 |
 
 ## 目录导航
 
