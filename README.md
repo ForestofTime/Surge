@@ -45,7 +45,7 @@
 
 ### 广告过滤与响应改写
 
-`.sgmodule` 文件提供 Raw 链接和一键导入 Surge 链接。GitHub 会过滤 `surge:///` 自定义协议，因此一键导入使用 [BoxJS URL Scheme](https://docs.boxjs.app/dev/url-scheme) 提供的 HTTPS 中转地址。分类统一使用 `AdBlock`、`System` 和 `Pannel`，分别对应去广告、系统优化与面板工具。`ad.conf` 是 Rewrite 合集，BoxJS JSON 属于独立配置资源，因此只提供 Raw 链接。
+`.sgmodule` 文件提供 Raw 链接和一键导入 Surge 链接。新模块优先使用 Surge 官方 `surge:///install-module` URL Scheme；部分历史条目仍保留 BoxJS HTTPS 中转地址。GitHub 网页可能过滤自定义协议，可复制完整链接到 Safari 打开。分类统一使用 `AdBlock`、`System` 和 `Pannel`，分别对应去广告、系统优化与面板工具。`ad.conf` 是 Rewrite 合集，BoxJS JSON 属于独立配置资源，因此只提供 Raw 链接。
 
 | 序号 | 模块 | 分类 | 作用 | RAW 链接 | 一键导入 Surge |
 | ---: | --- | --- | --- | --- | --- |
@@ -71,7 +71,7 @@
 | 20 | `Module/CainiaoMiniProgram.sgmodule` | AdBlock | 菜鸟淘宝小程序定向清理 HTTPDNS，并过滤抓包曝光的 1308、205、1381 广告位 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CainiaoMiniProgram.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FCainiaoMiniProgram.sgmodule) |
 | 21 | `Module/GoofishAds.sgmodule` | AdBlock | 闲鱼开屏、曝光接口及 11 处页面广告响应净化，使用闲鱼专属 HTTPDNS 清理 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/GoofishAds.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FGoofishAds.sgmodule) |
 | 22 | `Module/PinduoduoNative.sgmodule` | AdBlock | 首页配置、商品流与搜索完全透传；清理聊天和个人中心的专属商品广告接口 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/PinduoduoNative.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FPinduoduoNative.sgmodule) |
-| 23 | `Module/TaobaoAds.sgmodule` | AdBlock | 淘宝开屏、PopLayer 与 Tanx 广告净化，保留商品视频和首页业务 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/TaobaoAds.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FTaobaoAds.sgmodule) |
+| 23 | `Module/TaobaoAds.sgmodule` | AdBlock | 淘宝开屏、PopLayer 与 Tanx 广告净化，保留商品视频和首页业务 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/TaobaoAds.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FTaobaoAds.sgmodule) |
 
 ### 连接与工具
 
