@@ -179,13 +179,15 @@ test('passes malformed, unrelated, and no-op responses through unchanged', () =>
   for (const input of cases) assert.equal(JSON.stringify(runScript(input)), '{}');
 });
 
-test('README publishes the module with a BoxJS one-click import', () => {
+test('README publishes the module with the official Surge one-click import', () => {
   assert.match(
     readmeText,
     /`Module\/TaobaoAds\.sgmodule` \| AdBlock \| 淘宝开屏、PopLayer 与 Tanx 广告净化/
   );
   assert.match(
     readmeText,
-    /surge\/install-module\?url=https%3A%2F%2Fraw\.githubusercontent\.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FTaobaoAds\.sgmodule/
+    /surge:\/\/\/install-module\?url=https%3A%2F%2Fraw\.githubusercontent\.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FTaobaoAds\.sgmodule/
   );
+  const row = readmeText.split('\n').find((line) => line.includes('`Module/TaobaoAds.sgmodule`')) || '';
+  assert.doesNotMatch(row, /api\.boxjs\.app/);
 });
