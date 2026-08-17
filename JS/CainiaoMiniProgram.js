@@ -4,7 +4,7 @@ const TARGET_DNS_HOSTS = new Set([
   'guide-acs4miniapp-inner.m.taobao.com',
   'netflow-mtop.cainiao.com',
 ]);
-const TARGET_AD_IDS = new Set(['1308', '205', '1381', '2018']);
+const TARGET_AD_IDS = new Set(['1308', '205', '1381', '1391', '2018']);
 const AD_ID_FIELDS = ['id', 'positionId', 'adId', 'slotId', 'pitId'];
 const requestUrl = String(($request && $request.url) || '');
 const requestHeaders = ($request && $request.headers) || {};
@@ -14,6 +14,8 @@ let result = {};
 try {
   if (isAmdcRequest(requestUrl) && isTaobaoUserAgent(userAgent)) {
     result = cleanAmdcResponse(String($response.body || ''));
+  } else if (isBatchAdvertisementRequest(requestUrl)) {
+    result = cleanBatchShowResponse(String($response.body || ''));
   } else if (isAdvertisementRequest(requestUrl)) {
     result = cleanMshowResponse(String($response.body || ''));
   }
@@ -32,7 +34,11 @@ function isTaobaoUserAgent(ua) {
 }
 
 function isAdvertisementRequest(url) {
-  return /\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.(?:mshow(?:\.cn)?|show(?:\.login)?)(?:\/|\?|$)/i.test(url);
+  return /\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.(?:mshow(?:\.cn)?|show(?:\.login)?|batch\.show)(?:\/|\?|$)/i.test(url);
+}
+
+function isBatchAdvertisementRequest(url) {
+  return /\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.batch\.show(?:\/|\?|$)/i.test(url);
 }
 
 function cleanAmdcResponse(body) {
@@ -97,6 +103,21 @@ function cleanMshowResponse(body) {
       payload.data[id] = [];
       changed = true;
     }
+  }
+  return changed ? { body: JSON.stringify(payload) } : {};
+}
+
+function cleanBatchShowResponse(body) {
+  const payload = JSON.parse(body);
+  if (!payload || typeof payload !== 'object' || !payload.data || typeof payload.data !== 'object') {
+    return {};
+  }
+
+  let changed = false;
+  for (const key of Object.keys(payload.data)) {
+    if (!Array.isArray(payload.data[key]) || payload.data[key].length === 0) continue;
+    payload.data[key] = [];
+    changed = true;
   }
   return changed ? { body: JSON.stringify(payload) } : {};
 }

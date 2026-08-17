@@ -35,7 +35,7 @@
 - 新增淘宝广告净化 v1 原生模块：拦截抓包命中的 Tanx 素材与曝光接口，按路径处理开屏素材，并选择性清理开屏和 PopLayer 配置；保留商品视频、首页业务与共享图片域名。
 - 京东去开屏已更新到 v13：兼容 IJKPlayer 和 AVPlayer 两种已抓包确认的启动视频标记，仍保留商品视频、直播和页面业务。
 - 拼多多原生模块已更新到 v12：恢复首页、商品流、搜索和刷新链路，只保留已验证的聊天与个人中心广告接口清理，并继续拦截确认过的 HTTPDNS 绕过。
-- 菜鸟淘宝小程序模块已更新到 v4：继续限制在菜鸟应用标识和已抓包的 MTop 接口范围内，并清理确认过的视频卡广告位。
+- 菜鸟淘宝小程序模块已更新到 v5：继续限制在菜鸟应用标识和已抓包的 MTop 接口范围内，新增批量广告响应及领取广告位过滤。
 - 闲鱼、京东原生模块已纳入主目录；建行生活仅保留当前的参数化模块，工银 e 生活 App 与小程序继续分开维护。
 - 新增京东金融 v1 原生开屏模块，仅处理两个开屏配置接口；京粉模块更新到 v2，并补齐元数据、响应上限和异常透传。
 - 已移除旧版京东补充模块、旧京东响应脚本、旧朴朴素材脚本和旧滴滴车主脚本，保留当前模块引用的最新版实现。
@@ -69,7 +69,7 @@
 | 17 | `Module/ICBCLife.sgmodule` | AdBlock | 工银e生活 App 去开屏，自动学习全屏画布并在后续请求前跳过 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/ICBCLife.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FICBCLife.sgmodule) |
 | 18 | `Module/ICBCLifeMiniProgram.sgmodule` | AdBlock | 工银e生活微信小程序去开屏，会影响原生 App，不能同时启用 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/ICBCLifeMiniProgram.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FICBCLifeMiniProgram.sgmodule) |
 | 19 | `Module/CCBLife.sgmodule` | AdBlock | 建行生活开屏默认拦截，其它页面广告可按模块参数启用 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CCBLife.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FCCBLife.sgmodule) |
-| 20 | `Module/CainiaoMiniProgram.sgmodule` | AdBlock | 菜鸟淘宝小程序定向清理 HTTPDNS，并过滤抓包曝光的 1308、205、1381 广告位 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CainiaoMiniProgram.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FCainiaoMiniProgram.sgmodule) |
+| 20 | `Module/CainiaoMiniProgram.sgmodule` | AdBlock | 菜鸟淘宝小程序定向清理 HTTPDNS，并过滤抓包曝光的领取、视频卡及批量广告响应 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CainiaoMiniProgram.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FCainiaoMiniProgram.sgmodule) |
 | 21 | `Module/GoofishAds.sgmodule` | AdBlock | 闲鱼开屏、曝光接口及 11 处页面广告响应净化，使用闲鱼专属 HTTPDNS 清理 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/GoofishAds.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FGoofishAds.sgmodule) |
 | 22 | `Module/PinduoduoNative.sgmodule` | AdBlock | 首页配置、商品流与搜索完全透传；清理聊天和个人中心的专属商品广告接口 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/PinduoduoNative.sgmodule) | [一键导入](https://api.boxjs.app/surge/install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FPinduoduoNative.sgmodule) |
 | 23 | `Module/TaobaoAds.sgmodule` | AdBlock | 淘宝开屏、PopLayer 与 Tanx 广告净化，保留商品视频和首页业务 | [RAW](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/TaobaoAds.sgmodule) | [一键导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FTaobaoAds.sgmodule) |
