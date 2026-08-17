@@ -94,13 +94,14 @@ test('covers only the HAR-confirmed MTop hosts and advertisement APIs', () => {
   assert.match(ads, /guide-acs4miniapp-inner\\\.m\\\.taobao\\\.com/);
   assert.match(ads, /acs\\\.m\\\.taobao\\\.com/);
   assert.match(ads, /netflow-mtop\\\.cainiao\\\.com/);
+  assert.match(ads, /netflow-reply-mtop\\\.cainiao\\\.com/);
   assert.match(ads, /mtop\\\.cainiao\\\.guoguo\\\.nbnetflow\\\.ads\\\.\(\?:mshow/);
   assert.match(ads, /batch\\\.show/);
   assert.match(ads, /show\(\?:\\\.login\)\?/);
   assert.doesNotMatch(ads, /(?:^|\\\/)gw\\\/\.\*|\.\*cainiao/);
 
   assert.deepEqual(sectionLines('MITM'), [
-    'hostname = %APPEND% guide-acs.m.taobao.com, acs4miniapp-inner.m.taobao.com, guide-acs4miniapp-inner.m.taobao.com, acs.m.taobao.com, netflow-mtop.cainiao.com',
+    'hostname = %APPEND% guide-acs.m.taobao.com, acs4miniapp-inner.m.taobao.com, guide-acs4miniapp-inner.m.taobao.com, acs.m.taobao.com, netflow-mtop.cainiao.com, netflow-reply-mtop.cainiao.com',
     'tcp-connection = true',
   ]);
   assert.doesNotMatch(moduleText, /<ip-address>/);
@@ -126,7 +127,7 @@ test('removes only the HAR-confirmed Cainiao MTop bypass hosts from a Taobao AMD
   });
 
   assert.deepEqual(parseBase64Json(result.body), {
-    dns: [source.dns[4], source.dns[5], source.dns[6]],
+    dns: [source.dns[4], source.dns[6]],
     config: { keep: true },
   });
 });
@@ -151,7 +152,6 @@ test('preserves plain JSON encoding while cleaning an AMDC dns object', () => {
   assert.deepEqual(JSON.parse(result.body), {
     dns: {
       'acs.m.taobao.com': source.dns['acs.m.taobao.com'],
-      'netflow-reply-mtop.cainiao.com': source.dns['netflow-reply-mtop.cainiao.com'],
     },
   });
   assert.equal(result.body.trimStart().startsWith('{'), true);
@@ -422,6 +422,7 @@ test('latest HAR batch endpoint and pit 1391 exposure are filtered without mater
 test('rejects only QUIC to the captured netflow ad host so HTTP response scripts can inspect every reply', () => {
   assert.deepEqual(sectionLines('Rule'), [
     'AND,((DOMAIN,netflow-mtop.cainiao.com,extended-matching),(PROTOCOL,QUIC)),REJECT',
+    'AND,((DOMAIN,netflow-reply-mtop.cainiao.com,extended-matching),(PROTOCOL,QUIC)),REJECT',
   ]);
   assert.doesNotMatch(moduleText, /DOMAIN-SUFFIX,cainiao\.com/);
   assert.doesNotMatch(moduleText, /PROTOCOL,UDP/);
@@ -454,6 +455,30 @@ test('latest v5 HAR proves a fresh HTTP/3 reply bypassed six successful HTTP res
   );
   assert.match(directHeaders['alt-svc'], /h3/);
   assert.equal(directHeaders['x-protocol'], 'HTTP/1.1');
+
+  const replyHostEntries = [];
+  for (const entry of har.log.entries) {
+    if (!entry.request.url.includes('/amdc/mobileDispatch')) continue;
+    let payload;
+    try {
+      payload = parseBase64Json(entry.response.content.text);
+    } catch (_) {
+      continue;
+    }
+    const replyHost = payload.dns.find((item) => item.host === 'netflow-reply-mtop.cainiao.com');
+    if (replyHost) replyHostEntries.push(replyHost);
+  }
+  assert.equal(replyHostEntries.length, 3, 'v5 must retain the alternate reply host in three AMDC responses');
+  const replyProtocols = new Set();
+  for (const reply of replyHostEntries) {
+    for (const server of reply.servers || []) {
+      for (const channel of server.channels || []) {
+        for (const attribute of channel.attributes || []) replyProtocols.add(attribute.protocol);
+      }
+    }
+  }
+  assert.equal(replyProtocols.has('http3'), true);
+  assert.equal(replyProtocols.has('http2'), true);
 
   const exposedPits = new Set();
   for (const entry of har.log.entries) {
