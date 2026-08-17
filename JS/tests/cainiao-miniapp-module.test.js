@@ -12,6 +12,8 @@ const latestHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-085037.har';
 const batchRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-17-203959.har';
+const latestV5HarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-17-211008.har';
 
 function sectionLines(sectionName) {
   const section = moduleText.match(
@@ -50,9 +52,9 @@ function parseBase64Json(value) {
   return JSON.parse(Buffer.from(value, 'base64').toString('utf8'));
 }
 
-test('declares a narrowly scoped v5 mini-program module with unique script names', () => {
+test('declares a narrowly scoped v6 mini-program module with unique script names', () => {
   assert.match(moduleText, /^#!name=菜鸟淘宝小程序去广告$/m);
-  assert.match(moduleText, /^#!desc=.*HTTPDNS.*1308.*205.*1381.*1391.*2018.*v5$/m);
+  assert.match(moduleText, /^#!desc=.*HTTPDNS.*QUIC.*响应旁路.*v6$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/CainiaoMiniProgram\.sgmodule$/m
@@ -64,7 +66,7 @@ test('declares a narrowly scoped v5 mini-program module with unique script names
   assert.equal(new Set(names).size, names.length, 'Surge Script names must be unique');
   assert.deepEqual(names, ['菜鸟小程序-HTTPDNS清理', '菜鸟小程序-广告位过滤']);
   for (const line of scripts) {
-    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=5'));
+    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=6'));
     assert.ok(line.includes('type=http-response'));
     assert.ok(line.includes('requires-body=true'));
   }
@@ -415,6 +417,85 @@ test('latest HAR batch endpoint and pit 1391 exposure are filtered without mater
   const slotOutput = JSON.parse(slotResult.body);
   assert.deepEqual(slotOutput.data.result, []);
   assert.deepEqual(slotOutput.data.packageList, slotSource.data.packageList);
+});
+
+test('rejects only QUIC to the captured netflow ad host so HTTP response scripts can inspect every reply', () => {
+  assert.deepEqual(sectionLines('Rule'), [
+    'AND,((DOMAIN,netflow-mtop.cainiao.com,extended-matching),(PROTOCOL,QUIC)),REJECT',
+  ]);
+  assert.doesNotMatch(moduleText, /DOMAIN-SUFFIX,cainiao\.com/);
+  assert.doesNotMatch(moduleText, /PROTOCOL,UDP/);
+});
+
+test('latest v5 HAR proves a fresh HTTP/3 reply bypassed six successful HTTP response modifications', { skip: !fs.existsSync(latestV5HarPath) }, () => {
+  const har = JSON.parse(fs.readFileSync(latestV5HarPath, 'utf8'));
+  const adEntries = har.log.entries.filter((entry) => {
+    return entry.request.url.includes('mtop.cainiao.guoguo.nbnetflow.ads.');
+  });
+  assert.equal(adEntries.length, 6, 'latest HAR must contain both homepage loads and all three ad APIs');
+  for (const entry of adEntries) {
+    const comment = String(entry.comment || '');
+    assert.match(comment, /HTTP response script found: 菜鸟小程序-广告位过滤/);
+    assert.match(comment, /Response is modified by script/);
+  }
+
+  const directMshow = adEntries.find((entry) => entry.request.url.includes('ads.mshow'));
+  const directLogin = adEntries.find((entry) => entry.request.url.includes('ads.show.login'));
+  const directBatch = adEntries.find((entry) => entry.request.url.includes('ads.batch.show'));
+  const mshowData = JSON.parse(directMshow.response.content.text).data;
+  assert.deepEqual(mshowData['205'], []);
+  assert.deepEqual(mshowData['1308'], []);
+  assert.deepEqual(mshowData['1391'], []);
+  assert.deepEqual(JSON.parse(directLogin.response.content.text).data.result, []);
+  assert.deepEqual(JSON.parse(directBatch.response.content.text).data['1820'], []);
+
+  const directHeaders = Object.fromEntries(
+    directLogin.response.headers.map((header) => [header.name.toLowerCase(), header.value])
+  );
+  assert.match(directHeaders['alt-svc'], /h3/);
+  assert.equal(directHeaders['x-protocol'], 'HTTP/1.1');
+
+  const exposedPits = new Set();
+  for (const entry of har.log.entries) {
+    if (!entry.request.url.includes('nbnetflow-reply-log.cn-wulanchabu.log.aliyuncs.com')) continue;
+    const text = entry.request.postData && entry.request.postData.text;
+    if (typeof text !== 'string' || !text.includes('ads_expose')) continue;
+    for (const log of JSON.parse(text).__logs__ || []) {
+      exposedPits.add(String(log.utArgs || '').split('#', 1)[0]);
+    }
+  }
+  assert.equal(exposedPits.has('1308'), true, 'video-card slot must still be exposed after v5 modification');
+  assert.equal(exposedPits.has('205'), true, 'floating-envelope slot must still be exposed after v5 modification');
+  assert.equal(exposedPits.has('1381'), true, 'free-claim slot must still be exposed after v5 modification');
+
+  let hiddenRequest;
+  let hiddenResponse;
+  const hiddenReplyEntry = har.log.entries.find((entry) => {
+    if (!entry.request.url.includes('gm.mmstat.com/cnux.1.0')) return false;
+    const text = entry.request.postData && entry.request.postData.text;
+    if (typeof text !== 'string' || !text.includes('nbnetflow.ads.show.login')) return false;
+    const telemetry = JSON.parse(text);
+    const params = new URLSearchParams(telemetry.gokey);
+    const request = JSON.parse(decodeURIComponent(params.get('p7')));
+    const response = JSON.parse(decodeURIComponent(params.get('p8')));
+    const found = request.data && request.data.condition.includes('initialShow":false') &&
+      Array.isArray(response.data && response.data.result) && response.data.result.length > 0;
+    if (found) {
+      hiddenRequest = request;
+      hiddenResponse = response;
+    }
+    return found;
+  });
+  assert.ok(hiddenReplyEntry, 'telemetry must contain the later non-empty login-ad reply');
+  assert.equal(hiddenRequest.mpHost, 'netflow-mtop.cainiao.com');
+  assert.ok(hiddenResponse.headers['x-eagleeye-id']);
+  assert.ok(Number(hiddenResponse.data.result[0].currTimestamp) > 0);
+
+  const hiddenTime = Date.parse(hiddenReplyEntry.startedDateTime);
+  const nearbyHttpAd = adEntries.find((entry) => {
+    return Math.abs(Date.parse(entry.startedDateTime) - hiddenTime) <= 2000;
+  });
+  assert.equal(nearbyHttpAd, undefined, 'fresh login-ad reply must have no captured HTTP request nearby');
 });
 
 test('passes malformed and unrelated MTop responses through', () => {
