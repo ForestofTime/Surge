@@ -1,18 +1,23 @@
 #!name=菜鸟淘宝小程序去广告
-#!desc=选择性清理菜鸟淘宝小程序 HTTPDNS，并过滤广告位 1308、205、1381、1391、2018 及批量广告响应，保留包裹数据。v5
+#!desc=选择性清理菜鸟淘宝小程序 HTTPDNS，阻断广告接口 QUIC 响应旁路，并过滤领取、视频卡及批量广告，保留包裹数据。v6
 #!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CainiaoMiniProgram.sgmodule
 
+[Rule]
+# 两个抓包确认的广告请求与响应主机禁用 QUIC，使 HTTP/3 回落到可执行响应脚本的 TCP HTTP 引擎。
+AND,((DOMAIN,netflow-mtop.cainiao.com,extended-matching),(PROTOCOL,QUIC)),REJECT
+AND,((DOMAIN,netflow-reply-mtop.cainiao.com,extended-matching),(PROTOCOL,QUIC)),REJECT
+
 [Script]
-# 仅处理菜鸟淘宝小程序 appkey。响应为 base64 JSON 时保持 base64 编码，只移除四个已确认的 MTop 直连域名。
-菜鸟小程序-HTTPDNS清理 = type=http-response, pattern=^https?:\/\/(?:amdc\.m\.taobao\.com|(?:\d+\.){3}\d+)(?::\d+)?\/amdc\/mobileDispatch\?(?:[^&#]*&)*appkey=21380790(?:&[^#]*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CainiaoMiniProgram.js?v=5, requires-body=true, max-size=1048576, timeout=10
+# 仅处理菜鸟淘宝小程序 appkey。响应为 base64 JSON 时保持 base64 编码，只移除五个已确认的 MTop 直连域名。
+菜鸟小程序-HTTPDNS清理 = type=http-response, pattern=^https?:\/\/(?:amdc\.m\.taobao\.com|(?:\d+\.){3}\d+)(?::\d+)?\/amdc\/mobileDispatch\?(?:[^&#]*&)*appkey=21380790(?:&[^#]*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CainiaoMiniProgram.js?v=6, requires-body=true, max-size=1048576, timeout=10
 
 # 仅改写 mshow、show、show.login 与 batch.show 广告响应。批量接口只清空其广告数组，保留响应结构和其它业务数据。
-菜鸟小程序-广告位过滤 = type=http-response, pattern=^https?:\/\/(?:guide-acs\.m\.taobao\.com|acs4miniapp-inner\.m\.taobao\.com|guide-acs4miniapp-inner\.m\.taobao\.com|acs\.m\.taobao\.com|netflow-mtop\.cainiao\.com)\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.(?:mshow(?:\.cn)?|show(?:\.login)?|batch\.show)(?:\/|\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CainiaoMiniProgram.js?v=5, requires-body=true, max-size=1048576, timeout=10
+菜鸟小程序-广告位过滤 = type=http-response, pattern=^https?:\/\/(?:guide-acs\.m\.taobao\.com|acs4miniapp-inner\.m\.taobao\.com|guide-acs4miniapp-inner\.m\.taobao\.com|acs\.m\.taobao\.com|netflow-mtop\.cainiao\.com|netflow-reply-mtop\.cainiao\.com)\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.(?:mshow(?:\.cn)?|show(?:\.login)?|batch\.show)(?:\/|\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CainiaoMiniProgram.js?v=6, requires-body=true, max-size=1048576, timeout=10
 
 [MITM]
-hostname = %APPEND% guide-acs.m.taobao.com, acs4miniapp-inner.m.taobao.com, guide-acs4miniapp-inner.m.taobao.com, acs.m.taobao.com, netflow-mtop.cainiao.com
-# HTTPDNS 缓存可能使 MTop 走 Type 3 原始 TLS，限定由上方五个 hostname 进入 HTTP 引擎。
+hostname = %APPEND% guide-acs.m.taobao.com, acs4miniapp-inner.m.taobao.com, guide-acs4miniapp-inner.m.taobao.com, acs.m.taobao.com, netflow-mtop.cainiao.com, netflow-reply-mtop.cainiao.com
+# HTTPDNS 缓存可能使 MTop 走 Type 3 原始 TLS，限定由上方六个 hostname 进入 HTTP 引擎。
 tcp-connection = true
