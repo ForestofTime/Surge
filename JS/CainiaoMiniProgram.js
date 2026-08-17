@@ -1,3 +1,4 @@
+// 菜鸟淘宝小程序去广告 v7：过滤主通道广告响应，专用 reply 旁路由模块规则阻断。
 const TARGET_DNS_HOSTS = new Set([
   'guide-acs.m.taobao.com',
   'acs4miniapp-inner.m.taobao.com',

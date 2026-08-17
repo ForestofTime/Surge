@@ -54,9 +54,9 @@ function parseBase64Json(value) {
   return JSON.parse(Buffer.from(value, 'base64').toString('utf8'));
 }
 
-test('declares a narrowly scoped v6 mini-program module with unique script names', () => {
+test('declares a narrowly scoped v7 mini-program module with unique script names', () => {
   assert.match(moduleText, /^#!name=菜鸟淘宝小程序去广告$/m);
-  assert.match(moduleText, /^#!desc=.*HTTPDNS.*QUIC.*响应旁路.*v6$/m);
+  assert.match(moduleText, /^#!desc=.*HTTPDNS.*响应旁路.*v7$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/CainiaoMiniProgram\.sgmodule$/m
@@ -68,7 +68,7 @@ test('declares a narrowly scoped v6 mini-program module with unique script names
   assert.equal(new Set(names).size, names.length, 'Surge Script names must be unique');
   assert.deepEqual(names, ['菜鸟小程序-HTTPDNS清理', '菜鸟小程序-广告位过滤']);
   for (const line of scripts) {
-    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=6'));
+    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=7'));
     assert.ok(line.includes('type=http-response'));
     assert.ok(line.includes('requires-body=true'));
   }
@@ -421,12 +421,13 @@ test('latest HAR batch endpoint and pit 1391 exposure are filtered without mater
   assert.deepEqual(slotOutput.data.packageList, slotSource.data.packageList);
 });
 
-test('rejects only QUIC to the captured netflow ad host so HTTP response scripts can inspect every reply', () => {
+test('rejects the dedicated reply host while limiting the primary ad host block to QUIC', () => {
   assert.deepEqual(sectionLines('Rule'), [
     'AND,((DOMAIN,netflow-mtop.cainiao.com,extended-matching),(PROTOCOL,QUIC)),REJECT',
-    'AND,((DOMAIN,netflow-reply-mtop.cainiao.com,extended-matching),(PROTOCOL,QUIC)),REJECT',
+    'DOMAIN,netflow-reply-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
   ]);
   assert.doesNotMatch(moduleText, /DOMAIN-SUFFIX,cainiao\.com/);
+  assert.doesNotMatch(moduleText, /DOMAIN,lpc-mtop\.cainiao\.com/);
   assert.doesNotMatch(moduleText, /PROTOCOL,UDP/);
 });
 
@@ -547,6 +548,19 @@ test('latest v6 HAR proves the dedicated reply host still bypasses filtering out
     assert.ok(data['954'].length > 0, 'unconfirmed homepage functions must remain available');
   }
 
+  const amdcEntries = har.log.entries.filter((entry) => {
+    return entry.request.url.includes('/amdc/mobileDispatch') &&
+      /HTTP response script found: 菜鸟小程序-HTTPDNS清理/.test(String(entry.comment || ''));
+  });
+  assert.equal(amdcEntries.length, 33, 'latest HAR must prove v6 HTTPDNS filtering ran consistently');
+  for (const entry of amdcEntries) {
+    const payload = parseBase64Json(entry.response.content.text);
+    const hosts = Array.isArray(payload.dns)
+      ? payload.dns.map((item) => item.host)
+      : Object.keys(payload.dns || {});
+    assert.equal(hosts.includes('netflow-reply-mtop.cainiao.com'), false);
+  }
+
   const exposedPits = new Set();
   for (const entry of har.log.entries) {
     if (!entry.request.url.includes('nbnetflow-reply-log.cn-wulanchabu.log.aliyuncs.com')) continue;
@@ -591,7 +605,7 @@ test('latest v6 HAR proves the dedicated reply host still bypasses filtering out
 
   assert.deepEqual(sectionLines('Rule'), [
     'AND,((DOMAIN,netflow-mtop.cainiao.com,extended-matching),(PROTOCOL,QUIC)),REJECT',
-    'DOMAIN,netflow-reply-mtop.cainiao.com,REJECT',
+    'DOMAIN,netflow-reply-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
   ]);
 });
 
