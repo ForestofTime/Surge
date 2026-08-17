@@ -10,6 +10,8 @@ const moduleText = fs.existsSync(modulePath) ? fs.readFileSync(modulePath, 'utf8
 const scriptText = fs.existsSync(scriptPath) ? fs.readFileSync(scriptPath, 'utf8') : '';
 const latestHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-085037.har';
+const batchRegressionHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-17-203959.har';
 
 function sectionLines(sectionName) {
   const section = moduleText.match(
@@ -48,9 +50,9 @@ function parseBase64Json(value) {
   return JSON.parse(Buffer.from(value, 'base64').toString('utf8'));
 }
 
-test('declares a narrowly scoped v4 mini-program module with unique script names', () => {
+test('declares a narrowly scoped v5 mini-program module with unique script names', () => {
   assert.match(moduleText, /^#!name=菜鸟淘宝小程序去广告$/m);
-  assert.match(moduleText, /^#!desc=.*HTTPDNS.*1308.*205.*1381.*2018.*v4$/m);
+  assert.match(moduleText, /^#!desc=.*HTTPDNS.*1308.*205.*1381.*1391.*2018.*v5$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/CainiaoMiniProgram\.sgmodule$/m
@@ -62,7 +64,7 @@ test('declares a narrowly scoped v4 mini-program module with unique script names
   assert.equal(new Set(names).size, names.length, 'Surge Script names must be unique');
   assert.deepEqual(names, ['菜鸟小程序-HTTPDNS清理', '菜鸟小程序-广告位过滤']);
   for (const line of scripts) {
-    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=4'));
+    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=5'));
     assert.ok(line.includes('type=http-response'));
     assert.ok(line.includes('requires-body=true'));
   }
@@ -91,6 +93,7 @@ test('covers only the HAR-confirmed MTop hosts and advertisement APIs', () => {
   assert.match(ads, /acs\\\.m\\\.taobao\\\.com/);
   assert.match(ads, /netflow-mtop\\\.cainiao\\\.com/);
   assert.match(ads, /mtop\\\.cainiao\\\.guoguo\\\.nbnetflow\\\.ads\\\.\(\?:mshow/);
+  assert.match(ads, /batch\\\.show/);
   assert.match(ads, /show\(\?:\\\.login\)\?/);
   assert.doesNotMatch(ads, /(?:^|\\\/)gw\\\/\.\*|\.\*cainiao/);
 
@@ -351,6 +354,67 @@ test('latest HAR pit 2018 video-card request is filtered without touching packag
   assert.deepEqual(output.data.result, []);
   assert.deepEqual(output.data.packageList, source.data.packageList);
   assert.deepEqual(output.ret, source.ret);
+});
+
+test('latest HAR batch endpoint and pit 1391 exposure are filtered without material or copy matching', { skip: !fs.existsSync(batchRegressionHarPath) }, () => {
+  const har = JSON.parse(fs.readFileSync(batchRegressionHarPath, 'utf8'));
+  const telemetryEntry = har.log.entries.find((entry) => {
+    if (!entry.request.url.includes('gm.mmstat.com/cnux.1.0')) return false;
+    const text = entry.request.postData && entry.request.postData.text;
+    return typeof text === 'string' && text.includes('nbnetflow.ads.batch.show');
+  });
+  assert.ok(telemetryEntry, 'latest HAR must identify ads.batch.show as an ad response source');
+
+  const telemetry = JSON.parse(telemetryEntry.request.postData.text);
+  const telemetryParams = new URLSearchParams(telemetry.gokey);
+  const requestEvidence = JSON.parse(decodeURIComponent(telemetryParams.get('p7')));
+  const responseEvidence = JSON.parse(decodeURIComponent(telemetryParams.get('p8')));
+  assert.equal(requestEvidence.api, 'mtop.cainiao.guoguo.nbnetflow.ads.batch.show');
+  assert.equal(requestEvidence.mpHost, 'netflow-mtop.cainiao.com');
+  assert.ok(Array.isArray(responseEvidence.data['1820']));
+  assert.ok(responseEvidence.data['1820'].length > 0, 'latest batch response must contain an ad');
+
+  const exposedPits = new Set();
+  for (const entry of har.log.entries) {
+    if (!entry.request.url.includes('nbnetflow-reply-log.cn-wulanchabu.log.aliyuncs.com')) continue;
+    const text = entry.request.postData && entry.request.postData.text;
+    if (typeof text !== 'string' || !text.includes('ads_expose')) continue;
+    const payload = JSON.parse(text);
+    for (const log of payload.__logs__ || []) {
+      const pit = String(log.utArgs || '').split('#', 1)[0];
+      if (pit) exposedPits.add(pit);
+    }
+  }
+  assert.equal(exposedPits.has('1381'), true, 'existing free-claim slot must still be exposed');
+  assert.equal(exposedPits.has('1391'), true, 'latest immediate-claim slot must be exposed');
+
+  const batchResult = runScript({
+    url: 'https://netflow-mtop.cainiao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.batch.show/1.0/',
+    headers: { 'User-Agent': 'MTOPSDK/2.5.6-miniapp-sdk' },
+    body: JSON.stringify(responseEvidence),
+  });
+  assert.ok(batchResult.body, 'the ad-only batch response must be modified');
+  const batchOutput = JSON.parse(batchResult.body);
+  assert.deepEqual(batchOutput.data, { 1820: [], 2115: [], 2122: [] });
+  assert.deepEqual(batchOutput.headers, responseEvidence.headers);
+  assert.deepEqual(batchOutput.ret, responseEvidence.ret);
+
+  const slotSource = {
+    api: 'mtop.cainiao.guoguo.nbnetflow.ads.show.login',
+    data: {
+      result: [{ id: 'rotating-material', pitId: '1391', materialContentMapper: { action: 'claim' } }],
+      packageList: [{ id: 'parcel', mailNo: 'SF123456789' }],
+    },
+    ret: ['SUCCESS::调用成功'],
+  };
+  const slotResult = runScript({
+    url: 'https://guide-acs4miniapp-inner.m.taobao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.show.login/1.0/',
+    body: JSON.stringify(slotSource),
+  });
+  assert.ok(slotResult.body, 'pit 1391 must be filtered independently of creative material and copy');
+  const slotOutput = JSON.parse(slotResult.body);
+  assert.deepEqual(slotOutput.data.result, []);
+  assert.deepEqual(slotOutput.data.packageList, slotSource.data.packageList);
 });
 
 test('passes malformed and unrelated MTop responses through', () => {
