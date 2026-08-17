@@ -44,7 +44,7 @@ function runRequest(url, headers) {
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
   assert.match(moduleText, /仅处理京东 App 开屏图片和启动视频/);
-  assert.match(moduleText, /v12$/m);
+  assert.match(moduleText, /v13$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m
@@ -64,7 +64,11 @@ test('publishes a splash-only native Surge module', () => {
   }
 
   assert.match(moduleText, /^京东-主页面启动视频跳过 = type=http-request,/m);
-  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=12/);
+  assert.match(
+    moduleText,
+    /pattern=\^https\?:\\\/\\\/vod\\\.300hu\\\.com\\\/\\d\+\\\/\.\*\\\.mp4\(\?:\\\?\.\*\)\?\$/
+  );
+  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=13/);
 });
 
 test('keeps only the two QUIC fallbacks required by the confirmed splash paths', () => {
