@@ -9,6 +9,8 @@ const scriptPath = path.resolve(__dirname, '../JingdongSplash.js');
 const readmePath = path.resolve(__dirname, '../../README.md');
 const splashHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-12-081629.har';
+const latestVideoSplashHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-17-090751.har';
 
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const scriptText = fs.readFileSync(scriptPath, 'utf8');
@@ -103,6 +105,55 @@ test('only short-circuits the HAR-confirmed JD main-page launch-player video req
   ]) {
     assert.deepEqual(runRequest(url, headers), {});
   }
+});
+
+test('short-circuits the new AVPlayer main-page launch video without matching product video traffic', () => {
+  const launchHeaders = {
+    'User-Agent': 'CFNetwork;jdmall;iphone;version/15.10.0;build/170674',
+    Referer: 'play:avplayerSH_JDMainPageViewController_61_',
+  };
+  assert.deepEqual(
+    runRequest('https://vod.300hu.com/100831/path/launch.mp4?sign=example', launchHeaders),
+    { response: { status: 204 } }
+  );
+
+  for (const [url, headers] of [
+    ['https://vod.300hu.com/100831/path/product.mp4', { ...launchHeaders, Referer: 'play:avplayerProductDetail' }],
+    ['https://jvod.300hu.com/vod/product/path/product.mp4', launchHeaders],
+    ['https://vod.300hu.com/100831/path/product.mp4', { Referer: launchHeaders.Referer }],
+  ]) {
+    assert.deepEqual(runRequest(url, headers), {});
+  }
+});
+
+test('the latest HAR proves the AVPlayer launch video bypasses v12 while the old IJK path is blocked', { skip: !fs.existsSync(latestVideoSplashHarPath) }, () => {
+  const har = JSON.parse(fs.readFileSync(latestVideoSplashHarPath, 'utf8'));
+  const requestHeaders = (entry) =>
+    Object.fromEntries(
+      (entry.request && entry.request.headers || []).map((header) => [String(header.name).toLowerCase(), header.value])
+    );
+  const newLaunchVideo = har.log.entries.find((entry) => {
+    const headers = requestHeaders(entry);
+    return (
+      /^https:\/\/vod\.300hu\.com\/\d+\/.*\.mp4(?:\?|$)/.test(entry.request && entry.request.url || '') &&
+      /^CFNetwork;jdmall;(?:iphone|ipad);/i.test(headers['user-agent'] || '') &&
+      /^play:avplayerSH_JDMainPageViewController_61_/i.test(headers.referer || '')
+    );
+  });
+  assert.ok(newLaunchVideo, 'the latest HAR must contain the new AVPlayer launch video');
+  assert.equal(newLaunchVideo.response.status, 200);
+  assert.equal(newLaunchVideo.response.content.mimeType, 'video/mp4');
+  assert.doesNotMatch(newLaunchVideo.comment || '', /HTTP request script found: 京东-主页面启动视频跳过/);
+  assert.deepEqual(runRequest(newLaunchVideo.request.url, requestHeaders(newLaunchVideo)), {
+    response: { status: 204 },
+  });
+
+  const oldLaunchVideo = har.log.entries.find((entry) =>
+    /^https:\/\/vod\.300hu\.com\/1030\/.*\.mp4(?:\?|$)/.test(entry.request && entry.request.url || '')
+  );
+  assert.ok(oldLaunchVideo, 'the latest HAR must retain the old launch-video regression sample');
+  assert.equal(oldLaunchVideo.response.status, 204);
+  assert.match(oldLaunchVideo.comment || '', /HTTP request script found: 京东-主页面启动视频跳过/);
 });
 
 test('the latest device HAR proves both splash paths and the image rule result', { skip: !fs.existsSync(splashHarPath) }, () => {
