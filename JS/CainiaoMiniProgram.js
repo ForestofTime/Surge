@@ -1,4 +1,4 @@
-// 菜鸟淘宝小程序去广告 v8：按广告 API 响应结构过滤，专用传输旁路由模块规则阻断。
+// 菜鸟淘宝小程序去广告 v9：返回成功空响应阻止旧广告缓存回退，并过滤 mshow 悬浮展示结构。
 const TARGET_DNS_HOSTS = new Set([
   'guide-acs.m.taobao.com',
   'acs4miniapp-inner.m.taobao.com',
@@ -9,15 +9,20 @@ const TARGET_DNS_HOSTS = new Set([
 const requestUrl = String(($request && $request.url) || '');
 const requestHeaders = ($request && $request.headers) || {};
 const userAgent = String(requestHeaders['User-Agent'] || requestHeaders['user-agent'] || '');
+const hasResponse = typeof $response !== 'undefined' && $response;
 let result = {};
 
 try {
-  if (isAmdcRequest(requestUrl) && isTaobaoUserAgent(userAgent)) {
+  if (!hasResponse && isCacheSensitiveAdvertisementRequest(requestUrl)) {
+    result = buildEmptyAdvertisementResponse(requestUrl);
+  } else if (hasResponse && isAmdcRequest(requestUrl) && isTaobaoUserAgent(userAgent)) {
     result = cleanAmdcResponse(String($response.body || ''));
-  } else if (isBatchAdvertisementRequest(requestUrl)) {
+  } else if (hasResponse && isBatchAdvertisementRequest(requestUrl)) {
     result = cleanBatchShowResponse(String($response.body || ''));
-  } else if (isAdvertisementRequest(requestUrl)) {
+  } else if (hasResponse && isMshowRequest(requestUrl)) {
     result = cleanMshowResponse(String($response.body || ''));
+  } else if (hasResponse && isAdvertisementRequest(requestUrl)) {
+    result = cleanShowResponse(String($response.body || ''));
   }
 } catch (_) {
   result = {};
@@ -39,6 +44,61 @@ function isAdvertisementRequest(url) {
 
 function isBatchAdvertisementRequest(url) {
   return /\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.batch\.show(?:\/|\?|$)/i.test(url);
+}
+
+function isMshowRequest(url) {
+  return /\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.mshow(?:\.cn)?(?:\/|\?|$)/i.test(url);
+}
+
+function isCacheSensitiveAdvertisementRequest(url) {
+  return /\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.(?:show(?:\.login)?|batch\.show)(?:\/|\?|$)/i.test(url);
+}
+
+function buildEmptyAdvertisementResponse(url) {
+  const match = url.match(
+    /\/gw\/(mtop\.cainiao\.guoguo\.nbnetflow\.ads\.(?:show(?:\.login)?|batch\.show))\/([^/?]+)/i
+  );
+  if (!match) return {};
+
+  const api = match[1].toLowerCase();
+  const data = api.endsWith('.batch.show') ? emptyBatchPlacements(url) : { result: [] };
+  return {
+    response: {
+      status: 200,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({
+        api,
+        data,
+        ret: ['SUCCESS::调用成功'],
+        v: match[2],
+      }),
+    },
+  };
+}
+
+function emptyBatchPlacements(url) {
+  const encodedData = queryParameter(url, 'data');
+  if (!encodedData) return {};
+
+  const requestData = JSON.parse(decodeURIComponent(encodedData.replace(/\+/g, '%20')));
+  const pitItems = JSON.parse(requestData.pitItemList || '[]');
+  const output = {};
+  for (const item of pitItems) {
+    if (!item || item.pit === undefined || item.pit === null) continue;
+    output[String(item.pit)] = [];
+  }
+  return output;
+}
+
+function queryParameter(url, name) {
+  const queryIndex = url.indexOf('?');
+  if (queryIndex < 0) return '';
+  for (const part of url.slice(queryIndex + 1).split('&')) {
+    const separator = part.indexOf('=');
+    const key = separator < 0 ? part : part.slice(0, separator);
+    if (key === name) return separator < 0 ? '' : part.slice(separator + 1);
+  }
+  return '';
 }
 
 function cleanAmdcResponse(body) {
@@ -93,17 +153,29 @@ function cleanMshowResponse(body) {
 
   let changed = false;
   for (const key of Object.keys(payload.data)) {
-    if (!/^\d+$/.test(key) || !Array.isArray(payload.data[key]) || payload.data[key].length === 0) {
-      continue;
-    }
-    payload.data[key] = [];
-    changed = true;
-  }
-  if (Array.isArray(payload.data.result) && payload.data.result.length > 0) {
-    payload.data.result = [];
+    if (!/^\d+$/.test(key) || !Array.isArray(payload.data[key])) continue;
+    const filtered = payload.data[key].filter((item) => !hasFloatingPresentation(item));
+    if (filtered.length === payload.data[key].length) continue;
+    payload.data[key] = filtered;
     changed = true;
   }
   return changed ? { body: JSON.stringify(payload) } : {};
+}
+
+function hasFloatingPresentation(item) {
+  const mapper = item && item.materialContentMapper;
+  if (!mapper || typeof mapper !== 'object' || Array.isArray(mapper)) return false;
+  return Object.keys(mapper).some((key) => key.toLowerCase().startsWith('floatview'));
+}
+
+function cleanShowResponse(body) {
+  const payload = JSON.parse(body);
+  if (!payload || typeof payload !== 'object' || !payload.data || typeof payload.data !== 'object') {
+    return {};
+  }
+  if (!Array.isArray(payload.data.result) || payload.data.result.length === 0) return {};
+  payload.data.result = [];
+  return { body: JSON.stringify(payload) };
 }
 
 function cleanBatchShowResponse(body) {

@@ -76,23 +76,22 @@ function parseBase64Json(value) {
   return JSON.parse(Buffer.from(value, 'base64').toString('utf8'));
 }
 
-test('declares a narrowly scoped v8 mini-program module with unique script names', () => {
+test('declares a narrowly scoped v9 mini-program module with unique script names', () => {
   assert.match(moduleText, /^#!name=菜鸟淘宝小程序去广告$/m);
-  assert.match(moduleText, /^#!desc=.*HTTPDNS.*广告专用主机.*v8$/m);
+  assert.match(moduleText, /^#!desc=.*HTTPDNS.*成功空响应.*旧广告缓存.*v9$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/CainiaoMiniProgram\.sgmodule$/m
   );
 
   const scripts = sectionLines('Script');
-  assert.equal(scripts.length, 2);
+  assert.equal(scripts.length, 3);
   const names = scripts.map((line) => line.slice(0, line.indexOf('=' )).trim());
   assert.equal(new Set(names).size, names.length, 'Surge Script names must be unique');
-  assert.deepEqual(names, ['菜鸟小程序-HTTPDNS清理', '菜鸟小程序-广告位过滤']);
+  assert.deepEqual(names, ['菜鸟小程序-HTTPDNS清理', '菜鸟小程序-广告请求置空', '菜鸟小程序-广告位过滤']);
   for (const line of scripts) {
-    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=8'));
-    assert.ok(line.includes('type=http-response'));
-    assert.ok(line.includes('requires-body=true'));
+    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=9'));
+    if (line.includes('type=http-response')) assert.ok(line.includes('requires-body=true'));
   }
 });
 
@@ -247,7 +246,7 @@ test('passes non-Taobao, wrong-appkey, malformed, and unrelated AMDC responses t
   }
 });
 
-test('clears numeric mshow placements while preserving package and nested business data', () => {
+test('clears a floating mshow structure while preserving other placements and package data', () => {
   const source = {
     ret: ['SUCCESS::调用成功'],
     data: {
@@ -297,21 +296,21 @@ test('clears numeric mshow placements while preserving package and nested busine
   });
   const output = JSON.parse(result.body);
 
-  assert.deepEqual(output.data['1308'], []);
+  assert.deepEqual(output.data['1308'], source.data['1308']);
   assert.deepEqual(output.data['205'], []);
-  assert.deepEqual(output.data['1381'], []);
-  assert.deepEqual(output.data['1275'], []);
+  assert.deepEqual(output.data['1381'], source.data['1381']);
+  assert.deepEqual(output.data['1275'], source.data['1275']);
   assert.deepEqual(output.data.packageList, source.data.packageList);
   assert.deepEqual(output.data.nested, source.data.nested);
   assert.deepEqual(output.ret, source.ret);
 });
 
-test('clears every numeric mshow placement without relying on slot or creative identifiers', () => {
+test('clears floating presentation schemas without relying on slot or creative identifiers', () => {
   const source = {
     ret: ['SUCCESS::调用成功'],
     data: {
-      42: [{ id: 'rotating-creative-a', payload: { action: 'promotion' } }],
-      9001: [{ id: 'rotating-creative-b', payload: { action: 'promotion' } }],
+      42: [{ id: 'rotating-creative-a', materialContentMapper: { floatview_url: 'https://example.test/a.gif' } }],
+      9001: [{ id: 'rotating-creative-b', materialContentMapper: { floatviewClickUrl: 'https://example.test/b' } }],
       packageList: [
         { id: 'parcel-a', mailNo: 'SF123456789', status: '运输中' },
         { id: 'parcel-b', mailNo: 'YT987654321', status: '待取件' },
@@ -470,9 +469,9 @@ test('latest HAR batch endpoint and pit 1391 exposure are filtered without mater
   assert.deepEqual(slotOutput.data.packageList, slotSource.data.packageList);
 });
 
-test('rejects both dedicated ad transport hosts without blocking package transport', () => {
+test('rejects reply transport and main-host QUIC without blocking package transport', () => {
   assert.deepEqual(sectionLines('Rule'), [
-    'DOMAIN,netflow-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
+    'AND,((DOMAIN,netflow-mtop.cainiao.com,extended-matching),(PROTOCOL,QUIC)),REJECT',
     'DOMAIN,netflow-reply-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
   ]);
   assert.doesNotMatch(moduleText, /DOMAIN-SUFFIX,cainiao\.com/);
@@ -653,7 +652,7 @@ test('latest v6 HAR proves the dedicated reply host still bypasses filtering out
   assert.equal(nearbyHttpAd, undefined, 'fresh floating reply must have no captured HTTP request nearby');
 
   assert.deepEqual(sectionLines('Rule'), [
-    'DOMAIN,netflow-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
+    'AND,((DOMAIN,netflow-mtop.cainiao.com,extended-matching),(PROTOCOL,QUIC)),REJECT',
     'DOMAIN,netflow-reply-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
   ]);
 });
@@ -718,7 +717,7 @@ test('latest v7 HAR proves all three ads bypassed visible HTTP after HTTPDNS cle
   assert.equal(mshowTelemetry.length, 0, 'HAR cannot distinguish persistent cache from hidden native delivery');
 
   assert.deepEqual(sectionLines('Rule'), [
-    'DOMAIN,netflow-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
+    'AND,((DOMAIN,netflow-mtop.cainiao.com,extended-matching),(PROTOCOL,QUIC)),REJECT',
     'DOMAIN,netflow-reply-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
   ]);
 });
@@ -845,9 +844,34 @@ test('returns successful empty MTop responses before cache-sensitive ad requests
       v: item.version,
     });
   }
-  assert.deepEqual(runRequestScript({
+  assert.equal(JSON.stringify(runRequestScript({
     url: 'https://netflow-mtop.cainiao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.mshow/1.0/?type=json',
-  }), {}, 'mixed mshow data must continue to the response filter');
+  })), '{}', 'mixed mshow data must continue to the response filter');
+});
+
+test('passes incomplete payloads through and handles batch requests without placement metadata', () => {
+  const incomplete = JSON.stringify({ ret: ['SUCCESS::调用成功'] });
+  const responseUrls = [
+    'https://netflow-mtop.cainiao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.mshow/1.0/',
+    'https://netflow-mtop.cainiao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.show/1.1/',
+    'https://netflow-mtop.cainiao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.batch.show/1.0/',
+  ];
+  for (const url of responseUrls) {
+    assert.equal(JSON.stringify(runScript({ url, body: incomplete })), '{}');
+  }
+  assert.equal(JSON.stringify(runScript({
+    url: 'http://amdc.m.taobao.com/amdc/mobileDispatch?appkey=21380790',
+    headers: { 'User-Agent': '淘宝/57035247' },
+    body: JSON.stringify({ dns: 'invalid', config: { keep: true } }),
+  })), '{}');
+
+  const emptyBatch = runRequestScript({
+    url: 'https://netflow-mtop.cainiao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.batch.show/1.0/?type=json',
+  });
+  assert.deepEqual(JSON.parse(emptyBatch.response.body).data, {});
+  assert.equal(JSON.stringify(runRequestScript({
+    url: 'https://netflow-mtop.cainiao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.batch.show/1.0/?data=invalid',
+  })), '{}');
 });
 
 test('filters floating overlay structures from mshow while preserving navigation and package data', () => {
