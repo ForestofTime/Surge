@@ -11,6 +11,8 @@ const splashHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-12-081629.har';
 const latestVideoSplashHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-17-090751.har';
+const cachedVideoSplashHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-142415.har';
 
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const scriptText = fs.readFileSync(scriptPath, 'utf8');
@@ -128,6 +130,69 @@ test('short-circuits the new AVPlayer main-page launch video without matching pr
   ]) {
     assert.deepEqual(runRequest(url, headers), {});
   }
+});
+
+test('blocks rotating main-page launch-player suffixes while preserving product videos and live streams', () => {
+  const userAgents = [
+    'ffmpeg/4.0;jdmall;iphone;version/15.10.0;build/170674',
+    'CFNetwork;jdmall;iphone;version/15.10.0;build/170674',
+  ];
+  const launchReferers = [
+    'play:ijkplayerSH_JDMainPageViewController_321_8_5_2',
+    'play:avplayerSH_JDMainPageViewController_402_7_3_1',
+  ];
+
+  for (let index = 0; index < launchReferers.length; index += 1) {
+    assert.deepEqual(
+      runRequest('https://vod.300hu.com/2048/path/rotating-launch.mp4', {
+        'User-Agent': userAgents[index],
+        Referer: launchReferers[index],
+      }),
+      { response: { status: 204 } }
+    );
+  }
+
+  const jdVideoHeaders = {
+    'User-Agent': userAgents[0],
+    Referer: 'play:ijkplayerSH_JDMainPageViewController_140_19_9_1',
+  };
+  for (const [url, headers] of [
+    ['https://vod.300hu.com/2048/path/product.mp4', { ...jdVideoHeaders, Referer: 'play:ijkplayerProductDetail' }],
+    ['https://jvod.300hu.com/vod/product/path/product.mp4', jdVideoHeaders],
+    ['https://discover.300hu.com/explain-m3u8/live/stream.m3u8', jdVideoHeaders],
+    ['https://discover.300hu.com/explain-record/live/segment.ts', jdVideoHeaders],
+  ]) {
+    assert.deepEqual(runRequest(url, headers), {});
+  }
+});
+
+test('the newest JD HAR proves the visible launch video was served from local cache', { skip: !fs.existsSync(cachedVideoSplashHarPath) }, () => {
+  const har = JSON.parse(fs.readFileSync(cachedVideoSplashHarPath, 'utf8'));
+  assert.deepEqual(har.log.creator, { version: '5.102.0', name: 'Surge iOS' });
+  assert.ok(
+    har.log.entries.some((entry) =>
+      (entry.request && entry.request.headers || []).some((header) =>
+        /JD4iPhone\/15\.10\.0|jdmall;iphone;version\/15\.10\.0/.test(String(header.value || ''))
+      )
+    ),
+    'the HAR must identify JD 15.10.0 traffic'
+  );
+
+  const videoEntries = har.log.entries.filter((entry) => {
+    const url = entry.request && entry.request.url || '';
+    const mimeType = entry.response && entry.response.content && entry.response.content.mimeType || '';
+    return /\.(?:mp4|m3u8|ts|flv)(?:\?|$)/i.test(url) || /^video\//i.test(mimeType);
+  });
+  assert.equal(videoEntries.length, 0, 'the visible launch video made no network media request');
+  assert.equal(
+    har.log.entries.filter((entry) => /\(京东去开屏\)|京东-主页面启动视频跳过/.test(entry.comment || '')).length,
+    0,
+    'v13 had no request opportunity while the cached video was playing'
+  );
+  assert.ok(
+    har.log.entries.some((entry) => /Handled by VIF/.test(entry.comment || '')),
+    'the capture must contain VIF-handled JD traffic'
+  );
 });
 
 test('the latest HAR proves the AVPlayer launch video bypasses v12 while the old IJK path is blocked', { skip: !fs.existsSync(latestVideoSplashHarPath) }, () => {
