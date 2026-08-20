@@ -1,5 +1,5 @@
 #!name=京东去开屏
-#!desc=仅处理京东 App 开屏图片和启动视频，不修改首页、购物车、我的页面或业务接口。v13
+#!desc=仅处理京东 App 开屏图片和启动视频，不修改首页、购物车、我的页面或业务接口。v14
 #!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
@@ -16,7 +16,7 @@ AND, ((PROTOCOL, UDP), (DOMAIN, vod.300hu.com)), REJECT
 
 [Script]
 # 只将数字业务路径 MP4 交给脚本，再用京东视频 UA 和启动播放器 Referer 二次校验后返回 204。
-京东-主页面启动视频跳过 = type=http-request, pattern=^https?:\/\/vod\.300hu\.com\/\d+\/.*\.mp4(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=13, timeout=10
+京东-主页面启动视频跳过 = type=http-request, pattern=^https?:\/\/vod\.300hu\.com\/\d+\/.*\.mp4(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=14, timeout=10
 
 [MITM]
 hostname = %APPEND% m.360buyimg.com, vod.300hu.com

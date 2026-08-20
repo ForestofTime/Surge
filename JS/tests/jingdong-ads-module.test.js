@@ -46,7 +46,7 @@ function runRequest(url, headers) {
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
   assert.match(moduleText, /仅处理京东 App 开屏图片和启动视频/);
-  assert.match(moduleText, /v13$/m);
+  assert.match(moduleText, /v14$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m
@@ -70,7 +70,7 @@ test('publishes a splash-only native Surge module', () => {
     moduleText,
     /pattern=\^https\?:\\\/\\\/vod\\\.300hu\\\.com\\\/\\d\+\\\/\.\*\\\.mp4\(\?:\\\?\.\*\)\?\$/
   );
-  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=13/);
+  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=14/);
 });
 
 test('keeps only the two QUIC fallbacks required by the confirmed splash paths', () => {
@@ -111,6 +111,22 @@ test('only short-circuits the HAR-confirmed JD main-page launch-player video req
   ]) {
     assert.deepEqual(runRequest(url, headers), {});
   }
+
+  const unreadableHeaders = new Proxy({}, {
+    ownKeys() {
+      throw new Error('unreadable headers');
+    },
+  });
+  assert.deepEqual(
+    runRequest('https://vod.300hu.com/2048/path/launch.mp4', unreadableHeaders),
+    {},
+    'unexpected request metadata must fail open'
+  );
+  assert.deepEqual(
+    runRequest('https://vod.300hu.com/2048/path/launch.mp4', null),
+    {},
+    'missing request headers must pass through'
+  );
 });
 
 test('short-circuits the new AVPlayer main-page launch video without matching product video traffic', () => {
