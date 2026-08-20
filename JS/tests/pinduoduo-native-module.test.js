@@ -22,6 +22,8 @@ const latestV10RegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-145210.har';
 const latestV11RegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-150719.har';
+const latestV12DetailRegressionHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-142431.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
@@ -186,6 +188,42 @@ test('v12 passes through search results and homepage product refreshes exposed b
     4
   );
   assert.equal(String(subsidyRefresh.comment).includes('[Rewrite]'), false);
+});
+
+test('passes through the complete Pinduoduo 8.21 product-detail render exposed by the latest v12 HAR', {
+  skip: !fs.existsSync(latestV12DetailRegressionHarPath),
+}, () => {
+  const har = JSON.parse(fs.readFileSync(latestV12DetailRegressionHarPath, 'utf8'));
+  assert.equal(har.log.creator.name, 'Surge iOS');
+  assert.equal(har.log.creator.version, '5.102.0');
+
+  const detailRenders = har.log.entries.filter((entry) => {
+    if (entry.request.method !== 'POST') return false;
+    if (new URL(entry.request.url).pathname !== '/api/oak/integration/render') return false;
+    const request = JSON.parse(entry.request.postData.text);
+    return request.page_sn === '10014' && Object.hasOwn(request, 'goods_id');
+  });
+  assert.equal(detailRenders.length, 2);
+
+  for (const entry of detailRenders) {
+    const userAgent = entry.request.headers.find(({ name }) => name.toLowerCase() === 'user-agent');
+    assert.match(userAgent.value, /BundleID\/com\.xunmeng\.pinduoduo AppVersion\/8\.21\.0/);
+    assert.equal(entry.response.status, 200);
+
+    const payload = JSON.parse(entry.response.content.text);
+    for (const key of ['goods', 'sku', 'price', 'ui', 'section_list']) {
+      assert.ok(Object.hasOwn(payload, key), `detail response must contain ${key}`);
+    }
+    assert.equal(
+      String(entry.comment).match(/Response body is modified by body rewrite rule/g)?.length,
+      3
+    );
+  }
+
+  const detailRewriteRules = section('Body Rewrite', 'Map Local')
+    .split('\n')
+    .filter((line) => line.includes('api\\/oak\\/integration\\/render'));
+  assert.deepEqual(detailRewriteRules, [], 'the complete product-detail response must pass through');
 });
 
 test('HAR proves refer_page_sn alone cannot distinguish the shared homepage product feed', {
