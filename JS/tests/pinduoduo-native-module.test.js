@@ -38,11 +38,11 @@ function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
-test('uses QingRex native rules and passes through homepage products and search in v12', () => {
+test('uses QingRex native rules and passes through homepage, search, and product details in v13', () => {
   assert.match(moduleText, /^#!name=拼多多去广告（QingRex 原生兼容）$/m);
-  assert.match(moduleText, /首页配置与商品流、搜索完全透传；清理聊天与个人中心商品广告。v12/);
+  assert.match(moduleText, /首页、搜索与商品详情完全透传；清理聊天与个人中心商品广告。v13/);
 
-  // All retained v12 body rewrites and map-local rules stay byte-identical.
+  // All retained v13 body rewrites and map-local rules stay byte-identical.
   const unchangedBodyRewrite = section('Body Rewrite', 'Map Local')
     .split('\n')
     .filter((line) =>
@@ -53,7 +53,7 @@ test('uses QingRex native rules and passes through homepage products and search 
     .join('\n');
   assert.equal(
     sha256(unchangedBodyRewrite),
-    '6e5fcac7da482172fa13f9d6fcfea36b71388085dd0a3a1beb6a24b2f5aac4cc'
+    'c7ef6279aee9dd96690e481ad16e13e6d4f38268ff812253ccc41cd93ab013b8'
   );
   assert.equal(
     sha256(section('Map Local', 'MITM')),
