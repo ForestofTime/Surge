@@ -13,6 +13,8 @@ const latestVideoSplashHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-17-090751.har';
 const cachedVideoSplashHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-142415.har';
+const latestLiveSplashHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-144156.har';
 
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const scriptText = fs.readFileSync(scriptPath, 'utf8');
@@ -175,10 +177,61 @@ test('blocks rotating main-page launch-player suffixes while preserving product 
   for (const [url, headers] of [
     ['https://vod.300hu.com/2048/path/product.mp4', { ...jdVideoHeaders, Referer: 'play:ijkplayerProductDetail' }],
     ['https://jvod.300hu.com/vod/product/path/product.mp4', jdVideoHeaders],
-    ['https://discover.300hu.com/explain-m3u8/live/stream.m3u8', jdVideoHeaders],
-    ['https://discover.300hu.com/explain-record/live/segment.ts', jdVideoHeaders],
+    ['https://discover.300hu.com/explain-m3u8/live/stream.m3u8', { ...jdVideoHeaders, Referer: 'play:ijkplayerSH_DiscoverViewController_140_19_9_1' }],
+    ['https://discover.300hu.com/explain-record/live/segment.ts', { ...jdVideoHeaders, Referer: 'play:ijkplayerSH_DiscoverViewController_140_19_9_1' }],
   ]) {
     assert.deepEqual(runRequest(url, headers), {});
+  }
+});
+
+test('blocks the launch-only discover stream fallback without blocking other discover playback', () => {
+  const launchHeaders = {
+    'User-Agent': 'ffmpeg/4.0;jdmall;iphone;version/15.10.0;build/170674',
+    Referer: 'play:ijkplayerSH_JDMainPageViewController_140_19_9_1',
+  };
+
+  for (const url of [
+    'https://discover.300hu.com/explain-m3u8/channel/stream.m3u8?scene=9',
+    'https://discover.300hu.com/explain-record/channel/segment.ts',
+    'https://discover.300hu.com/record/channel/live/segment.ts',
+  ]) {
+    assert.deepEqual(runRequest(url, launchHeaders), { response: { status: 204 } });
+  }
+
+  for (const [url, headers] of [
+    ['https://discover.300hu.com/explain-m3u8/channel/stream.m3u8', { ...launchHeaders, Referer: 'play:ijkplayerSH_DiscoverViewController_140_19_9_1' }],
+    ['https://discover.300hu.com/explain-record/channel/segment.ts', { ...launchHeaders, Referer: 'play:ijkplayerProductDetail' }],
+    ['https://discover.300hu.com/explain-m3u8/channel/stream.m3u8', { Referer: launchHeaders.Referer }],
+    ['https://discover.300hu.com/explain-m3u8/channel/metadata.json', launchHeaders],
+  ]) {
+    assert.deepEqual(runRequest(url, headers), {});
+  }
+});
+
+test('the newest cleared-cache HAR exposes an unhandled launch-only discover stream fallback', { skip: !fs.existsSync(latestLiveSplashHarPath) }, () => {
+  const har = JSON.parse(fs.readFileSync(latestLiveSplashHarPath, 'utf8'));
+  const requestHeaders = (entry) =>
+    Object.fromEntries(
+      (entry.request && entry.request.headers || []).map((header) => [String(header.name).toLowerCase(), header.value])
+    );
+  const entries = har.log.entries.filter((entry) => {
+    const headers = requestHeaders(entry);
+    return (
+      /^https:\/\/discover\.300hu\.com\/.*\.(?:m3u8|ts)(?:\?|$)/i.test(entry.request && entry.request.url || '') &&
+      /^ffmpeg\/[^;]+;jdmall;(?:iphone|ipad);/i.test(headers['user-agent'] || '') &&
+      /^play:ijkplayerSH_JDMainPageViewController_/i.test(headers.referer || '')
+    );
+  });
+
+  assert.equal(entries.length, 6, 'the HAR must contain the six launch stream fallback requests');
+  assert.equal(
+    entries.reduce((total, entry) => total + Number(entry.response.content && entry.response.content.size || 0), 0),
+    1566150,
+    'the fallback must account for the observed 1,566,150 response bytes'
+  );
+  assert.ok(entries.every((entry) => !/HTTP request script found: 京东-主页面启动视频跳过/.test(entry.comment || '')));
+  for (const entry of entries) {
+    assert.deepEqual(runRequest(entry.request.url, requestHeaders(entry)), { response: { status: 204 } });
   }
 });
 
