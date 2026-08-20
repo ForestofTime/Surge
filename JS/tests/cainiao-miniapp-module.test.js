@@ -56,9 +56,9 @@ function parseBase64Json(value) {
   return JSON.parse(Buffer.from(value, 'base64').toString('utf8'));
 }
 
-test('declares a narrowly scoped v7 mini-program module with unique script names', () => {
+test('declares a narrowly scoped v8 mini-program module with unique script names', () => {
   assert.match(moduleText, /^#!name=菜鸟淘宝小程序去广告$/m);
-  assert.match(moduleText, /^#!desc=.*HTTPDNS.*响应旁路.*v7$/m);
+  assert.match(moduleText, /^#!desc=.*HTTPDNS.*广告专用主机.*v8$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/CainiaoMiniProgram\.sgmodule$/m
@@ -70,7 +70,7 @@ test('declares a narrowly scoped v7 mini-program module with unique script names
   assert.equal(new Set(names).size, names.length, 'Surge Script names must be unique');
   assert.deepEqual(names, ['菜鸟小程序-HTTPDNS清理', '菜鸟小程序-广告位过滤']);
   for (const line of scripts) {
-    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=7'));
+    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=8'));
     assert.ok(line.includes('type=http-response'));
     assert.ok(line.includes('requires-body=true'));
   }
@@ -227,7 +227,7 @@ test('passes non-Taobao, wrong-appkey, malformed, and unrelated AMDC responses t
   }
 });
 
-test('removes confirmed ad keys and explicit ad elements while preserving real parcels', () => {
+test('clears numeric mshow placements while preserving package and nested business data', () => {
   const source = {
     ret: ['SUCCESS::调用成功'],
     data: {
@@ -280,10 +280,9 @@ test('removes confirmed ad keys and explicit ad elements while preserving real p
   assert.deepEqual(output.data['1308'], []);
   assert.deepEqual(output.data['205'], []);
   assert.deepEqual(output.data['1381'], []);
-  assert.deepEqual(output.data['1275'], source.data['1275']);
-  assert.deepEqual(output.data.packageList, [source.data.packageList[0], source.data.packageList[4]]);
-  assert.deepEqual(output.data.nested.cards, [source.data.nested.cards[1]]);
-  assert.deepEqual(output.data.nested.batch, { safe: source.data.nested.batch.safe });
+  assert.deepEqual(output.data['1275'], []);
+  assert.deepEqual(output.data.packageList, source.data.packageList);
+  assert.deepEqual(output.data.nested, source.data.nested);
   assert.deepEqual(output.ret, source.ret);
 });
 
@@ -315,14 +314,14 @@ test('clears every numeric mshow placement without relying on slot or creative i
   assert.deepEqual(output.ret, source.ret);
 });
 
-test('clears pit 1381 from show.login while preserving real package data', () => {
+test('clears the show.login result array without relying on a slot identifier', () => {
   const source = {
     api: 'mtop.cainiao.guoguo.nbnetflow.ads.show.login',
     data: {
       result: [
         {
           id: '67253',
-          pitId: '1381',
+          pitId: 'rotating-slot',
           materialId: '130290',
           materialContentMapper: {
             title: '你有一个包裹待领取',
@@ -451,9 +450,9 @@ test('latest HAR batch endpoint and pit 1391 exposure are filtered without mater
   assert.deepEqual(slotOutput.data.packageList, slotSource.data.packageList);
 });
 
-test('rejects the dedicated reply host while limiting the primary ad host block to QUIC', () => {
+test('rejects both dedicated ad transport hosts without blocking package transport', () => {
   assert.deepEqual(sectionLines('Rule'), [
-    'AND,((DOMAIN,netflow-mtop.cainiao.com,extended-matching),(PROTOCOL,QUIC)),REJECT',
+    'DOMAIN,netflow-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
     'DOMAIN,netflow-reply-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
   ]);
   assert.doesNotMatch(moduleText, /DOMAIN-SUFFIX,cainiao\.com/);
@@ -634,7 +633,7 @@ test('latest v6 HAR proves the dedicated reply host still bypasses filtering out
   assert.equal(nearbyHttpAd, undefined, 'fresh floating reply must have no captured HTTP request nearby');
 
   assert.deepEqual(sectionLines('Rule'), [
-    'AND,((DOMAIN,netflow-mtop.cainiao.com,extended-matching),(PROTOCOL,QUIC)),REJECT',
+    'DOMAIN,netflow-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
     'DOMAIN,netflow-reply-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
   ]);
 });

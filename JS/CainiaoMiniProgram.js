@@ -1,4 +1,4 @@
-// 菜鸟淘宝小程序去广告 v7：过滤主通道广告响应，专用 reply 旁路由模块规则阻断。
+// 菜鸟淘宝小程序去广告 v8：按广告 API 响应结构过滤，专用传输旁路由模块规则阻断。
 const TARGET_DNS_HOSTS = new Set([
   'guide-acs.m.taobao.com',
   'acs4miniapp-inner.m.taobao.com',
@@ -6,8 +6,6 @@ const TARGET_DNS_HOSTS = new Set([
   'netflow-mtop.cainiao.com',
   'netflow-reply-mtop.cainiao.com',
 ]);
-const TARGET_AD_IDS = new Set(['1308', '205', '1381', '1391', '2018']);
-const AD_ID_FIELDS = ['id', 'positionId', 'adId', 'slotId', 'pitId'];
 const requestUrl = String(($request && $request.url) || '');
 const requestHeaders = ($request && $request.headers) || {};
 const userAgent = String(requestHeaders['User-Agent'] || requestHeaders['user-agent'] || '');
@@ -94,17 +92,16 @@ function cleanMshowResponse(body) {
   }
 
   let changed = false;
-  const presentTargetIds = Array.from(TARGET_AD_IDS).filter((id) => {
-    return Object.prototype.hasOwnProperty.call(payload.data, id);
-  });
-  payload.data = cleanAdArrays(payload.data, () => {
-    changed = true;
-  });
-  for (const id of presentTargetIds) {
-    if (!Array.isArray(payload.data[id]) || payload.data[id].length !== 0) {
-      payload.data[id] = [];
-      changed = true;
+  for (const key of Object.keys(payload.data)) {
+    if (!/^\d+$/.test(key) || !Array.isArray(payload.data[key]) || payload.data[key].length === 0) {
+      continue;
     }
+    payload.data[key] = [];
+    changed = true;
+  }
+  if (Array.isArray(payload.data.result) && payload.data.result.length > 0) {
+    payload.data.result = [];
+    changed = true;
   }
   return changed ? { body: JSON.stringify(payload) } : {};
 }
@@ -122,40 +119,6 @@ function cleanBatchShowResponse(body) {
     changed = true;
   }
   return changed ? { body: JSON.stringify(payload) } : {};
-}
-
-function cleanAdArrays(value, markChanged) {
-  if (Array.isArray(value)) {
-    const output = [];
-    for (const item of value) {
-      if (hasTargetAdId(item)) {
-        markChanged();
-        continue;
-      }
-      output.push(cleanAdArrays(item, markChanged));
-    }
-    return output;
-  }
-
-  if (value && typeof value === 'object') {
-    for (const key of Object.keys(value)) {
-      if (TARGET_AD_IDS.has(key)) {
-        delete value[key];
-        markChanged();
-        continue;
-      }
-      value[key] = cleanAdArrays(value[key], markChanged);
-    }
-  }
-  return value;
-}
-
-function hasTargetAdId(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
-  return AD_ID_FIELDS.some((field) => {
-    return Object.prototype.hasOwnProperty.call(value, field) &&
-      TARGET_AD_IDS.has(String(value[field]));
-  });
 }
 
 function decodeBase64Utf8(input) {
