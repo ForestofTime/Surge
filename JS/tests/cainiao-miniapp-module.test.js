@@ -18,6 +18,10 @@ const latestV6HarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-17-212317.har';
 const latestV7HarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-184052.har';
+const latestV8CacheHarPaths = [
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-193709.har',
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-201036.har',
+];
 
 function sectionLines(sectionName) {
   const section = moduleText.match(
@@ -45,6 +49,22 @@ function runScript({ url, headers = {}, body }) {
   );
 
   assert.equal(doneCalls.length, 1, 'the response script must call $done once');
+  return doneCalls[0];
+}
+
+function runRequestScript({ url, headers = {} }) {
+  const doneCalls = [];
+
+  vm.runInNewContext(
+    scriptText,
+    {
+      $request: { url, headers },
+      $done: (value) => doneCalls.push(value),
+    },
+    { filename: scriptPath }
+  );
+
+  assert.equal(doneCalls.length, 1, 'the request script must call $done once');
   return doneCalls[0];
 }
 
@@ -701,6 +721,168 @@ test('latest v7 HAR proves all three ads bypassed visible HTTP after HTTPDNS cle
     'DOMAIN,netflow-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
     'DOMAIN,netflow-reply-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
   ]);
+});
+
+test('latest v8 HARs prove network rejection reuses persistent ads instead of receiving fresh ads', {
+  skip: !latestV8CacheHarPaths.every((harPath) => fs.existsSync(harPath)),
+}, () => {
+  const runs = latestV8CacheHarPaths.map((harPath) => {
+    const har = JSON.parse(fs.readFileSync(harPath, 'utf8'));
+    assert.deepEqual(har.log.creator, { version: '5.102.0', name: 'Surge iOS' });
+
+    const amdcEntries = har.log.entries.filter((entry) => {
+      const comment = String(entry.comment || '');
+      return entry.response?.status === 200 &&
+        entry.request.url.includes('/amdc/mobileDispatch') &&
+        comment.includes('HTTP response script found: 菜鸟小程序-HTTPDNS清理') &&
+        comment.includes('Response is modified by script');
+    });
+    assert.ok(amdcEntries.length >= 10, 'v8 HTTPDNS cleanup must be consistently loaded');
+    for (const entry of amdcEntries) {
+      const text = entry.response.content.text;
+      const payload = text.trimStart().startsWith('{') ? JSON.parse(text) : parseBase64Json(text);
+      const hosts = Array.isArray(payload.dns)
+        ? payload.dns.map((item) => item.host || item.domain || item.hostname)
+        : Object.keys(payload.dns || {});
+      assert.equal(hosts.some((host) => /^(?:guide-acs|acs4miniapp-inner|guide-acs4miniapp-inner|netflow-(?:reply-)?mtop)\./.test(host)), false);
+    }
+
+    assert.equal(har.log.entries.some((entry) => {
+      return entry.request.url.includes('mtop.cainiao.guoguo.nbnetflow.ads.');
+    }), false, 'no ad response reached the visible HTTP engine');
+
+    const adsTelemetry = [];
+    for (const entry of har.log.entries) {
+      if (!entry.request.url.includes('gm.mmstat.com/cnux.1.0')) continue;
+      const text = entry.request.postData?.text;
+      if (typeof text !== 'string') continue;
+      const telemetry = JSON.parse(text);
+      const params = new URLSearchParams(telemetry.gokey);
+      if (!params.get('p7') || !params.get('p8')) continue;
+      const request = JSON.parse(decodeURIComponent(params.get('p7')));
+      const response = JSON.parse(decodeURIComponent(params.get('p8')));
+      if (!String(request.api || '').startsWith('mtop.cainiao.guoguo.nbnetflow.ads.')) continue;
+      adsTelemetry.push({ time: Date.parse(entry.startedDateTime), request, response });
+    }
+    assert.ok(adsTelemetry.length >= 4, 'the client must report every ad API outcome');
+    for (const item of adsTelemetry) {
+      assert.equal(item.request.mpHost, 'netflow-mtop.cainiao.com');
+      assert.match(item.request.api, /\.(?:mshow|show|show\.login|batch\.show)$/);
+      if (item.response.errorCode) {
+        assert.equal(item.response.errorCode, 'FAIL_SYS_NETWORK_ERROR');
+        continue;
+      }
+      const arrays = Object.values(item.response.data || {}).filter(Array.isArray);
+      assert.ok(arrays.every((value) => value.length === 0), 'the only successful ad response must be empty');
+    }
+
+    const exposures = [];
+    for (const entry of har.log.entries) {
+      if (!entry.request.url.includes('nbnetflow-reply-log.cn-wulanchabu.log.aliyuncs.com')) continue;
+      const payload = JSON.parse(entry.request.postData?.text || '{}');
+      for (const log of payload.__logs__ || []) {
+        if (log.adsAction !== 'ads_expose') continue;
+        const [pit, item, material] = String(log.utArgs || '').split('#');
+        exposures.push({ time: Date.parse(entry.startedDateTime), pit, item, material });
+      }
+    }
+    assert.equal(exposures.some((entry) => entry.pit === '1308'), false, 'the top video card no longer appears');
+
+    const rawBodies = har.log.entries.map((entry) => {
+      return `${entry.request.postData?.text || ''}\n${entry.response?.content?.text || ''}`;
+    }).join('\n');
+    assert.doesNotMatch(rawBodies, /免费领取|立即去领|看视频领金豆|领红包/);
+    return { adsTelemetry, exposures };
+  });
+
+  assert.equal(runs[0].exposures.some((entry) => entry.pit === '1381'), true);
+  assert.equal(runs[1].exposures.some((entry) => entry.pit === '1391'), true);
+  const floating = runs.map((run) => run.exposures.find((entry) => entry.pit === '205'));
+  assert.ok(floating.every(Boolean), 'both runs must expose the floating ad');
+  assert.deepEqual(
+    floating.map(({ item, material }) => ({ item, material })),
+    [{ item: '38181', material: '36753' }, { item: '38181', material: '36753' }],
+    'the same material 33 minutes apart proves persistent reuse'
+  );
+  assert.ok(
+    floating[1].time < Math.min(...runs[1].adsTelemetry.map((entry) => entry.time)),
+    'the second run exposes the cached ad before its first captured ad request'
+  );
+});
+
+test('returns successful empty MTop responses before cache-sensitive ad requests reach the network', () => {
+  const cases = [
+    {
+      url: 'https://netflow-mtop.cainiao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.show.login/1.0/?type=json',
+      api: 'mtop.cainiao.guoguo.nbnetflow.ads.show.login',
+      version: '1.0',
+      data: { result: [] },
+    },
+    {
+      url: 'https://guide-acs4miniapp-inner.m.taobao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.show/1.1/?type=json',
+      api: 'mtop.cainiao.guoguo.nbnetflow.ads.show',
+      version: '1.1',
+      data: { result: [] },
+    },
+    {
+      url: 'https://netflow-mtop.cainiao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.batch.show/1.0/?data=' + encodeURIComponent(JSON.stringify({
+        pitItemList: JSON.stringify([{ pit: 'dynamic-a' }, { pit: 'dynamic-b' }]),
+      })),
+      api: 'mtop.cainiao.guoguo.nbnetflow.ads.batch.show',
+      version: '1.0',
+      data: { 'dynamic-a': [], 'dynamic-b': [] },
+    },
+  ];
+
+  for (const item of cases) {
+    const result = runRequestScript({ url: item.url });
+    assert.equal(result.response.status, 200);
+    assert.equal(result.response.headers['Content-Type'], 'application/json; charset=utf-8');
+    assert.deepEqual(JSON.parse(result.response.body), {
+      api: item.api,
+      data: item.data,
+      ret: ['SUCCESS::调用成功'],
+      v: item.version,
+    });
+  }
+  assert.deepEqual(runRequestScript({
+    url: 'https://netflow-mtop.cainiao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.mshow/1.0/?type=json',
+  }), {}, 'mixed mshow data must continue to the response filter');
+});
+
+test('filters floating overlay structures from mshow while preserving navigation and package data', () => {
+  const source = {
+    api: 'mtop.cainiao.guoguo.nbnetflow.ads.mshow',
+    data: {
+      42: [{ materialContentMapper: { floatview_url: 'https://img.example/floating.gif', floatview_click_url: 'https://example.test/' } }],
+      1334: [{ materialContentMapper: { type: 'pickUp', link: '/pages/pickup/pickup', title: '取包裹' } }],
+      954: [{ materialContentMapper: { iconContent: '业务入口', link: '/pages/service' } }],
+      packageList: [{ mailNo: 'SF123456789' }],
+    },
+    ret: ['SUCCESS::调用成功'],
+    v: '1.0',
+  };
+  const result = runScript({
+    url: 'https://netflow-mtop.cainiao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.mshow/1.0/',
+    body: JSON.stringify(source),
+  });
+  const output = JSON.parse(result.body);
+  assert.deepEqual(output.data['42'], []);
+  assert.deepEqual(output.data['1334'], source.data['1334']);
+  assert.deepEqual(output.data['954'], source.data['954']);
+  assert.deepEqual(output.data.packageList, source.data.packageList);
+});
+
+test('uses an empty-success request script with QUIC fallback instead of all-protocol main-host rejection', () => {
+  assert.deepEqual(sectionLines('Rule'), [
+    'AND,((DOMAIN,netflow-mtop.cainiao.com,extended-matching),(PROTOCOL,QUIC)),REJECT',
+    'DOMAIN,netflow-reply-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
+  ]);
+  const requestScript = sectionLines('Script').find((line) => line.startsWith('菜鸟小程序-广告请求置空'));
+  assert.ok(requestScript);
+  assert.match(requestScript, /type=http-request/);
+  assert.match(requestScript, /ads\\\.\(\?:show/);
+  assert.doesNotMatch(requestScript, /mshow/);
 });
 
 test('passes malformed and unrelated MTop responses through', () => {
