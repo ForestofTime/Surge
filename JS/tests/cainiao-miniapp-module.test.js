@@ -16,6 +16,8 @@ const latestV5HarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-17-211008.har';
 const latestV6HarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-17-212317.har';
+const latestV7HarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-184052.har';
 
 function sectionLines(sectionName) {
   const section = moduleText.match(
@@ -282,6 +284,34 @@ test('removes confirmed ad keys and explicit ad elements while preserving real p
   assert.deepEqual(output.data.packageList, [source.data.packageList[0], source.data.packageList[4]]);
   assert.deepEqual(output.data.nested.cards, [source.data.nested.cards[1]]);
   assert.deepEqual(output.data.nested.batch, { safe: source.data.nested.batch.safe });
+  assert.deepEqual(output.ret, source.ret);
+});
+
+test('clears every numeric mshow placement without relying on slot or creative identifiers', () => {
+  const source = {
+    ret: ['SUCCESS::调用成功'],
+    data: {
+      42: [{ id: 'rotating-creative-a', payload: { action: 'promotion' } }],
+      9001: [{ id: 'rotating-creative-b', payload: { action: 'promotion' } }],
+      packageList: [
+        { id: 'parcel-a', mailNo: 'SF123456789', status: '运输中' },
+        { id: 'parcel-b', mailNo: 'YT987654321', status: '待取件' },
+      ],
+      serviceConfig: { officialCustomerService: true },
+    },
+  };
+  const result = runScript({
+    url: 'https://acs.m.taobao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.mshow/1.0/',
+    headers: { 'User-Agent': 'MTOPSDK/2.5.6-miniapp-sdk' },
+    body: JSON.stringify(source),
+  });
+
+  assert.ok(result.body, 'the ad-only numeric placements must be modified');
+  const output = JSON.parse(result.body);
+  assert.deepEqual(output.data['42'], []);
+  assert.deepEqual(output.data['9001'], []);
+  assert.deepEqual(output.data.packageList, source.data.packageList);
+  assert.deepEqual(output.data.serviceConfig, source.data.serviceConfig);
   assert.deepEqual(output.ret, source.ret);
 });
 
@@ -605,6 +635,71 @@ test('latest v6 HAR proves the dedicated reply host still bypasses filtering out
 
   assert.deepEqual(sectionLines('Rule'), [
     'AND,((DOMAIN,netflow-mtop.cainiao.com,extended-matching),(PROTOCOL,QUIC)),REJECT',
+    'DOMAIN,netflow-reply-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
+  ]);
+});
+
+test('latest v7 HAR proves all three ads bypassed visible HTTP after HTTPDNS cleanup', { skip: !fs.existsSync(latestV7HarPath) }, () => {
+  const har = JSON.parse(fs.readFileSync(latestV7HarPath, 'utf8'));
+  assert.deepEqual(har.log.creator, { version: '5.102.0', name: 'Surge iOS' });
+
+  const amdcEntries = har.log.entries.filter((entry) => {
+    return entry.response?.status === 200 &&
+      entry.request.url.includes('/amdc/mobileDispatch') &&
+      /HTTP response script found: 菜鸟小程序-HTTPDNS清理/.test(String(entry.comment || '')) &&
+      /Response is modified by script/.test(String(entry.comment || ''));
+  });
+  assert.ok(amdcEntries.length >= 4, 'v7 HTTPDNS cleanup must be loaded consistently');
+  for (const entry of amdcEntries) {
+    const text = entry.response.content.text;
+    const payload = text.trimStart().startsWith('{') ? JSON.parse(text) : parseBase64Json(text);
+    const hosts = Array.isArray(payload.dns)
+      ? payload.dns.map((item) => item.host || item.domain || item.hostname)
+      : Object.keys(payload.dns || {});
+    assert.equal(hosts.some((host) => /^(?:guide-acs|acs4miniapp-inner|guide-acs4miniapp-inner|netflow-(?:reply-)?mtop)\./.test(host)), false);
+  }
+
+  const visibleAds = har.log.entries.filter((entry) => {
+    return entry.request.url.includes('mtop.cainiao.guoguo.nbnetflow.ads.');
+  });
+  assert.equal(visibleAds.length, 0, 'no ad response reached the visible HTTP engine');
+  assert.equal(har.log.entries.some((entry) => {
+    return /HTTP response script found: 菜鸟小程序-广告位过滤/.test(String(entry.comment || ''));
+  }), false);
+
+  const exposedPits = new Set();
+  for (const entry of har.log.entries) {
+    if (!entry.request.url.includes('nbnetflow-reply-log.cn-wulanchabu.log.aliyuncs.com')) continue;
+    const text = entry.request.postData && entry.request.postData.text;
+    if (typeof text !== 'string' || !text.includes('ads_expose')) continue;
+    for (const log of JSON.parse(text).__logs__ || []) {
+      exposedPits.add(String(log.utArgs || '').split('#', 1)[0]);
+    }
+  }
+  for (const pit of ['205', '1308', '1381']) {
+    assert.equal(exposedPits.has(pit), true, `latest device run must expose ${pit}`);
+  }
+
+  const flyAdResults = [];
+  const mshowTelemetry = [];
+  for (const entry of har.log.entries) {
+    if (!entry.request.url.includes('gm.mmstat.com/cnux.1.0')) continue;
+    const text = entry.request.postData && entry.request.postData.text;
+    if (typeof text !== 'string') continue;
+    const telemetry = JSON.parse(text);
+    const params = new URLSearchParams(telemetry.gokey);
+    if (!params.get('p7') || !params.get('p8')) continue;
+    const request = JSON.parse(decodeURIComponent(params.get('p7')));
+    const response = JSON.parse(decodeURIComponent(params.get('p8')));
+    if (request?.api === 'mtop.cainiao.adx.flyad.getAd') flyAdResults.push(response);
+    if (String(request?.api || '').includes('nbnetflow.ads.mshow')) mshowTelemetry.push(response);
+  }
+  assert.equal(flyAdResults.length, 3);
+  assert.ok(flyAdResults.every((response) => response.errorCode === 'NO_DATA'));
+  assert.equal(mshowTelemetry.length, 0, 'HAR cannot distinguish persistent cache from hidden native delivery');
+
+  assert.deepEqual(sectionLines('Rule'), [
+    'DOMAIN,netflow-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
     'DOMAIN,netflow-reply-mtop.cainiao.com,REJECT,extended-matching,pre-matching',
   ]);
 });
