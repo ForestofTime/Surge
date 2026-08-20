@@ -47,8 +47,8 @@ function runRequest(url, headers) {
 
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
-  assert.match(moduleText, /仅处理京东 App 开屏图片和启动视频/);
-  assert.match(moduleText, /v14$/m);
+  assert.match(moduleText, /仅处理京东 App 开屏图片和启动媒体/);
+  assert.match(moduleText, /v15$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m
@@ -72,13 +72,19 @@ test('publishes a splash-only native Surge module', () => {
     moduleText,
     /pattern=\^https\?:\\\/\\\/vod\\\.300hu\\\.com\\\/\\d\+\\\/\.\*\\\.mp4\(\?:\\\?\.\*\)\?\$/
   );
-  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=14/);
+  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=15/);
+  assert.match(moduleText, /^京东-主页面启动流跳过 = type=http-request,/m);
+  assert.match(
+    moduleText,
+    /pattern=\^https\?:\\\/\\\/discover\\\.300hu\\\.com\\\/\.\*\\\.\(\?:m3u8\|ts\)\(\?:\\\?\.\*\)\?\$/
+  );
 });
 
-test('keeps only the two QUIC fallbacks required by the confirmed splash paths', () => {
+test('keeps only the three QUIC fallbacks required by the confirmed splash paths', () => {
   assert.deepEqual(sectionLines(moduleText, 'Rule'), [
     'AND, ((PROTOCOL, UDP), (DOMAIN, m.360buyimg.com)), REJECT',
     'AND, ((PROTOCOL, UDP), (DOMAIN, vod.300hu.com)), REJECT',
+    'AND, ((PROTOCOL, UDP), (DOMAIN, discover.300hu.com)), REJECT',
   ]);
 });
 
@@ -88,9 +94,9 @@ test('maps only the HAR-confirmed full-screen canvas class', () => {
   ]);
 });
 
-test('limits MITM to the two confirmed splash delivery hosts', () => {
+test('limits MITM to the three confirmed splash delivery hosts', () => {
   assert.deepEqual(sectionLines(moduleText, 'MITM'), [
-    'hostname = %APPEND% m.360buyimg.com, vod.300hu.com',
+    'hostname = %APPEND% m.360buyimg.com, vod.300hu.com, discover.300hu.com',
     'tcp-connection = true',
   ]);
 });
