@@ -1,11 +1,11 @@
 #!name=拼多多去广告（QingRex 原生兼容）
-#!desc=首页、搜索与商品详情完全透传；清理聊天与个人中心商品广告。v13
+#!desc=首页、搜索与商品详情完全透传；清理聊天与个人中心商品广告，并接管 API 原始 TLS。v14
 #!author=ForestofTime
 #!category=AdBlock
 #!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/PinDuoDuo.png
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/PinduoduoNative.sgmodule
-#!date=2026-08-20
+#!date=2026-08-23
 
 [Rule]
 # QingRex 原规则，兼容拼多多 8.20.0 HAR 证实的 /v2/d 与 /v3/d HTTPDNS 路径。
@@ -75,3 +75,4 @@ http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/aristotle\/order_list_v4\?
 
 [MITM]
 hostname = %APPEND% api.pinduoduo.com
+tcp-connection = true
