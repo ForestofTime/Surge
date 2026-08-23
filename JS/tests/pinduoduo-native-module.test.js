@@ -24,6 +24,8 @@ const latestV11RegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-150719.har';
 const latestV12DetailRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-142431.har';
+const latestChatPersonalRegressionHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-23-153700.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
@@ -224,6 +226,61 @@ test('passes through the complete Pinduoduo 8.21 product-detail render exposed b
     .split('\n')
     .filter((line) => line.includes('api\\/oak\\/integration\\/render'));
   assert.deepEqual(detailRewriteRules, [], 'the complete product-detail response must pass through');
+});
+
+test('routes raw Pinduoduo API TLS through the HTTP engine after the latest chat and personal regression', {
+  skip: !fs.existsSync(latestChatPersonalRegressionHarPath),
+}, () => {
+  const har = JSON.parse(fs.readFileSync(latestChatPersonalRegressionHarPath, 'utf8'));
+  assert.equal(har.log.creator.name, 'Surge iOS');
+  assert.equal(har.log.creator.version, '5.102.0');
+
+  const httpDns = har.log.entries.filter((entry) =>
+    /^http:\/\/(?:\d{1,3}(?:\.\d{1,3}){3}|\[[0-9a-fA-F:]+\])\/(?:d\d?|v[23]\/d)(?:\?|$)/
+      .test(entry.request.url)
+  );
+  assert.ok(httpDns.length > 0);
+  assert.ok(httpDns.every((entry) => entry.response === undefined));
+  assert.ok(httpDns.every((entry) =>
+    String(entry.comment).includes('拼多多去广告（QingRex 原生兼容）')
+  ));
+
+  const protectedPaths = [
+    '/api/zaire_biz/chat/resource/get_list_data',
+    '/api/caterham/v3/query/new_chat_group',
+    '/api/alexa/goods/back_up',
+    '/api/caterham/v3/query/personal',
+  ];
+  const visibleProtectedRequests = har.log.entries.filter((entry) =>
+    protectedPaths.includes(new URL(entry.request.url).pathname)
+  );
+  assert.deepEqual(visibleProtectedRequests, []);
+
+  const visibleJsonBodies = har.log.entries
+    .map((entry) => entry.response?.content?.text)
+    .filter((text) => {
+      if (typeof text !== 'string') return false;
+      try {
+        JSON.parse(text);
+        return true;
+      } catch {
+        return false;
+      }
+    });
+  const pageProductImages = har.log.entries.filter((entry) => {
+    const url = new URL(entry.request.url);
+    return url.hostname.endsWith('.pddpic.com') &&
+      /\/(?:mms-(?:goods|material)-image|promo\/goods)\//.test(url.pathname);
+  });
+  const imagesWithoutVisiblePayload = pageProductImages.filter((entry) => {
+    const imageName = new URL(entry.request.url).pathname.split('/').pop();
+    return !visibleJsonBodies.some((body) => body.includes(imageName));
+  });
+  assert.ok(imagesWithoutVisiblePayload.length >= 4);
+
+  const mitm = moduleText.split('[MITM]\n', 2)[1];
+  assert.match(mitm, /^hostname = %APPEND% api\.pinduoduo\.com$/m);
+  assert.match(mitm, /^tcp-connection = true$/m);
 });
 
 test('HAR proves refer_page_sn alone cannot distinguish the shared homepage product feed', {
