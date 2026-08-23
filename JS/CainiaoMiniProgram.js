@@ -1,4 +1,4 @@
-// 菜鸟淘宝小程序去广告 v9：返回成功空响应阻止旧广告缓存回退，并过滤 mshow 悬浮展示结构。
+// 菜鸟淘宝小程序去广告 v10：返回成功空响应阻止旧广告缓存回退，并按展示结构过滤 mshow 促销内容。
 const TARGET_DNS_HOSTS = new Set([
   'guide-acs.m.taobao.com',
   'acs4miniapp-inner.m.taobao.com',
@@ -154,7 +154,7 @@ function cleanMshowResponse(body) {
   let changed = false;
   for (const key of Object.keys(payload.data)) {
     if (!/^\d+$/.test(key) || !Array.isArray(payload.data[key])) continue;
-    const filtered = payload.data[key].filter((item) => !hasFloatingPresentation(item));
+    const filtered = payload.data[key].filter((item) => !hasPromotionalPresentation(item));
     if (filtered.length === payload.data[key].length) continue;
     payload.data[key] = filtered;
     changed = true;
@@ -162,10 +162,18 @@ function cleanMshowResponse(body) {
   return changed ? { body: JSON.stringify(payload) } : {};
 }
 
-function hasFloatingPresentation(item) {
+function hasPromotionalPresentation(item) {
   const mapper = item && item.materialContentMapper;
   if (!mapper || typeof mapper !== 'object' || Array.isArray(mapper)) return false;
-  return Object.keys(mapper).some((key) => key.toLowerCase().startsWith('floatview'));
+  const keys = Object.keys(mapper)
+    .map((key) => key.toLowerCase())
+    .filter((key) => key !== 'advrecgmtmodifiedtime');
+  const keySet = new Set(keys);
+
+  return keys.some((key) => key.startsWith('floatview')) ||
+    (keySet.has('image') && keySet.has('link')) ||
+    (keySet.has('mainpic') && keySet.has('btnpic') && keySet.has('link')) ||
+    (keys.length === 1 && keySet.has('label'));
 }
 
 function cleanShowResponse(body) {

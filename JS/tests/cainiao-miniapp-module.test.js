@@ -78,9 +78,9 @@ function parseBase64Json(value) {
   return JSON.parse(Buffer.from(value, 'base64').toString('utf8'));
 }
 
-test('declares a narrowly scoped v9 mini-program module with unique script names', () => {
+test('declares a narrowly scoped v10 mini-program module with unique script names', () => {
   assert.match(moduleText, /^#!name=菜鸟淘宝小程序去广告$/m);
-  assert.match(moduleText, /^#!desc=.*HTTPDNS.*成功空响应.*旧广告缓存.*v9$/m);
+  assert.match(moduleText, /^#!desc=.*HTTPDNS.*成功空响应.*展示结构.*v10$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/CainiaoMiniProgram\.sgmodule$/m
@@ -92,7 +92,7 @@ test('declares a narrowly scoped v9 mini-program module with unique script names
   assert.equal(new Set(names).size, names.length, 'Surge Script names must be unique');
   assert.deepEqual(names, ['菜鸟小程序-HTTPDNS清理', '菜鸟小程序-广告请求置空', '菜鸟小程序-广告位过滤']);
   for (const line of scripts) {
-    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=9'));
+    assert.ok(line.includes('/JS/CainiaoMiniProgram.js?v=10'));
     if (line.includes('type=http-response')) assert.ok(line.includes('requires-body=true'));
   }
 });
