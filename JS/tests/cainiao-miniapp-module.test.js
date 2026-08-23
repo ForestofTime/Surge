@@ -22,6 +22,8 @@ const latestV8CacheHarPaths = [
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-193709.har',
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-201036.har',
 ];
+const latestV9PromotionalSchemaHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-23-230214.har';
 
 function sectionLines(sectionName) {
   const section = moduleText.match(
@@ -331,6 +333,76 @@ test('clears floating presentation schemas without relying on slot or creative i
   assert.deepEqual(output.data.packageList, source.data.packageList);
   assert.deepEqual(output.data.serviceConfig, source.data.serviceConfig);
   assert.deepEqual(output.ret, source.ret);
+});
+
+test('latest v9 HAR removes fresh promotional mshow schemas while preserving service entries', {
+  skip: !fs.existsSync(latestV9PromotionalSchemaHarPath),
+}, () => {
+  const har = JSON.parse(fs.readFileSync(latestV9PromotionalSchemaHarPath, 'utf8'));
+  assert.deepEqual(har.log.creator, { version: '5.102.0', name: 'Surge iOS' });
+  assert.ok(har.log.entries.some((entry) => entry.request.headers?.some(({ name, value }) =>
+    name.toLowerCase() === 'user-agent' && value.includes('AliApp(TB/10.65.20)')
+  )));
+
+  const amdcHits = har.log.entries.filter((entry) => {
+    const comment = String(entry.comment || '');
+    return entry.request.url.includes('/amdc/mobileDispatch') &&
+      comment.includes('HTTP response script found: 菜鸟小程序-HTTPDNS清理');
+  });
+  assert.ok(amdcHits.length >= 20, 'v9 HTTPDNS cleanup must be loaded consistently');
+
+  const mshowEntries = har.log.entries.filter((entry) =>
+    entry.request.url.includes('mtop.cainiao.guoguo.nbnetflow.ads.mshow')
+  );
+  assert.equal(mshowEntries.length, 3);
+
+  const seenSchemas = new Set();
+  for (const entry of mshowEntries) {
+    const comment = String(entry.comment || '');
+    assert.match(comment, /HTTP response script found: 菜鸟小程序-广告位过滤/);
+    assert.match(comment, /Response is modified by script/);
+
+    const source = JSON.parse(entry.response.content.text);
+    const expected = JSON.parse(entry.response.content.text);
+    let promotionalCount = 0;
+    for (const [key, items] of Object.entries(expected.data)) {
+      if (!/^\d+$/.test(key) || !Array.isArray(items)) continue;
+      expected.data[key] = items.filter((item) => {
+        const mapper = item?.materialContentMapper;
+        if (!mapper || typeof mapper !== 'object' || Array.isArray(mapper)) return true;
+        const keys = Object.keys(mapper).filter((name) => name !== 'advRecGmtModifiedTime');
+        const floating = keys.some((name) => name.toLowerCase().startsWith('floatview'));
+        const imageLink = keys.includes('image') && keys.includes('link');
+        const compositeBanner = keys.includes('mainPic') && keys.includes('btnPic') && keys.includes('link');
+        const labelOnly = keys.length === 1 && keys[0] === 'label';
+        if (floating) seenSchemas.add('floating');
+        if (imageLink) seenSchemas.add('image-link');
+        if (compositeBanner) seenSchemas.add('composite-banner');
+        if (labelOnly) seenSchemas.add('label-only');
+        if (!(floating || imageLink || compositeBanner || labelOnly)) return true;
+        promotionalCount += 1;
+        assert.ok(
+          Math.abs(Number(item.currTimestamp) - Date.parse(entry.startedDateTime)) < 5000,
+          'promotional mshow payload must be fresh in this capture'
+        );
+        return false;
+      });
+    }
+    assert.ok(promotionalCount > 0);
+
+    const result = runScript({ url: entry.request.url, body: entry.response.content.text });
+    assert.ok(result.body, 'fresh promotional schemas must cause a response modification');
+    const output = JSON.parse(result.body);
+    assert.deepEqual(output.data, expected.data);
+    for (const businessKey of ['954', '1334', '1275', '1665']) {
+      assert.deepEqual(output.data[businessKey], source.data[businessKey]);
+    }
+    assert.deepEqual(output.ret, source.ret);
+  }
+  assert.deepEqual(
+    seenSchemas,
+    new Set(['image-link', 'composite-banner', 'label-only'])
+  );
 });
 
 test('clears the show.login result array without relying on a slot identifier', () => {
