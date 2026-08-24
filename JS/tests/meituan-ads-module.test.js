@@ -51,11 +51,11 @@ test('publishes a bounded repository-native Meituan module', () => {
   assert.ok(scriptText, 'JS/MeituanAds.js must exist');
   assert.ok(hornRequestScriptText, 'JS/MeituanHornRequest.js must exist');
   assert.match(moduleText, /^#!name=美团去广告$/m);
-  assert.match(moduleText, /^#!desc=.*v6$/m);
+  assert.match(moduleText, /^#!desc=.*v7$/m);
   assert.match(moduleText, /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/MeituanAds\.sgmodule$/m);
   assert.ok(moduleText.includes('type=http-request,pattern=^https:\\/\\/h\\.meituan\\.com\\/horn_ios\\/mergeRequest'));
-  assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/MeituanHornRequest\.js\?v=6/);
-  assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/MeituanAds\.js\?v=6/);
+  assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/MeituanHornRequest\.js\?v=7/);
+  assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/MeituanAds\.js\?v=7/);
   assert.match(moduleText, /requires-body=true/);
   assert.match(moduleText, /max-size=1048576/);
   assert.doesNotMatch(moduleText, /script\.hub|script-path=.*(?:MeChenCC|fmz200|blackmatrix7|zirawell)/i);
