@@ -31,13 +31,27 @@ function runScript({ url, body }) {
   return result;
 }
 
+function runRequestScript({ url, body, method = 'POST', headers = {} }) {
+  let result;
+  vm.runInNewContext(scriptText, {
+    $request: { url, body, method, headers },
+    $done(value) {
+      result = value;
+    },
+    URL,
+    console: { log() {} },
+  });
+  return result;
+}
+
 test('publishes a bounded repository-native Meituan module', () => {
   assert.ok(moduleText, 'Module/MeituanAds.sgmodule must exist');
   assert.ok(scriptText, 'JS/MeituanAds.js must exist');
   assert.match(moduleText, /^#!name=美团去广告$/m);
-  assert.match(moduleText, /^#!desc=.*v4$/m);
+  assert.match(moduleText, /^#!desc=.*v5$/m);
   assert.match(moduleText, /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/MeituanAds\.sgmodule$/m);
-  assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/MeituanAds\.js\?v=4/);
+  assert.ok(moduleText.includes('type=http-request,pattern=^https:\\/\\/h\\.meituan\\.com\\/horn_ios\\/mergeRequest'));
+  assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/MeituanAds\.js\?v=5/);
   assert.match(moduleText, /requires-body=true/);
   assert.match(moduleText, /max-size=1048576/);
   assert.doesNotMatch(moduleText, /script\.hub|script-path=.*(?:MeChenCC|fmz200|blackmatrix7|zirawell)/i);
@@ -110,6 +124,60 @@ test('disables only the two advertising push switches found in the latest HAR', 
   assert.equal(output.pikeConfig.data.keep, 'pike-data');
   assert.equal(output.pikeConfig.keep, 'pike');
   assert.equal(output.traceId, 'keep');
+});
+
+test('requests a fresh recommendation-platform Horn value without changing sibling requests', () => {
+  const source = {
+    launch_protect: { query: '', etag: 'W/"keep"' },
+    recommend_platform_config: { query: 'stale-query', etag: 'W/"stale"' },
+  };
+
+  const result = runRequestScript({
+    url: 'https://h.meituan.com/horn_ios/mergeRequest',
+    body: JSON.stringify(source),
+  });
+  const output = JSON.parse(result.body);
+  assert.deepEqual(output.launch_protect, source.launch_protect);
+  assert.equal(output.recommend_platform_config.query, '');
+  assert.equal(output.recommend_platform_config.etag, '');
+});
+
+test('disables the MSC recommendation platform and its persisted cache via Horn', () => {
+  const source = {
+    recommend_platform_config: {
+      data: {
+        customer: {
+          enabled: true,
+          cacheEnabled: true,
+          feedbackEnabled: true,
+          showCacheWhenRequestError: true,
+          blackList: ['keep-scene'],
+          cacheBlackList: ['keep-cache-scene'],
+          showCacheWhenRequestErrorWhiteList: ['keep-white-scene'],
+        },
+        horn: { version: 1341225, keep: true },
+      },
+      etag: 'W/"keep-etag"',
+    },
+    unrelated_config: { data: { customer: { enabled: true } } },
+  };
+
+  const result = runScript({
+    url: 'https://h.meituan.com/horn_ios/mergeRequest',
+    body: JSON.stringify(source),
+  });
+  const output = JSON.parse(result.body);
+  const customer = output.recommend_platform_config.data.customer;
+  assert.equal(customer.enabled, false);
+  assert.equal(customer.cacheEnabled, false);
+  assert.equal(customer.feedbackEnabled, false);
+  assert.equal(customer.showCacheWhenRequestError, false);
+  assert.deepEqual(customer.blackList, ['keep-scene']);
+  assert.deepEqual(customer.cacheBlackList, ['keep-cache-scene']);
+  assert.deepEqual(customer.showCacheWhenRequestErrorWhiteList, ['keep-white-scene']);
+  assert.deepEqual(output.recommend_platform_config.data.horn, source.recommend_platform_config.data.horn);
+  assert.equal(output.recommend_platform_config.etag, 'W/"keep-etag"');
+  assert.deepEqual(output.unrelated_config, source.unrelated_config);
 });
 
 test('removes only the personal-page cross recommendation area', () => {
