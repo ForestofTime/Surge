@@ -11,6 +11,7 @@ const readIfPresent = (file) => (fs.existsSync(file) ? fs.readFileSync(file, 'ut
 const moduleText = readIfPresent(modulePath);
 const scriptText = readIfPresent(scriptPath);
 const mapLocalText = (moduleText.match(/\[Map Local\]([\s\S]*?)\n\[/) || [])[1] || '';
+const abTestLine = mapLocalText.split('\n').find((line) => line.includes('recommend\\/unity\\/abtest')) || '';
 const readmeText = fs.readFileSync(path.join(repoRoot, 'README.md'), 'utf8');
 const indexText = fs.readFileSync(path.join(repoRoot, 'docs/repo-file-index.md'), 'utf8');
 
@@ -32,9 +33,9 @@ test('publishes a bounded repository-native Meituan module', () => {
   assert.ok(moduleText, 'Module/MeituanAds.sgmodule must exist');
   assert.ok(scriptText, 'JS/MeituanAds.js must exist');
   assert.match(moduleText, /^#!name=美团去广告$/m);
-  assert.match(moduleText, /^#!desc=.*v2$/m);
+  assert.match(moduleText, /^#!desc=.*v3$/m);
   assert.match(moduleText, /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/MeituanAds\.sgmodule$/m);
-  assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/MeituanAds\.js\?v=2/);
+  assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/MeituanAds\.js\?v=3/);
   assert.match(moduleText, /requires-body=true/);
   assert.match(moduleText, /max-size=1048576/);
   assert.doesNotMatch(moduleText, /script\.hub|script-path=.*(?:MeChenCC|fmz200|blackmatrix7|zirawell)/i);
@@ -60,6 +61,25 @@ test('does not reject shared business, layout, HTTPDNS, or image delivery', () =
   assert.doesNotMatch(mapLocalText, /gaea\\\.meituan\\\.com\\\/mapi\\\/usercenter/);
   assert.doesNotMatch(mapLocalText, /group\\\/v1\\\/recommend\\\/unity\\\/recommends/);
   assert.doesNotMatch(moduleText, /horn_ios\\\/mergeRequest[^\n]*data-type=(?:text|json)/);
+  assert.doesNotMatch(moduleText, /shark-mt|force-http-engine-hosts|tcp-connection\s*=\s*true/i);
+});
+
+test('disables only the two latest HAR-confirmed cross-recommendation experiments', () => {
+  assert.ok(abTestLine, 'the exact recommendation AB endpoint must have an immediate local response');
+  assert.match(abTestLine, /^\^https:\/\\\/\\\/apimobile\\\.meituan\\\.com\\\/group\\\/v1\\\/recommend\\\/unity\\\/abtest/);
+  assert.match(abTestLine, /status-code=200/);
+  assert.match(abTestLine, /header="Content-Type:application\/json"/);
+
+  const encodedData = abTestLine.match(/data="((?:\\.|[^"])*)"/);
+  assert.ok(encodedData, 'the local response must contain JSON data');
+  const response = JSON.parse(JSON.parse(`"${encodedData[1]}"`));
+  assert.deepEqual(response, {
+    status: 0,
+    data: {
+      shopping_cart: 0,
+      platform_personal_center: 0,
+    },
+  });
 });
 
 test('disables only the two advertising push switches found in the latest HAR', () => {
