@@ -10,6 +10,7 @@ const scriptPath = path.join(repoRoot, 'JS/MeituanAds.js');
 const readIfPresent = (file) => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '');
 const moduleText = readIfPresent(modulePath);
 const scriptText = readIfPresent(scriptPath);
+const mapLocalText = (moduleText.match(/\[Map Local\]([\s\S]*?)\n\[/) || [])[1] || '';
 const readmeText = fs.readFileSync(path.join(repoRoot, 'README.md'), 'utf8');
 const indexText = fs.readFileSync(path.join(repoRoot, 'docs/repo-file-index.md'), 'utf8');
 
@@ -56,9 +57,8 @@ test('does not reject shared business, layout, HTTPDNS, or image delivery', () =
   assert.doesNotMatch(moduleText, /httpdns|httpdnsmultiapi|59\.82\.113\.10|103\.37\.152\./i);
   assert.doesNotMatch(moduleText, /(?:DOMAIN|hostname =).*p\d\.meituan\.net/);
   assert.doesNotMatch(moduleText, /maplocatesdksnapshot|metrics-picture/);
-  assert.doesNotMatch(moduleText, /(?:DOMAIN|hostname =).*p\d\.meituan\.net/);
-  assert.doesNotMatch(moduleText, /\[Map Local\][\s\S]*gaea\\\.meituan\\\.com\\\/mapi\\\/usercenter/);
-  assert.doesNotMatch(moduleText, /\[Map Local\][\s\S]*group\\\/v1\\\/recommend\\\/unity\\\/recommends/);
+  assert.doesNotMatch(mapLocalText, /gaea\\\.meituan\\\.com\\\/mapi\\\/usercenter/);
+  assert.doesNotMatch(mapLocalText, /group\\\/v1\\\/recommend\\\/unity\\\/recommends/);
   assert.doesNotMatch(moduleText, /horn_ios\\\/mergeRequest[^\n]*data-type=(?:text|json)/);
 });
 

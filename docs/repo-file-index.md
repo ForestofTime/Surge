@@ -82,10 +82,10 @@
 - 维护建议：只增加 HAR 证实的路径与字段。
 
 ### `JS/MeituanAds.js`
-- 作用：关闭最新 HAR 确认的两个美团营销推送开关。
+- 作用：关闭美团营销推送，并清理购物车与个人页推荐商品流。
 - 适用客户端/APP：美团 App。
 - 依赖关系：被 `Module/MeituanAds.sgmodule` 引用。
-- 维护建议：保留 Horn 内其他业务与推送配置。
+- 维护建议：仅修改已确认的开关、推荐数组和个人页推荐区块。
 
 ### `JS/GoofishAds.js`
 - 作用：清理闲鱼 HTTPDNS 绕过和已确认的响应广告字段。
@@ -196,7 +196,7 @@
 - 依赖关系：本地脚本 `JS/ChinaMobileAds.js`。
 
 ### `Module/MeituanAds.sgmodule`
-- 作用：清理美团开屏、品牌素材、启动推荐和营销推送。
+- 作用：清理美团开屏、营销素材、购物车与个人页推荐。
 - 适用客户端/APP：Surge iOS/Mac；APP 为美团。
 - 类型：Rule + Map Local + Script + MITM。
 - 依赖关系：本地脚本 `JS/MeituanAds.js`。

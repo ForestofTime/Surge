@@ -1,5 +1,5 @@
 #!name=美团去广告
-#!desc=清理美团开屏、品牌素材、启动推荐和营销推送。v1
+#!desc=清理美团开屏、营销素材、购物车与个人页推荐。v2
 #!author=MeChenCC / fmz200 / ForestofTime Surge 原生整理
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
@@ -27,8 +27,10 @@ DOMAIN-SUFFIX,dreport.meituan.net,REJECT
 ^https?:\/\/s3plus\.meituan\.net\/v1\/mss_28529f45d4404eee93c6fa2279ce2ca0\/(?:brandcpt-vedio|waimai-alita)\/[^?]+\.zip(?:\?.*)?$ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 [Script]
-# 最新 HAR 仅确认这两个营销推送开关，其他 Horn 业务配置原样保留。
-美团-营销推送 = type=http-response,pattern=^https:\/\/h\.meituan\.com\/horn_ios\/mergeRequest(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=1,requires-body=true,max-size=1048576,timeout=10,engine=jsc
+# 精确修改广告字段与推荐数组，其他页面业务字段原样保留。
+美团-营销推送 = type=http-response,pattern=^https:\/\/h\.meituan\.com\/horn_ios\/mergeRequest(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=2,requires-body=true,max-size=1048576,timeout=10,engine=jsc
+美团-购物车推荐 = type=http-response,pattern=^https:\/\/apimobile\.meituan\.com\/group\/v1\/recommend\/unity\/recommends(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=2,requires-body=true,max-size=1048576,timeout=10,engine=jsc
+美团-个人页推荐 = type=http-response,pattern=^https?:\/\/gaea\.meituan\.com\/mapi\/usercenter(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=2,requires-body=true,max-size=1048576,timeout=10,engine=jsc
 
 [MITM]
-hostname = %APPEND% wmapi.meituan.com, apimobile.meituan.com, s3plus.meituan.net, flowplus.meituan.net, img.meituan.net, h.meituan.com
+hostname = %APPEND% wmapi.meituan.com, apimobile.meituan.com, s3plus.meituan.net, flowplus.meituan.net, img.meituan.net, h.meituan.com, gaea.meituan.com
