@@ -44,6 +44,7 @@ test('publishes a repository-native Baidu Netdisk module without ScriptHub depen
 });
 
 test('ports every supplied Baidu endpoint with explicit native response semantics', () => {
+  const normalized = baiduModule.replaceAll('\\/', '/');
   for (const endpoint of [
     '/api/getconfig',
     '/membership/(?:proxy\\/)?guide',
@@ -59,9 +60,9 @@ test('ports every supplied Baidu endpoint with explicit native response semantic
     '/membership/user\\?method=gamecenter',
     'afd\\.baidu\\.com/afd/entry',
   ]) {
-    assert.match(baiduModule, new RegExp(endpoint), endpoint);
+    assert.ok(normalized.includes(endpoint.replaceAll('\\/', '/')), endpoint);
   }
-  assert.match(baiduModule, /http-response-jq .*\/api\\\/taskscore\\\/tasklist .*'\.result\.list=\[\]'/);
+  assert.match(normalized, /^http-response-jq .*\/api\/taskscore\/tasklist.* '\.result\.list=\[\]'$/m);
   assert.match(baiduModule, /hostname = %APPEND% .*pan\.baidu\.com.*afd\.baidu\.com.*zhangyuyidong\.cn/);
 });
 
@@ -87,14 +88,14 @@ test('removes only Baidu homepage ad cards and preserves sibling business data',
 });
 
 test('passes malformed and unrelated Baidu responses through', () => {
-  assert.deepEqual(runBaiduScript({
+  assert.equal(JSON.stringify(runBaiduScript({
     url: 'https://pan.baidu.com/feed/cardinfos',
     body: '{broken',
-  }), {});
-  assert.deepEqual(runBaiduScript({
+  })), '{}');
+  assert.equal(JSON.stringify(runBaiduScript({
     url: 'https://pan.baidu.com/api/list',
     body: JSON.stringify({ data: { cards: [1] } }),
-  }), {});
+  })), '{}');
 });
 
 test('publishes a native CaoCao module covering the supplied rule families', () => {
@@ -102,6 +103,7 @@ test('publishes a native CaoCao module covering the supplied rule families', () 
   assert.match(caocaoModule, /^#!name=曹操出行去广告$/m);
   assert.match(caocaoModule, /^#!desc=.*资源更新.*v1$/m);
   assert.match(caocaoModule, /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/CaoCaoTravel\.sgmodule$/m);
+  const normalized = caocaoModule.replaceAll('\\/', '/');
   for (const fragment of [
     'advert-bss',
     'queryBpsAggregation',
@@ -119,10 +121,12 @@ test('publishes a native CaoCao module covering the supplied rule families', () 
     'cmall-core/home',
     'querySecTipsResource',
   ]) {
-    assert.match(caocaoModule, new RegExp(fragment), fragment);
+    assert.ok(normalized.includes(fragment), fragment);
   }
   assert.doesNotMatch(caocaoModule, /\]\(https?:\/\//, 'Markdown links must not leak into Surge rules');
   assert.doesNotMatch(caocaoModule, /script-path|script\.hub/);
+  assert.match(caocaoModule, /hot-patch-service\\\/\.\*\)\$/);
+  assert.match(caocaoModule, /advert\\\/picture\.\*\$/);
   assert.match(caocaoModule, /hostname = %APPEND% .*cap\.caocaokeji\.cn.*notice\.caocaokeji\.cn/);
 });
 

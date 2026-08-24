@@ -1,5 +1,5 @@
 #!name=Flush DNS
-#!desc=快速清除Surge的DNS缓存
+#!desc=清理 Surge DNS 缓存。v2
 #!category=Pannel
 #!system=ios
 # 更新日期：2022.08.24

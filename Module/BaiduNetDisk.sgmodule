@@ -1,0 +1,34 @@
+#!name=百度网盘去广告
+#!desc=清理百度网盘任务、活动、推荐和首页广告卡片。v1
+#!author=ddgksf2013 / ForestofTime Surge 原生整理
+#!category=AdBlock
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/BaiduNetDisk.sgmodule
+
+[Body Rewrite]
+http-response-jq ^https:\/\/pan\.baidu\.com\/api\/taskscore\/tasklist(?:\?|$) '.result.list=[]'
+
+[Map Local]
+# 返回成功空 JSON，避免客户端在连接失败后复用旧缓存。
+^https:\/\/pan\.baidu\.com\/api\/getconfig(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/pan\.baidu\.com\/api\/getsyscfg(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/pan\.baidu\.com\/recommend\/shortseries\/list(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/pan\.baidu\.com\/membership\/user\?method=gamecenter(?:&|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/afd\.baidu\.com\/afd\/entry(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+# 原转换源对下列专用营销接口返回成功空正文。
+^https:\/\/pan\.baidu\.com\/membership\/(?:proxy\/)?guide(?:\?|$) data-type=text data=" " status-code=200
+^https:\/\/pan\.baidu\.com\/act\/v\d+\/(?:bchannel|welfare)\/list(?:\?|$) data-type=text data=" " status-code=200
+^https:\/\/pan\.baidu\.com\/pcs\/ad(?:\?|$) data-type=text data=" " status-code=200
+^https:\/\/pan\.baidu\.com\/act\/api\/activityentry(?:\?|$) data-type=text data=" " status-code=200
+^https:\/\/pan\.baidu\.com\/feed\/hotlist(?:\?|$) data-type=text data=" " status-code=200
+^https:\/\/(?:[a-z0-9-]+\.)*zhangyuyidong\.cn\/api\/zysdk(?:\?|$) data-type=text data=" " status-code=200
+^https:\/\/pan\.baidu\.com\/queryintent\/queryhint(?:\?|$) data-type=text data=" " status-code=200
+^https:\/\/pan\.baidu\.com\/coins\/center\/notice(?:\?|$) data-type=text data=" " status-code=200
+
+[Script]
+# 只清空首页广告卡片数组，保留文件推荐、导航和请求标识。
+百度网盘-首页广告卡片 = type=http-response, pattern=^https:\/\/pan\.baidu\.com\/feed\/cardinfos(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/BaiduNetDiskAds.js?v=1, requires-body=true, max-size=1048576, timeout=10
+
+[MITM]
+hostname = %APPEND% pan.baidu.com, afd.baidu.com, *.zhangyuyidong.cn

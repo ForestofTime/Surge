@@ -1,5 +1,5 @@
 #!name=闲鱼去广告
-#!desc=原生移植 11 条响应净化、2 条广告拒绝与闲鱼专属 HTTPDNS 清理。v1
+#!desc=清理闲鱼广告接口、页面广告字段和专属 HTTPDNS。v1
 #!author=ddgksf2013 / ForestofTime Surge 原生转换
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge

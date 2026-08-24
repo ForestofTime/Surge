@@ -80,7 +80,7 @@ function parseBase64Json(value) {
 
 test('declares a narrowly scoped v10 mini-program module with unique script names', () => {
   assert.match(moduleText, /^#!name=菜鸟淘宝小程序去广告$/m);
-  assert.match(moduleText, /^#!desc=.*HTTPDNS.*成功空响应.*展示结构.*v10$/m);
+  assert.match(moduleText, /^#!desc=.*HTTPDNS.*保留包裹和取寄件.*v10$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/CainiaoMiniProgram\.sgmodule$/m

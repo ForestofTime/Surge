@@ -23,7 +23,7 @@ function sectionLines(text, sectionName) {
 test('publishes a narrowly scoped native JD Finance splash module', () => {
   assert.notEqual(moduleText, '', 'Module/JDFinance.sgmodule must exist');
   assert.match(moduleText, /^#!name=京东金融去开屏$/m);
-  assert.match(moduleText, /^#!desc=.*开屏配置接口.*v1$/m);
+  assert.match(moduleText, /^#!desc=.*开屏配置.*保留页面与金融业务.*v1$/m);
   assert.match(moduleText, /^#!category=AdBlock$/m);
   assert.match(moduleText, /^#!homepage=https:\/\/github\.com\/ForestofTime\/Surge$/m);
   assert.match(
@@ -59,10 +59,10 @@ test('does not block shared image hosts, homepage layout, navigation, or finance
 test('README publishes the JD Finance module with a one-click import', () => {
   assert.match(
     readmeText,
-    /`Module\/JDFinance\.sgmodule` \| AdBlock \| 京东金融仅去开屏/
+    /`Module\/JDFinance\.sgmodule` \| 京东金融去开屏 \| AdBlock \| 仅清空京东金融开屏配置/
   );
   assert.match(
     readmeText,
-    /surge\/install-module\?url=https%3A%2F%2Fraw\.githubusercontent\.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FJDFinance\.sgmodule/
+    /surge:\/\/\/install-module\?url=https%3A%2F%2Fraw\.githubusercontent\.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FJDFinance\.sgmodule/
   );
 });

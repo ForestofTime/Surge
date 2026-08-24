@@ -47,7 +47,7 @@ function runScript(txcode, body, argument = {}) {
 
 test('declares a parameterised v1 CCB Life module with splash enabled only', () => {
   assert.match(moduleText, /^#!name=建行生活去广告$/m);
-  assert.match(moduleText, /^#!desc=.*默认仅屏蔽开屏.*v1$/m);
+  assert.match(moduleText, /^#!desc=.*默认清理建行生活开屏.*按参数启用页面广告过滤.*v1$/m);
   assert.match(
     moduleText,
     /^#!arguments = splash:true,home:false,life:false,finance:false,profile:false,popup:false,recommendation:false,icon_skin:false,newcomer:false$/m

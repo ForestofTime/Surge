@@ -182,7 +182,7 @@ test('passes malformed, unrelated, and no-op responses through unchanged', () =>
 test('README publishes the module with the official Surge one-click import', () => {
   assert.match(
     readmeText,
-    /`Module\/TaobaoAds\.sgmodule` \| AdBlock \| 淘宝开屏、PopLayer 与 Tanx 广告净化/
+    /`Module\/TaobaoAds\.sgmodule` \| 淘宝广告净化 \| AdBlock \| 清理淘宝开屏、PopLayer 和 Tanx 广告/
   );
   assert.match(
     readmeText,

@@ -70,7 +70,7 @@ function scriptNames(text) {
 
 test('declares a native v1 module with unique scripts and no ScriptHub jq dependency', () => {
   assert.match(moduleText, /^#!name=闲鱼去广告$/m);
-  assert.match(moduleText, /^#!desc=.*11.*HTTPDNS.*v1$/m);
+  assert.match(moduleText, /^#!desc=.*页面广告字段.*HTTPDNS.*v1$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/GoofishAds\.sgmodule$/m
@@ -309,6 +309,6 @@ test('documents the raw module and one-click Surge import', () => {
   assert.match(readmeText, /Module\/GoofishAds\.sgmodule/);
   assert.match(
     readmeText,
-    /api\.boxjs\.app\/surge\/install-module\?url=https%3A%2F%2Fraw\.githubusercontent\.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FGoofishAds\.sgmodule/
+    /surge:\/\/\/install-module\?url=https%3A%2F%2Fraw\.githubusercontent\.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FGoofishAds\.sgmodule/
   );
 });

@@ -1,5 +1,5 @@
 #!name=工银e生活微信小程序去开屏
-#!desc=会影响原生 App 的证书固定连接，请勿同时启用或常驻启用。v1
+#!desc=清理工银e生活微信小程序开屏；与原生 App 模块互斥。v1
 #!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge

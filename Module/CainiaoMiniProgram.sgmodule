@@ -1,5 +1,5 @@
 #!name=菜鸟淘宝小程序去广告
-#!desc=选择性清理菜鸟淘宝小程序 HTTPDNS，以成功空响应替代广告请求并按展示结构过滤促销内容。v10
+#!desc=清理菜鸟小程序广告与 HTTPDNS，保留包裹和取寄件。v10
 #!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge

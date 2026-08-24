@@ -1,5 +1,5 @@
 #!name=Telegram 优选 IP 覆盖
-#!desc=绕开已验证劣化的 Telegram DC2/DC5 IP，强制改用同 DC 备用地址。
+#!desc=将已验证的 Telegram DC2/DC5 劣化 IP 替换为同 DC 备用地址。
 #!author=ForestofTime
 #!category=System
 #!homepage=https://github.com/ForestofTime/Surge

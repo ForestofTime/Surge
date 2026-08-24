@@ -47,7 +47,7 @@ function runRequest(url, headers) {
 
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
-  assert.match(moduleText, /仅处理京东 App 开屏图片和启动媒体/);
+  assert.match(moduleText, /仅拦截京东开屏图片和启动媒体，保留页面业务/);
   assert.match(moduleText, /v15$/m);
   assert.match(
     moduleText,
@@ -325,7 +325,7 @@ test('the latest device HAR proves both splash paths and the image rule result',
 test('README describes the reduced scope and keeps the one-click import link', () => {
   assert.match(
     readmeText,
-    /`Module\/JingdongAds\.sgmodule` \| AdBlock \| 京东仅去开屏/
+    /`Module\/JingdongAds\.sgmodule` \| 京东去开屏 \| AdBlock \| 仅拦截京东开屏图片和启动媒体/
   );
   assert.match(
     readmeText,

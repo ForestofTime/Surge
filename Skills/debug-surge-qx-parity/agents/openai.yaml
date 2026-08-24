@@ -1,0 +1,4 @@
+interface:
+  display_name: "Surge HAR 模块修复"
+  short_description: "根据最新抓包证据修复广告失效、缓存回退、传输绕过和业务误杀"
+  default_prompt: "使用 $debug-surge-qx-parity 分析最新 HAR，最小修复 Surge 模块并完成回归验证。"

@@ -1,5 +1,5 @@
 #!name=京粉去广告
-#!desc=过滤京粉开屏响应及首页横幅广告，保留正常功能数据。v2
+#!desc=清理京粉开屏和首页横幅，保留业务数据。v2
 #!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge

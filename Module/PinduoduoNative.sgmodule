@@ -1,5 +1,5 @@
 #!name=拼多多去广告（QingRex 原生兼容）
-#!desc=首页、搜索与商品详情完全透传；清理聊天与个人中心商品广告，并接管 API 原始 TLS。v14
+#!desc=清理拼多多聊天与个人中心广告，透传首页、搜索和详情。v14
 #!author=ForestofTime
 #!category=AdBlock
 #!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/PinDuoDuo.png

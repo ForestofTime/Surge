@@ -1,6 +1,6 @@
 # 仓库文件索引（核心文件说明）
 
-本文覆盖当前仓库的核心源码、模块、规则和自动化入口，按目录分组说明用途、依赖与维护要点。新增模块和回归修复以根目录 `README.md` 的最近更新为准。
+本文覆盖仓库的核心源码、模块、规则、技能和自动化入口，按目录说明用途与依赖。完整模块清单以根目录 `README.md` 为准。
 
 ## 根目录
 
@@ -57,6 +57,11 @@
 - 依赖关系：可在主配置中作为 `RULE-SET` 引用。
 
 ## `JS/`
+
+### `JS/BaiduNetDiskAds.js`
+- 作用：清空百度网盘首页 `feed/cardinfos` 的 `data.cards`，保留同级业务字段。
+- 依赖关系：被 `Module/BaiduNetDisk.sgmodule` 引用。
+- 维护要点：只处理固定主机与路径，解析失败时透传。
 
 ### `JS/CCBLifeAdBlock.js`
 - 作用：建行生活参数化广告净化脚本，默认只处理开屏配置，可按参数扩展页面广告字段。
@@ -121,6 +126,15 @@
 
 ## `JS/tests/`
 
+### `JS/tests/baidupan-caocao-modules.test.js`
+- 作用：验证百度网盘和曹操出行原生模块的端点覆盖、脚本边界与依赖收敛。
+
+### `JS/tests/repository-metadata.test.js`
+- 作用：验证模块元数据、脚本任务名称和 README 索引完整性。
+
+### `JS/tests/surge-har-skill.test.js`
+- 作用：验证仓库内 HAR 修复技能文件及时间线工具的脱敏行为。
+
 ### `JS/tests/pinduoduo-native-module.test.js`
 - 作用：验证拼多多原生模块的 HTTPDNS、首页、商品流、搜索、刷新和广告字段边界。
 - 适用客户端/APP：Node 本地测试。
@@ -128,6 +142,16 @@
 - 维护建议：新增规则前先增加回归样本，确保功能数据保持透传。
 
 ## `Module/`
+
+### `Module/BaiduNetDisk.sgmodule`
+- 作用：原生清理百度网盘任务、活动、推荐和首页广告卡片。
+- 类型：Body Rewrite + Map Local + Script + MITM。
+- 依赖关系：本地脚本 `JS/BaiduNetDiskAds.js`。
+
+### `Module/CaoCaoTravel.sgmodule`
+- 作用：原生拦截曹操出行广告、营销、推荐和资源更新接口。
+- 类型：URL Rewrite + MITM。
+- 维护要点：地址推荐、资源更新和热修复接口范围较高，App 更新后需回归业务功能。
 
 ### `Module/Didichuxing.sgmodule`
 - 作用：滴滴出行首页、活动、推荐流和个人页净化模块。
@@ -277,6 +301,13 @@
   - `zZPiglet/Task`（欧可林签到）
   - `blackmatrix7/ios_rule_script`（贴吧签到）
   - `Voldeemort/Surge`（备用注释项）
+
+## `Skills/`
+
+### `Skills/debug-surge-qx-parity/`
+- 作用：按 HAR 证据诊断、修复、测试并发布 Surge 模块回归。
+- 工具：请求时间线、QX 与 Surge 端点对比。
+- 边界：自动化验证完成后，真机冷启动仍需单独验收。
 
 ## `modules/`
 

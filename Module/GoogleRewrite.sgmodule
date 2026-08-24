@@ -1,5 +1,5 @@
 #!name=Google Rewrite
-#!desc=Safari 谷歌搜索重定向（Surge）
+#!desc=将 iOS Safari 的 Google.cn 搜索重定向至 Google.com。
 #!category=System
 #!system=ios
 

@@ -1,0 +1,32 @@
+#!name=曹操出行去广告
+#!desc=拦截曹操出行广告、营销、推荐与资源更新接口。v1
+#!author=Sliverkiss / ForestofTime Surge 原生整理
+#!category=AdBlock
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CaoCaoTravel.sgmodule
+
+[URL Rewrite]
+# 开屏广告与上报
+^https?:\/\/cap\.caocaokeji\.cn\/advert-bss\/(?:pullAdvert|pullAdvertMaterial|reportAdvertData)(?:[/?].*)?$ - reject
+
+# 弹窗、策略、提示栏与消息红点
+^https?:\/\/cap\.caocaokeji\.cn\/bps\/(?:queryBpsAggregation|commonMsgBar|commonMsgBarDynamic|parallelMsgBar|countUnReadMsg)(?:[/?].*)?$ - reject
+^https?:\/\/cap\.caocaokeji\.cn\/bps\/msgBarAgg\/2\.0(?:\?.*)?$ - reject
+^https?:\/\/notice\.caocaokeji\.cn\/notice-server\/getNotice(?:[/?].*)?$ - reject
+^https?:\/\/cap\.caocaokeji\.cn\/ab-gateway\/getBatchLabForApp(?:[/?].*)?$ - reject
+^https?:\/\/cap\.caocaokeji\.cn\/messCmp\/queryMessage(?:[/?].*)?$ - reject
+
+# 首页推荐与营销聚合
+^https?:\/\/cap\.caocaokeji\.cn\/bps\/(?:indexSuggestAddress|queryAddressIntegration)(?:[/?].*)?$ - reject
+^https?:\/\/mobile\.caocaokeji\.cn\/cap\/cmall-core\/home\/1\.0(?:\?.*)?$ - reject
+^https?:\/\/cap\.caocaokeji\.cn\/security-center\/querySecTipsResource\/2\.0(?:\?.*)?$ - reject
+
+# 资源更新、热修复与营销素材
+^https?:\/\/cap\.caocaokeji\.cn\/(?:resource-service\/resource.*|hot-patch-service\/.*)$ - reject
+^https?:\/\/ccimgs\.oss\.aliyuncs\.com\/\/advert\/picture.*$ - reject
+^https?:\/\/cdncc-frontend\.caocaokeji\.cn\/2\/(?:specialCarTeam\/onLine|demand-center-server\/images\/qipao\.gif)(?:\?.*)?$ - reject
+^https?:\/\/ccimgs\.oss-cn-hangzhou\.aliyuncs\.com\/customer\/20230517\/64646b8d7c01910053a944ad.*$ - reject
+^https?:\/\/cospimgs-cdn\.caocaokeji\.cn\/advertFile.*$ - reject
+
+[MITM]
+hostname = %APPEND% cap.caocaokeji.cn, notice.caocaokeji.cn, mobile.caocaokeji.cn, ccimgs.oss.aliyuncs.com, ccimgs.oss-cn-hangzhou.aliyuncs.com, cdncc-frontend.caocaokeji.cn, cospimgs-cdn.caocaokeji.cn

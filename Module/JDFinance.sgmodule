@@ -1,5 +1,5 @@
 #!name=京东金融去开屏
-#!desc=仅拦截京东金融 App 的开屏配置接口，不修改首页、导航或金融业务接口。v1
+#!desc=仅清空京东金融开屏配置，保留页面与金融业务。v1
 #!author=zirawell / 奶思 / ForestofTime Surge 原生整理
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge

@@ -1,5 +1,5 @@
 #!name=工银e生活 App 去开屏广告
-#!desc=自动学习全屏开屏素材并在请求前跳过，不解密业务域。v7
+#!desc=学习工银e生活全屏开屏素材，后续请求直接跳过。v7
 #!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge

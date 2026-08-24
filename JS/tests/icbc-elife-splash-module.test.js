@@ -85,7 +85,7 @@ function makeJpeg(width, height) {
 
 test('declares a v7 App-safe module at the existing subscription URL', () => {
   assert.match(appModuleText, /^#!name=工银e生活 App 去开屏广告$/m);
-  assert.match(appModuleText, /^#!desc=.*不解密业务域.*v7$/m);
+  assert.match(appModuleText, /^#!desc=.*学习工银e生活全屏开屏素材.*后续请求直接跳过.*v7$/m);
   assert.match(
     appModuleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/ICBCLife\.sgmodule$/m
@@ -117,7 +117,7 @@ test('the App module learns splash canvases and short-circuits known requests on
 
 test('moves the exact business-domain MITM into an explicitly separate mini-program module', () => {
   assert.match(miniModuleText, /^#!name=工银e生活微信小程序去开屏$/m);
-  assert.match(miniModuleText, /^#!desc=.*会影响原生 App.*请勿同时启用.*v1$/m);
+  assert.match(miniModuleText, /^#!desc=.*微信小程序开屏.*与原生 App 模块互斥.*v1$/m);
   assert.match(
     miniModuleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/ICBCLifeMiniProgram\.sgmodule$/m

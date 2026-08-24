@@ -1,5 +1,5 @@
 #!name=超鹿运动去开屏广告
-#!desc=仅清空超鹿开屏配置接口 data.splashes，不依赖广告素材链接。v1
+#!desc=清空超鹿运动开屏配置的 data.splashes。v1
 #!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge

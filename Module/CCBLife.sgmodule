@@ -1,5 +1,5 @@
 #!name=建行生活去广告
-#!desc=参数化净化开屏及各标签页广告，默认仅屏蔽开屏。v1
+#!desc=默认清理建行生活开屏，可按参数启用页面广告过滤。v1
 #!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge

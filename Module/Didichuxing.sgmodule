@@ -1,5 +1,5 @@
 #!name=滴滴出行去广告
-#!desc=合并 QX 首页净化与 Surge 个人页净化，保留核心出行功能。v1
+#!desc=清理滴滴首页、推荐流、钱包营销和个人页广告。v1
 #!author=QingRex / ZenmoFeiShi / ForestofTime
 #!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/DiDi.png
 #!category=AdBlock

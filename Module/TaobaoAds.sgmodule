@@ -1,5 +1,5 @@
 #!name=淘宝广告净化
-#!desc=净化淘宝开屏、PopLayer 与 Tanx 广告，保留首页、商品、支付和普通图片。v1
+#!desc=清理淘宝开屏、PopLayer 和 Tanx 广告，保留商品业务。v1
 #!author=RuCu6 / 树先生 / zirawell / ForestofTime Surge 原生整理
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
