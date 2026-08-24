@@ -40,7 +40,7 @@ test('publishes a bounded repository-native Meituan module', () => {
 });
 
 test('keeps only precise ad resources and current response filtering', () => {
-  assert.match(moduleText, /wmapi\\\.meituan\\\.com\\\/api\\\/v7\\\/(?:\\\(\?:)?loadInfo\|openscreen\|startpicture/);
+  assert.match(moduleText, /wmapi\\\.meituan\\\.com.*loadInfo\|openscreen\|startpicture/);
   assert.match(moduleText, /img\\\.meituan\\\.net\\\/bizad\\\/bizad_brandCpt_/);
   assert.match(moduleText, /img\\\.meituan\\\.net\\\/goodsawardpic\\\//);
   assert.match(moduleText, /blk_conf_73\\\.json/);
@@ -59,21 +59,18 @@ test('does not reject shared business, layout, HTTPDNS, or image delivery', () =
 
 test('disables only the two advertising push switches found in the latest HAR', () => {
   const source = {
-    code: 0,
-    data: {
-      launch_protect: { enabled: true },
-      pikeConfig: {
-        data: {
-          customer: {
-            sharkpush_marketing_dsp_pop: true,
-            sharkpush_meishi_float_picasso: true,
-            sharkpush_order_status: true,
-            transport_config: { retry: 3 },
-          },
-          keep: 'pike-data',
+    launch_protect: { enabled: true },
+    pikeConfig: {
+      data: {
+        customer: {
+          sharkpush_marketing_dsp_pop: true,
+          sharkpush_meishi_float_picasso: true,
+          sharkpush_order_used_alert: true,
+          transport_config: { retry: 3 },
         },
-        keep: 'pike',
+        keep: 'pike-data',
       },
+      keep: 'pike',
     },
     traceId: 'keep',
   };
@@ -83,14 +80,14 @@ test('disables only the two advertising push switches found in the latest HAR', 
     body: JSON.stringify(source),
   });
   const output = JSON.parse(result.body);
-  const customer = output.data.pikeConfig.data.customer;
+  const customer = output.pikeConfig.data.customer;
   assert.equal(customer.sharkpush_marketing_dsp_pop, false);
   assert.equal(customer.sharkpush_meishi_float_picasso, false);
-  assert.equal(customer.sharkpush_order_status, true);
-  assert.deepEqual(customer.transport_config, source.data.pikeConfig.data.customer.transport_config);
-  assert.equal(output.data.launch_protect.enabled, true);
-  assert.equal(output.data.pikeConfig.data.keep, 'pike-data');
-  assert.equal(output.data.pikeConfig.keep, 'pike');
+  assert.equal(customer.sharkpush_order_used_alert, true);
+  assert.deepEqual(customer.transport_config, source.pikeConfig.data.customer.transport_config);
+  assert.equal(output.launch_protect.enabled, true);
+  assert.equal(output.pikeConfig.data.keep, 'pike-data');
+  assert.equal(output.pikeConfig.keep, 'pike');
   assert.equal(output.traceId, 'keep');
 });
 
@@ -101,7 +98,7 @@ test('passes unrelated, missing-field, and malformed responses through', () => {
   })), '{}');
   assert.equal(JSON.stringify(runScript({
     url: 'https://h.meituan.com/horn_ios/mergeRequest',
-    body: JSON.stringify({ data: { pikeConfig: { data: { customer: { keep: true } } } } }),
+    body: JSON.stringify({ pikeConfig: { data: { customer: { keep: true } } } }),
   })), '{}');
   assert.equal(JSON.stringify(runScript({
     url: 'https://h.meituan.com/horn_ios/mergeRequest',

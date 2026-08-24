@@ -81,6 +81,12 @@
 - 依赖关系：被 `Module/ChinaMobile.sgmodule` 引用，使用 Surge WebView Web Crypto。
 - 维护建议：只增加 HAR 证实的路径与字段。
 
+### `JS/MeituanAds.js`
+- 作用：关闭最新 HAR 确认的两个美团营销推送开关。
+- 适用客户端/APP：美团 App。
+- 依赖关系：被 `Module/MeituanAds.sgmodule` 引用。
+- 维护建议：保留 Horn 内其他业务与推送配置。
+
 ### `JS/GoofishAds.js`
 - 作用：清理闲鱼 HTTPDNS 绕过和已确认的响应广告字段。
 - 适用客户端/APP：闲鱼。
@@ -138,6 +144,9 @@
 ### `JS/tests/china-mobile-module.test.js`
 - 作用：验证中国移动加密响应、字段清理、异常透传与模块边界。
 
+### `JS/tests/meituan-ads-module.test.js`
+- 作用：验证美团素材路径、营销推送字段和业务透传边界。
+
 ### `JS/tests/repository-metadata.test.js`
 - 作用：验证模块元数据、脚本任务名称和 README 索引完整性。
 
@@ -185,6 +194,13 @@
 - 适用客户端/APP：Surge iOS/Mac；APP 为中国移动。
 - 类型：Map Local + Script + MITM。
 - 依赖关系：本地脚本 `JS/ChinaMobileAds.js`。
+
+### `Module/MeituanAds.sgmodule`
+- 作用：清理美团开屏、品牌素材、启动推荐和营销推送。
+- 适用客户端/APP：Surge iOS/Mac；APP 为美团。
+- 类型：Rule + Map Local + Script + MITM。
+- 依赖关系：本地脚本 `JS/MeituanAds.js`。
+- 维护建议：禁止扩大到 `d.meituan.net`、HTTPDNS、共享商品图片和全部 Horn 配置。
 
 ### `Module/GoofishAds.sgmodule`
 - 作用：闲鱼 HTTPDNS 和响应广告字段清理。

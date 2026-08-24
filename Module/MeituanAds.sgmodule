@@ -1,0 +1,34 @@
+#!name=美团去广告
+#!desc=清理美团开屏、品牌素材、启动推荐和营销推送。v1
+#!author=MeChenCC / fmz200 / ForestofTime Surge 原生整理
+#!category=AdBlock
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/MeituanAds.sgmodule
+
+[Rule]
+# 仅拒绝广告与上报专用域名。共享业务域名 d.meituan.net 保持直通。
+DOMAIN-SUFFIX,analytics.meituan.net,REJECT
+DOMAIN-SUFFIX,report.meituan.com,REJECT
+DOMAIN-SUFFIX,wmlog.meituan.com,REJECT
+DOMAIN-SUFFIX,ad.e.waimai.sankuai.com,REJECT
+DOMAIN-SUFFIX,mads.meituan.com,REJECT
+DOMAIN-SUFFIX,dreport.meituan.net,REJECT
+
+[Map Local]
+# 开屏配置与启动推荐返回成功空 JSON，避免连接失败触发旧缓存。
+^https?:\/\/wmapi\.meituan\.com\/api\/v7\/(?:loadInfo|openscreen|startpicture)(?:\?.*)?$ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/apimobile\.meituan\.com\/group\/v4\/recommend\/home\/startPageChannel(?:\?.*)?$ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+# 只处理社区方案中名称明确的广告素材，不拦截 p0/p1 等共享商品图片域名。
+^https?:\/\/(?:s3plus|flowplus)\.meituan\.net\/v\d+\/\w+\/linglong\/\w+\.(?:gif|jpe?g|mp4)(?:\?.*)?$ data-type=tiny-gif status-code=200
+^https?:\/\/img\.meituan\.net\/bizad\/bizad_brandCpt_\d+\.jpg(?:\?.*)?$ data-type=tiny-gif status-code=200
+^https?:\/\/img\.meituan\.net\/goodsawardpic\/[a-f0-9]+\.png\.webp(?:\?.*)?$ data-type=tiny-gif status-code=200
+^https?:\/\/s3plus\.meituan\.net\/ocean-blk-index\/index\/blk_conf_73\.json(?:\?.*)?$ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/s3plus\.meituan\.net\/v1\/mss_28529f45d4404eee93c6fa2279ce2ca0\/(?:brandcpt-vedio|waimai-alita)\/[^?]+\.zip(?:\?.*)?$ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+[Script]
+# 最新 HAR 仅确认这两个营销推送开关，其他 Horn 业务配置原样保留。
+美团-营销推送 = type=http-response,pattern=^https:\/\/h\.meituan\.com\/horn_ios\/mergeRequest(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=1,requires-body=true,max-size=1048576,timeout=10,engine=jsc
+
+[MITM]
+hostname = %APPEND% wmapi.meituan.com, apimobile.meituan.com, s3plus.meituan.net, flowplus.meituan.net, img.meituan.net, h.meituan.com
