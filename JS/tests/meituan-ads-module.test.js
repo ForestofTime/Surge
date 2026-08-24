@@ -7,9 +7,11 @@ const vm = require('node:vm');
 const repoRoot = path.resolve(__dirname, '../..');
 const modulePath = path.join(repoRoot, 'Module/MeituanAds.sgmodule');
 const scriptPath = path.join(repoRoot, 'JS/MeituanAds.js');
+const hornRequestScriptPath = path.join(repoRoot, 'JS/MeituanHornRequest.js');
 const readIfPresent = (file) => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '');
 const moduleText = readIfPresent(modulePath);
 const scriptText = readIfPresent(scriptPath);
+const hornRequestScriptText = readIfPresent(hornRequestScriptPath);
 const mapLocalText = (moduleText.match(/\[Map Local\]([\s\S]*?)\n\[/) || [])[1] || '';
 const abTestLine = mapLocalText.split('\n').find((line) => line.includes('recommend\\/unity\\/abtest')) || '';
 const cartRecommendLine = mapLocalText.split('\n').find((line) => line.includes('recommend\\/unity\\/recommends')) || '';
@@ -33,7 +35,7 @@ function runScript({ url, body }) {
 
 function runRequestScript({ url, body, method = 'POST', headers = {} }) {
   let result;
-  vm.runInNewContext(scriptText, {
+  vm.runInNewContext(hornRequestScriptText, {
     $request: { url, body, method, headers },
     $done(value) {
       result = value;
@@ -47,11 +49,13 @@ function runRequestScript({ url, body, method = 'POST', headers = {} }) {
 test('publishes a bounded repository-native Meituan module', () => {
   assert.ok(moduleText, 'Module/MeituanAds.sgmodule must exist');
   assert.ok(scriptText, 'JS/MeituanAds.js must exist');
+  assert.ok(hornRequestScriptText, 'JS/MeituanHornRequest.js must exist');
   assert.match(moduleText, /^#!name=美团去广告$/m);
-  assert.match(moduleText, /^#!desc=.*v5$/m);
+  assert.match(moduleText, /^#!desc=.*v6$/m);
   assert.match(moduleText, /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/MeituanAds\.sgmodule$/m);
   assert.ok(moduleText.includes('type=http-request,pattern=^https:\\/\\/h\\.meituan\\.com\\/horn_ios\\/mergeRequest'));
-  assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/MeituanAds\.js\?v=5/);
+  assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/MeituanHornRequest\.js\?v=6/);
+  assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/MeituanAds\.js\?v=6/);
   assert.match(moduleText, /requires-body=true/);
   assert.match(moduleText, /max-size=1048576/);
   assert.doesNotMatch(moduleText, /script\.hub|script-path=.*(?:MeChenCC|fmz200|blackmatrix7|zirawell)/i);
@@ -142,7 +146,7 @@ test('requests a fresh recommendation-platform Horn value without changing sibli
   assert.equal(output.recommend_platform_config.etag, '');
 });
 
-test('disables the MSC recommendation platform and its persisted cache via Horn', () => {
+test('blacklists only the HAR-confirmed personal-center scene and its persisted cache via Horn', () => {
   const source = {
     recommend_platform_config: {
       data: {
@@ -168,16 +172,30 @@ test('disables the MSC recommendation platform and its persisted cache via Horn'
   });
   const output = JSON.parse(result.body);
   const customer = output.recommend_platform_config.data.customer;
-  assert.equal(customer.enabled, false);
-  assert.equal(customer.cacheEnabled, false);
-  assert.equal(customer.feedbackEnabled, false);
-  assert.equal(customer.showCacheWhenRequestError, false);
-  assert.deepEqual(customer.blackList, ['keep-scene']);
-  assert.deepEqual(customer.cacheBlackList, ['keep-cache-scene']);
+  assert.equal(customer.enabled, true);
+  assert.equal(customer.cacheEnabled, true);
+  assert.equal(customer.feedbackEnabled, true);
+  assert.equal(customer.showCacheWhenRequestError, true);
+  assert.deepEqual(customer.blackList, ['keep-scene', 'personalcenter_2154']);
+  assert.deepEqual(customer.cacheBlackList, ['keep-cache-scene', 'personalcenter_2154']);
   assert.deepEqual(customer.showCacheWhenRequestErrorWhiteList, ['keep-white-scene']);
   assert.deepEqual(output.recommend_platform_config.data.horn, source.recommend_platform_config.data.horn);
   assert.equal(output.recommend_platform_config.etag, 'W/"keep-etag"');
   assert.deepEqual(output.unrelated_config, source.unrelated_config);
+});
+
+test('injects a complete scene blacklist when the latest HAR returns an empty Horn object', () => {
+  const result = runScript({
+    url: 'https://h.meituan.com/horn_ios/mergeRequest',
+    body: '{}',
+  });
+  const output = JSON.parse(result.body);
+  const target = output.recommend_platform_config;
+  assert.ok(target.data.horn, 'the injected Horn value needs a complete cache envelope');
+  assert.equal(target.data.customer.enabled, true);
+  assert.equal(target.data.customer.cacheEnabled, true);
+  assert.deepEqual(target.data.customer.blackList, ['personalcenter_2154']);
+  assert.deepEqual(target.data.customer.cacheBlackList, ['personalcenter_2154']);
 });
 
 test('removes only the personal-page cross recommendation area', () => {
@@ -248,10 +266,6 @@ test('passes unrelated, missing-field, and malformed responses through', () => {
   assert.equal(JSON.stringify(runScript({
     url: 'https://h.meituan.com/api/app-aggregation/request',
     body: JSON.stringify({ data: { keep: true } }),
-  })), '{}');
-  assert.equal(JSON.stringify(runScript({
-    url: 'https://h.meituan.com/horn_ios/mergeRequest',
-    body: JSON.stringify({ pikeConfig: { data: { customer: { keep: true } } } }),
   })), '{}');
   assert.equal(JSON.stringify(runScript({
     url: 'https://h.meituan.com/horn_ios/mergeRequest',
