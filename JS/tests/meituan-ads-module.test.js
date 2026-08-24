@@ -12,6 +12,8 @@ const moduleText = readIfPresent(modulePath);
 const scriptText = readIfPresent(scriptPath);
 const mapLocalText = (moduleText.match(/\[Map Local\]([\s\S]*?)\n\[/) || [])[1] || '';
 const abTestLine = mapLocalText.split('\n').find((line) => line.includes('recommend\\/unity\\/abtest')) || '';
+const cartRecommendLine = mapLocalText.split('\n').find((line) => line.includes('recommend\\/unity\\/recommends')) || '';
+const mineRecommendLine = mapLocalText.split('\n').find((line) => line.includes('lycoris\\/scene\\/personalcenter_2154')) || '';
 const readmeText = fs.readFileSync(path.join(repoRoot, 'README.md'), 'utf8');
 const indexText = fs.readFileSync(path.join(repoRoot, 'docs/repo-file-index.md'), 'utf8');
 
@@ -33,9 +35,9 @@ test('publishes a bounded repository-native Meituan module', () => {
   assert.ok(moduleText, 'Module/MeituanAds.sgmodule must exist');
   assert.ok(scriptText, 'JS/MeituanAds.js must exist');
   assert.match(moduleText, /^#!name=美团去广告$/m);
-  assert.match(moduleText, /^#!desc=.*v3$/m);
+  assert.match(moduleText, /^#!desc=.*v4$/m);
   assert.match(moduleText, /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/MeituanAds\.sgmodule$/m);
-  assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/MeituanAds\.js\?v=3/);
+  assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/MeituanAds\.js\?v=4/);
   assert.match(moduleText, /requires-body=true/);
   assert.match(moduleText, /max-size=1048576/);
   assert.doesNotMatch(moduleText, /script\.hub|script-path=.*(?:MeChenCC|fmz200|blackmatrix7|zirawell)/i);
@@ -50,6 +52,7 @@ test('keeps only precise ad resources and current response filtering', () => {
   assert.match(moduleText, /h\\\.meituan\\\.com\\\/horn_ios\\\/mergeRequest/);
   assert.match(moduleText, /gaea\\\.meituan\\\.com\\\/mapi\\\/usercenter/);
   assert.match(moduleText, /apimobile\\\.meituan\\\.com\\\/group\\\/v1\\\/recommend\\\/unity\\\/recommends/);
+  assert.match(moduleText, /feedguess\\\.meituan\\\.com\\\/lycoris\\\/scene\\\/personalcenter_2154/);
   assert.doesNotMatch(moduleText, /blk_conf_\\(?:d|d\+|\\d|\\d\+)/);
 });
 
@@ -59,58 +62,20 @@ test('does not reject shared business, layout, HTTPDNS, or image delivery', () =
   assert.doesNotMatch(moduleText, /(?:DOMAIN|hostname =).*p\d\.meituan\.net/);
   assert.doesNotMatch(moduleText, /maplocatesdksnapshot|metrics-picture/);
   assert.doesNotMatch(mapLocalText, /gaea\\\.meituan\\\.com\\\/mapi\\\/usercenter/);
-  assert.doesNotMatch(mapLocalText, /group\\\/v1\\\/recommend\\\/unity\\\/recommends/);
   assert.doesNotMatch(moduleText, /horn_ios\\\/mergeRequest[^\n]*data-type=(?:text|json)/);
   assert.doesNotMatch(moduleText, /shark-mt|force-http-engine-hosts|tcp-connection\s*=\s*true/i);
 });
 
-test('disables only the two latest HAR-confirmed cross-recommendation experiments', () => {
-  assert.ok(abTestLine, 'the exact recommendation AB endpoint must have an immediate local response');
-  assert.ok(abTestLine.startsWith('^https:\\/\\/apimobile\\.meituan\\.com\\/group\\/v1\\/recommend\\/unity\\/abtest'));
-  assert.match(abTestLine, /status-code=200/);
-  assert.match(abTestLine, /header="Content-Type:application\/json"/);
+test('returns successful empty data only for the two HAR-confirmed recommendation feeds', () => {
+  assert.equal(abTestLine, '', 'the unrequested AB endpoint must not be overridden');
 
-  const encodedData = abTestLine.match(/data="((?:\\.|[^"])*)"/);
-  assert.ok(encodedData, 'the local response must contain JSON data');
-  const response = JSON.parse(JSON.parse(`"${encodedData[1]}"`));
-  assert.deepEqual(response, {
-    status: 0,
-    data: {
-      hotel_order_city_scenery: 1,
-      jny_pay_city_hotel: 1,
-      waimai_order_coupon: 1,
-      daozong_deal_related: 1,
-      hotel_poi_nearby_scenery: 1,
-      jny_deal_more: 0,
-      jwy_deal_related: 0,
-      jny_poi_best: 1,
-      pay_popup: 0,
-      platform_collection_list: 1,
-      daocan_poi_nearby: 1,
-      maoyan_order_detail: 1,
-      jny_deal_related: 0,
-      jwy_deal_more: 0,
-      shopping_cart: 0,
-      platform_message_center: 1,
-      platform_personal_center: 0,
-      traffic_train_pay_cross: 0,
-      train_pay_cross: 0,
-      hotel_deal_related: 0,
-      traffic_pay_cross: 0,
-      daocan_deal_related: 1,
-      daozong_poi_nearby: 1,
-      traffic_train_order_life: 1,
-      jwy_pay_coupon: 0,
-      hotel_poi_nearby_hotel: 0,
-      platform_order_list: 1,
-      hotel_poi_combine: 0,
-      jwy_poi_nearby: 0,
-      daozong_deal_selected: 0,
-      jwy_pay_more: 0,
-      train_order_life: 0,
-      traffic_order_life: 0,
-    },
-  });
+  assert.ok(cartRecommendLine, 'shopping-cart recommendations need an immediate local response');
+  assert.match(cartRecommendLine, /status-code=200/);
+  assert.match(cartRecommendLine, /data="\{\\"status\\":0,\\"data\\":\[\]\}"/);
+
+  assert.ok(mineRecommendLine, 'the personal-center MSC recommendation scene needs an immediate local response');
+  assert.match(mineRecommendLine, /status-code=200/);
+  assert.match(mineRecommendLine, /data="\{\\"code\\":0,\\"status\\":0,\\"data\\":\[\],\\"homeData\\":\[\],\\"isEnd\\":true,\\"hasMore\\":false,\\"extensionRequestOptions\\":\{\}\}"/);
 });
 
 test('disables only the two advertising push switches found in the latest HAR', () => {
