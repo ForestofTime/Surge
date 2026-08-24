@@ -41,6 +41,7 @@ function runRequestScript({ url, body, method = 'POST', headers = {} }) {
       result = value;
     },
     URL,
+    Uint8Array,
     console: { log() {} },
   });
   return result;
@@ -51,12 +52,13 @@ test('publishes a bounded repository-native Meituan module', () => {
   assert.ok(scriptText, 'JS/MeituanAds.js must exist');
   assert.ok(hornRequestScriptText, 'JS/MeituanHornRequest.js must exist');
   assert.match(moduleText, /^#!name=美团去广告$/m);
-  assert.match(moduleText, /^#!desc=.*v7$/m);
+  assert.match(moduleText, /^#!desc=.*v8$/m);
   assert.match(moduleText, /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/MeituanAds\.sgmodule$/m);
   assert.ok(moduleText.includes('type=http-request,pattern=^https:\\/\\/h\\.meituan\\.com\\/horn_ios\\/mergeRequest'));
-  assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/MeituanHornRequest\.js\?v=7/);
-  assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/MeituanAds\.js\?v=7/);
+  assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/MeituanHornRequest\.js\?v=8/);
+  assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/MeituanAds\.js\?v=8/);
   assert.match(moduleText, /requires-body=true/);
+  assert.match(moduleText, /美团-推荐平台配置请求[^\n]*binary-body-mode=true/);
   assert.match(moduleText, /max-size=1048576/);
   assert.doesNotMatch(moduleText, /script\.hub|script-path=.*(?:MeChenCC|fmz200|blackmatrix7|zirawell)/i);
 });
@@ -150,10 +152,36 @@ test('requests a fresh recommendation-platform Horn value without changing sibli
   assert.deepEqual(output.launch_protect, source.launch_protect);
   assert.equal(output.recommend_platform_config.query, '');
   assert.equal(output.recommend_platform_config.etag, '');
+  assert.equal(output.user_config.query, '');
+  assert.equal(output.user_config.etag, '');
   assert.equal(output.unicode_keep, source.unicode_keep);
   assert.equal(result.headers['Content-Length'], String(Buffer.byteLength(result.body)));
   assert.equal(result.headers['Content-Type'], 'application/json; charset=utf-8');
   assert.equal(result.headers['X-Keep'], 'keep');
+});
+
+test('rewrites the real Horn request as UTF-8 bytes in Surge binary body mode', () => {
+  const source = {
+    launch_protect: { query: '', etag: 'W/"keep"' },
+    unicode_keep: '美团请求体',
+  };
+  const body = new TextEncoder().encode(JSON.stringify(source));
+  const result = runRequestScript({
+    url: 'https://h.meituan.com/horn_ios/mergeRequest',
+    body,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Content-Length': String(body.byteLength),
+    },
+  });
+
+  assert.ok(result.body instanceof Uint8Array);
+  const output = JSON.parse(new TextDecoder().decode(result.body));
+  assert.deepEqual(output.launch_protect, source.launch_protect);
+  assert.equal(output.unicode_keep, source.unicode_keep);
+  assert.deepEqual(output.recommend_platform_config, { query: '', etag: '' });
+  assert.deepEqual(output.user_config, { query: '', etag: '' });
+  assert.equal(result.headers['Content-Length'], String(result.body.byteLength));
 });
 
 test('blacklists only the HAR-confirmed personal-center scene and its persisted cache via Horn', () => {
@@ -206,6 +234,37 @@ test('injects a complete scene blacklist when the latest HAR returns an empty Ho
   assert.equal(target.data.customer.cacheEnabled, true);
   assert.deepEqual(target.data.customer.blackList, ['personalcenter_2154']);
   assert.deepEqual(target.data.customer.cacheBlackList, ['personalcenter_2154']);
+  assert.equal(output.user_config.data.customer.showRecommendSwitch, false);
+  assert.equal(output.user_config.data.customer.forceOpenRecommendSwitch, false);
+});
+
+test('turns off the native personal-page recommendation switch and preserves user config siblings', () => {
+  const source = {
+    user_config: {
+      data: {
+        customer: {
+          showRecommendSwitch: true,
+          forceOpenRecommendSwitch: true,
+          showClearHistorySwitch: true,
+          marketingFullLayerShowInterval: 24,
+        },
+        horn: { version: 515595 },
+      },
+      etag: 'W/"keep-user-etag"',
+    },
+  };
+  const result = runScript({
+    url: 'https://h.meituan.com/horn_ios/mergeRequest',
+    body: JSON.stringify(source),
+  });
+  const output = JSON.parse(result.body);
+  const customer = output.user_config.data.customer;
+  assert.equal(customer.showRecommendSwitch, false);
+  assert.equal(customer.forceOpenRecommendSwitch, false);
+  assert.equal(customer.showClearHistorySwitch, true);
+  assert.equal(customer.marketingFullLayerShowInterval, 24);
+  assert.deepEqual(output.user_config.data.horn, source.user_config.data.horn);
+  assert.equal(output.user_config.etag, 'W/"keep-user-etag"');
 });
 
 test('removes only the personal-page cross recommendation area', () => {

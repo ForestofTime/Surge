@@ -1,5 +1,5 @@
 #!name=美团去广告
-#!desc=清理美团开屏、营销素材、购物车与个人页推荐。v7
+#!desc=清理美团开屏、营销素材、购物车与个人页推荐。v8
 #!author=MeChenCC / fmz200 / ForestofTime Surge 原生整理
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
@@ -31,11 +31,11 @@ DOMAIN-SUFFIX,dreport.meituan.net,REJECT
 ^https?:\/\/s3plus\.meituan\.net\/v1\/mss_28529f45d4404eee93c6fa2279ce2ca0\/(?:brandcpt-vedio|waimai-alita)\/[^?]+\.zip(?:\?.*)?$ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 [Script]
-# 主动请求 MSC 推荐配置；空响应也注入个人页场景黑名单，停止缓存与网络推荐渲染。
-美团-推荐平台配置请求 = type=http-request,pattern=^https:\/\/h\.meituan\.com\/horn_ios\/mergeRequest(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanHornRequest.js?v=7,requires-body=true,max-size=1048576,timeout=10,engine=jsc
-美团-营销与推荐配置 = type=http-response,pattern=^https:\/\/h\.meituan\.com\/horn_ios\/mergeRequest(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=7,requires-body=true,max-size=1048576,timeout=10,engine=jsc
-美团-购物车推荐 = type=http-response,pattern=^https:\/\/apimobile\.meituan\.com\/group\/v1\/recommend\/unity\/recommends(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=7,requires-body=true,max-size=1048576,timeout=10,engine=jsc
-美团-个人页推荐 = type=http-response,pattern=^https?:\/\/gaea\.meituan\.com\/mapi\/usercenter(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=7,requires-body=true,max-size=1048576,timeout=10,engine=jsc
+# 用二进制请求体主动拉取推荐与个人页开关，响应关闭场景缓存和原生推荐开关。
+美团-推荐平台配置请求 = type=http-request,pattern=^https:\/\/h\.meituan\.com\/horn_ios\/mergeRequest(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanHornRequest.js?v=8,requires-body=true,binary-body-mode=true,max-size=1048576,timeout=10,engine=jsc
+美团-营销与推荐配置 = type=http-response,pattern=^https:\/\/h\.meituan\.com\/horn_ios\/mergeRequest(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=8,requires-body=true,max-size=1048576,timeout=10,engine=jsc
+美团-购物车推荐 = type=http-response,pattern=^https:\/\/apimobile\.meituan\.com\/group\/v1\/recommend\/unity\/recommends(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=8,requires-body=true,max-size=1048576,timeout=10,engine=jsc
+美团-个人页推荐 = type=http-response,pattern=^https?:\/\/gaea\.meituan\.com\/mapi\/usercenter(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=8,requires-body=true,max-size=1048576,timeout=10,engine=jsc
 
 [MITM]
 hostname = %APPEND% wmapi.meituan.com, apimobile.meituan.com, feedguess.meituan.com, s3plus.meituan.net, flowplus.meituan.net, img.meituan.net, h.meituan.com, gaea.meituan.com

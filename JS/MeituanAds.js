@@ -29,6 +29,7 @@ function disableExistingSwitch(container, key) {
 
 function cleanHorn(payload) {
   let changed = blacklistPersonalCenterRecommendation(payload);
+  changed = disablePersonalCenterRecommendationSwitch(payload) || changed;
   const customer = payload &&
     payload.pikeConfig &&
     payload.pikeConfig.data &&
@@ -38,6 +39,45 @@ function cleanHorn(payload) {
   changed = disableExistingSwitch(customer, 'sharkpush_marketing_dsp_pop') || changed;
   changed = disableExistingSwitch(customer, 'sharkpush_meishi_float_picasso') || changed;
   return changed;
+}
+
+function disablePersonalCenterRecommendationSwitch(payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return false;
+
+  let target = payload.user_config;
+  if (!target || typeof target !== 'object' || Array.isArray(target)) {
+    payload.user_config = createUserConfig();
+    return true;
+  }
+  if (!target.data || typeof target.data !== 'object' || Array.isArray(target.data)) {
+    target.data = createUserConfig().data;
+    return true;
+  }
+  if (!target.data.customer || typeof target.data.customer !== 'object' || Array.isArray(target.data.customer)) {
+    target.data.customer = createUserConfig().data.customer;
+    return true;
+  }
+
+  let changed = false;
+  changed = disableExistingSwitch(target.data.customer, 'showRecommendSwitch') || changed;
+  changed = disableExistingSwitch(target.data.customer, 'forceOpenRecommendSwitch') || changed;
+  return changed;
+}
+
+function createUserConfig() {
+  return {
+    data: {
+      customer: {
+        showRecommendSwitch: false,
+        forceOpenRecommendSwitch: false,
+      },
+      horn: {
+        time: 'N/A',
+        version: 515595,
+      },
+    },
+    etag: 'W/"surge-user-recommend-off"',
+  };
 }
 
 function blacklistPersonalCenterRecommendation(payload) {
