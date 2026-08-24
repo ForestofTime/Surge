@@ -134,16 +134,26 @@ test('requests a fresh recommendation-platform Horn value without changing sibli
   const source = {
     launch_protect: { query: '', etag: 'W/"keep"' },
     recommend_platform_config: { query: 'stale-query', etag: 'W/"stale"' },
+    unicode_keep: '美团业务字段保持不变',
   };
 
   const result = runRequestScript({
     url: 'https://h.meituan.com/horn_ios/mergeRequest',
     body: JSON.stringify(source),
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Content-Length': String(Buffer.byteLength(JSON.stringify(source))),
+      'X-Keep': 'keep',
+    },
   });
   const output = JSON.parse(result.body);
   assert.deepEqual(output.launch_protect, source.launch_protect);
   assert.equal(output.recommend_platform_config.query, '');
   assert.equal(output.recommend_platform_config.etag, '');
+  assert.equal(output.unicode_keep, source.unicode_keep);
+  assert.equal(result.headers['Content-Length'], String(Buffer.byteLength(result.body)));
+  assert.equal(result.headers['Content-Type'], 'application/json; charset=utf-8');
+  assert.equal(result.headers['X-Keep'], 'keep');
 });
 
 test('blacklists only the HAR-confirmed personal-center scene and its persisted cache via Horn', () => {
