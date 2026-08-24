@@ -200,7 +200,7 @@
 - 适用客户端/APP：Surge iOS/Mac；APP 为美团。
 - 类型：Rule + Map Local + Script + MITM。
 - 依赖关系：本地脚本 `JS/MeituanAds.js`。
-- 维护建议：禁止扩大到 `d.meituan.net`、HTTPDNS、共享商品图片和全部 Horn 配置。
+- 维护建议：通过专用 AB 开关控制交叉推荐；禁止扩大到 Shark、`d.meituan.net`、HTTPDNS、共享商品图片和全部 Horn 配置。
 
 ### `Module/GoofishAds.sgmodule`
 - 作用：闲鱼 HTTPDNS 和响应广告字段清理。

@@ -66,7 +66,7 @@ test('does not reject shared business, layout, HTTPDNS, or image delivery', () =
 
 test('disables only the two latest HAR-confirmed cross-recommendation experiments', () => {
   assert.ok(abTestLine, 'the exact recommendation AB endpoint must have an immediate local response');
-  assert.match(abTestLine, /^\^https:\/\\\/\\\/apimobile\\\.meituan\\\.com\\\/group\\\/v1\\\/recommend\\\/unity\\\/abtest/);
+  assert.ok(abTestLine.startsWith('^https:\\/\\/apimobile\\.meituan\\.com\\/group\\/v1\\/recommend\\/unity\\/abtest'));
   assert.match(abTestLine, /status-code=200/);
   assert.match(abTestLine, /header="Content-Type:application\/json"/);
 
@@ -76,8 +76,39 @@ test('disables only the two latest HAR-confirmed cross-recommendation experiment
   assert.deepEqual(response, {
     status: 0,
     data: {
+      hotel_order_city_scenery: 1,
+      jny_pay_city_hotel: 1,
+      waimai_order_coupon: 1,
+      daozong_deal_related: 1,
+      hotel_poi_nearby_scenery: 1,
+      jny_deal_more: 0,
+      jwy_deal_related: 0,
+      jny_poi_best: 1,
+      pay_popup: 0,
+      platform_collection_list: 1,
+      daocan_poi_nearby: 1,
+      maoyan_order_detail: 1,
+      jny_deal_related: 0,
+      jwy_deal_more: 0,
       shopping_cart: 0,
+      platform_message_center: 1,
       platform_personal_center: 0,
+      traffic_train_pay_cross: 0,
+      train_pay_cross: 0,
+      hotel_deal_related: 0,
+      traffic_pay_cross: 0,
+      daocan_deal_related: 1,
+      daozong_poi_nearby: 1,
+      traffic_train_order_life: 1,
+      jwy_pay_coupon: 0,
+      hotel_poi_nearby_hotel: 0,
+      platform_order_list: 1,
+      hotel_poi_combine: 0,
+      jwy_poi_nearby: 0,
+      daozong_deal_selected: 0,
+      jwy_pay_more: 0,
+      train_order_life: 0,
+      traffic_order_life: 0,
     },
   });
 });
