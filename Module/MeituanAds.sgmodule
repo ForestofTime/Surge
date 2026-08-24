@@ -1,5 +1,5 @@
 #!name=美团去广告
-#!desc=清理美团开屏、营销素材、购物车与个人页推荐。v8
+#!desc=清理美团开屏、品牌素材、启动推荐和营销推送。v1
 #!author=MeChenCC / fmz200 / ForestofTime Surge 原生整理
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
@@ -19,10 +19,6 @@ DOMAIN-SUFFIX,dreport.meituan.net,REJECT
 ^https?:\/\/wmapi\.meituan\.com\/api\/v7\/(?:loadInfo|openscreen|startpicture)(?:\?.*)?$ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/apimobile\.meituan\.com\/group\/v4\/recommend\/home\/startPageChannel(?:\?.*)?$ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
-# 推荐专用接口返回成功空数据，防止网络失败继续读取旧推荐缓存。
-^https:\/\/apimobile\.meituan\.com\/group\/v1\/recommend\/unity\/recommends(?:\?.*)?$ data-type=text data="{\"status\":0,\"data\":[]}" status-code=200 header="Content-Type:application/json"
-^https:\/\/feedguess\.meituan\.com\/lycoris\/scene\/personalcenter_2154(?:\?.*)?$ data-type=text data="{\"code\":0,\"status\":0,\"data\":[],\"homeData\":[],\"isEnd\":true,\"hasMore\":false,\"extensionRequestOptions\":{}}" status-code=200 header="Content-Type:application/json"
-
 # 只处理社区方案中名称明确的广告素材，不拦截 p0/p1 等共享商品图片域名。
 ^https?:\/\/(?:s3plus|flowplus)\.meituan\.net\/v\d+\/\w+\/linglong\/\w+\.(?:gif|jpe?g|mp4)(?:\?.*)?$ data-type=tiny-gif status-code=200
 ^https?:\/\/img\.meituan\.net\/bizad\/bizad_brandCpt_\d+\.jpg(?:\?.*)?$ data-type=tiny-gif status-code=200
@@ -31,11 +27,8 @@ DOMAIN-SUFFIX,dreport.meituan.net,REJECT
 ^https?:\/\/s3plus\.meituan\.net\/v1\/mss_28529f45d4404eee93c6fa2279ce2ca0\/(?:brandcpt-vedio|waimai-alita)\/[^?]+\.zip(?:\?.*)?$ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 [Script]
-# 用二进制请求体主动拉取推荐与个人页开关，响应关闭场景缓存和原生推荐开关。
-美团-推荐平台配置请求 = type=http-request,pattern=^https:\/\/h\.meituan\.com\/horn_ios\/mergeRequest(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanHornRequest.js?v=8,requires-body=true,binary-body-mode=true,max-size=1048576,timeout=10,engine=jsc
-美团-营销与推荐配置 = type=http-response,pattern=^https:\/\/h\.meituan\.com\/horn_ios\/mergeRequest(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=8,requires-body=true,max-size=1048576,timeout=10,engine=jsc
-美团-购物车推荐 = type=http-response,pattern=^https:\/\/apimobile\.meituan\.com\/group\/v1\/recommend\/unity\/recommends(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=8,requires-body=true,max-size=1048576,timeout=10,engine=jsc
-美团-个人页推荐 = type=http-response,pattern=^https?:\/\/gaea\.meituan\.com\/mapi\/usercenter(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=8,requires-body=true,max-size=1048576,timeout=10,engine=jsc
+# 最新 HAR 仅确认这两个营销推送开关，其他 Horn 业务配置原样保留。
+美团-营销推送 = type=http-response,pattern=^https:\/\/h\.meituan\.com\/horn_ios\/mergeRequest(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=1,requires-body=true,max-size=1048576,timeout=10,engine=jsc
 
 [MITM]
-hostname = %APPEND% wmapi.meituan.com, apimobile.meituan.com, feedguess.meituan.com, s3plus.meituan.net, flowplus.meituan.net, img.meituan.net, h.meituan.com, gaea.meituan.com
+hostname = %APPEND% wmapi.meituan.com, apimobile.meituan.com, s3plus.meituan.net, flowplus.meituan.net, img.meituan.net, h.meituan.com
