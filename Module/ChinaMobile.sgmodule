@@ -1,0 +1,21 @@
+#!name=中国移动去广告
+#!desc=清理中国移动启动页、顶部拉新、营销专区与导航横幅。v1
+#!author=Yuheng0101 / ForestofTime Surge 原生重写
+#!category=AdBlock
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/ChinaMobile.sgmodule
+
+[Map Local]
+# 历史弹窗详情接口。保持原方案的成功空响应语义。
+^https?:\/\/h\.app\.coc\.10086\.cn\/biz-orange\/DH\/popupWindow\/getDetail(?:\?.*)?$ data-type=text data=" " status-code=200
+
+[Script]
+中国移动-启动页 = type=http-response,pattern=^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/init\/startInit(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/ChinaMobileAds.js?v=1,requires-body=true,max-size=1048576,timeout=10,engine=webview
+中国移动-顶部拉新 = type=http-response,pattern=^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/newTopPullSecond\/getNewTopPullList(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/ChinaMobileAds.js?v=1,requires-body=true,max-size=1048576,timeout=10,engine=webview
+中国移动-营销专区 = type=http-response,pattern=^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/emotionMarket\/getEmotionMarketNew(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/ChinaMobileAds.js?v=1,requires-body=true,max-size=1048576,timeout=10,engine=webview
+中国移动-首页区域 = type=http-response,pattern=^https?:\/\/h\.app\.coc\.10086\.cn\/biz-orange\/DH\/homeArea\/getTopAreaList(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/ChinaMobileAds.js?v=1,requires-body=true,max-size=1048576,timeout=10,engine=webview
+中国移动-导航横幅 = type=http-response,pattern=^https?:\/\/h\.app\.coc\.10086\.cn\/biz-orange\/DH\/navigation\/getNavigationNewInfo(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/ChinaMobileAds.js?v=1,requires-body=true,max-size=1048576,timeout=10,engine=webview
+中国移动-摇一摇 = type=http-response,pattern=^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/DN\/friendShake\/getShakeList(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/ChinaMobileAds.js?v=1,requires-body=true,max-size=1048576,timeout=10,engine=webview
+
+[MITM]
+hostname = %APPEND% client.app.coc.10086.cn, h.app.coc.10086.cn

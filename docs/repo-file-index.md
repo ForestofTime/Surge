@@ -75,6 +75,12 @@
 - 依赖关系：被 `Module/CainiaoMiniProgram.sgmodule` 引用。
 - 维护建议：保持菜鸟应用标识、MTop 主机和广告字段的边界，回归测试覆盖视频卡广告位。
 
+### `JS/ChinaMobileAds.js`
+- 作用：解密并净化中国移动六个广告响应，异常时透传。
+- 适用客户端/APP：中国移动 App。
+- 依赖关系：被 `Module/ChinaMobile.sgmodule` 引用，使用 Surge WebView Web Crypto。
+- 维护建议：只增加 HAR 证实的路径与字段。
+
 ### `JS/GoofishAds.js`
 - 作用：清理闲鱼 HTTPDNS 绕过和已确认的响应广告字段。
 - 适用客户端/APP：闲鱼。
@@ -129,6 +135,9 @@
 ### `JS/tests/baidupan-caocao-modules.test.js`
 - 作用：验证百度网盘和曹操出行原生模块的端点覆盖、脚本边界与依赖收敛。
 
+### `JS/tests/china-mobile-module.test.js`
+- 作用：验证中国移动加密响应、字段清理、异常透传与模块边界。
+
 ### `JS/tests/repository-metadata.test.js`
 - 作用：验证模块元数据、脚本任务名称和 README 索引完整性。
 
@@ -170,6 +179,12 @@
 - 适用客户端/APP：Surge iOS/Mac；小程序为菜鸟淘宝。
 - 类型：Script + MITM。
 - 依赖关系：本地脚本 `JS/CainiaoMiniProgram.js`。
+
+### `Module/ChinaMobile.sgmodule`
+- 作用：清理中国移动启动页、顶部拉新、营销专区和导航横幅。
+- 适用客户端/APP：Surge iOS/Mac；APP 为中国移动。
+- 类型：Map Local + Script + MITM。
+- 依赖关系：本地脚本 `JS/ChinaMobileAds.js`。
 
 ### `Module/GoofishAds.sgmodule`
 - 作用：闲鱼 HTTPDNS 和响应广告字段清理。

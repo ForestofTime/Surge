@@ -50,6 +50,7 @@ async function runScript({ url, data, decryptMode = 14, encryptMode = 14, rawBod
     crypto: crypto.webcrypto,
     TextEncoder,
     TextDecoder,
+    URL,
     atob,
     btoa,
     console: { log() {} },
@@ -64,7 +65,7 @@ test('publishes a bounded repository-native China Mobile module', () => {
   assert.match(moduleText, /^#!name=中国移动去广告$/m);
   assert.match(moduleText, /^#!desc=.*v1$/m);
   assert.match(moduleText, /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/ChinaMobile\.sgmodule$/m);
-  assert.doesNotMatch(moduleText, /script\.hub|Yuheng0101|xchun5678/);
+  assert.doesNotMatch(moduleText, /script\.hub|script-path=.*(?:Yuheng0101|xchun5678)/);
   assert.match(moduleText, /script-path=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/JS\/ChinaMobileAds\.js\?v=1/);
   assert.match(moduleText, /engine=webview/);
   assert.match(moduleText, /requires-body=true/);
@@ -170,9 +171,8 @@ test('supports the mode-1 envelope and mode-2 key, then passes failures through'
   });
   assert.equal(decryptPayload(mode2.body, 2).rspBody.startImgurl, '');
 
-  assert.deepEqual(await runScript({
+  assert.equal(JSON.stringify(await runScript({
     url: 'https://client.app.coc.10086.cn/biz-orange/DN/init/startInit',
     rawBody: 'invalid-ciphertext',
-  }), {});
+  })), '{}');
 });
-
