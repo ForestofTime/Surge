@@ -1,12 +1,15 @@
 const requestUrl = String(($request && $request.url) || '');
-const responseBody = String(($response && $response.body) || '');
+const isResponsePhase = typeof $response !== 'undefined';
+const payloadBody = String((isResponsePhase ? $response.body : $request.body) || '');
 let result = {};
 
 try {
-  const payload = JSON.parse(responseBody);
+  const payload = JSON.parse(payloadBody);
   let changed = false;
 
-  if (/^https:\/\/h\.meituan\.com\/horn_ios\/mergeRequest(?:\?|$)/i.test(requestUrl)) {
+  if (!isResponsePhase && /^https:\/\/h\.meituan\.com\/horn_ios\/mergeRequest(?:\?|$)/i.test(requestUrl)) {
+    changed = requestFreshRecommendationConfig(payload);
+  } else if (/^https:\/\/h\.meituan\.com\/horn_ios\/mergeRequest(?:\?|$)/i.test(requestUrl)) {
     changed = cleanHorn(payload);
   } else if (/^https?:\/\/gaea\.meituan\.com\/mapi\/usercenter(?:\?|$)/i.test(requestUrl)) {
     changed = cleanMine(payload);
@@ -27,14 +30,39 @@ function disableExistingSwitch(container, key) {
   return true;
 }
 
+function requestFreshRecommendationConfig(payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return false;
+  const current = payload.recommend_platform_config;
+  if (current && current.query === '' && current.etag === '') return false;
+  payload.recommend_platform_config = { query: '', etag: '' };
+  return true;
+}
+
+function disableRecommendationPlatform(payload) {
+  const customer = payload &&
+    payload.recommend_platform_config &&
+    payload.recommend_platform_config.data &&
+    payload.recommend_platform_config.data.customer;
+
+  if (!customer || typeof customer !== 'object' || Array.isArray(customer)) return false;
+  let changed = false;
+  for (const key of ['enabled', 'cacheEnabled', 'feedbackEnabled', 'showCacheWhenRequestError']) {
+    if (customer[key] !== false) {
+      customer[key] = false;
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 function cleanHorn(payload) {
+  let changed = disableRecommendationPlatform(payload);
   const customer = payload &&
     payload.pikeConfig &&
     payload.pikeConfig.data &&
     payload.pikeConfig.data.customer;
 
-  if (!customer || typeof customer !== 'object' || Array.isArray(customer)) return false;
-  let changed = false;
+  if (!customer || typeof customer !== 'object' || Array.isArray(customer)) return changed;
   changed = disableExistingSwitch(customer, 'sharkpush_marketing_dsp_pop') || changed;
   changed = disableExistingSwitch(customer, 'sharkpush_meishi_float_picasso') || changed;
   return changed;

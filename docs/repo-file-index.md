@@ -82,10 +82,10 @@
 - 维护建议：只增加 HAR 证实的路径与字段。
 
 ### `JS/MeituanAds.js`
-- 作用：关闭美团营销推送，并清理购物车与个人页推荐商品流。
+- 作用：刷新并关闭美团 MSC 推荐平台与缓存，同时清理营销推送和公开推荐接口。
 - 适用客户端/APP：美团 App。
 - 依赖关系：被 `Module/MeituanAds.sgmodule` 引用。
-- 维护建议：仅修改已确认的开关、推荐数组和个人页推荐区块。
+- 维护建议：仅修改推荐平台开关、已确认的营销开关、推荐数组和个人页推荐区块。
 
 ### `JS/GoofishAds.js`
 - 作用：清理闲鱼 HTTPDNS 绕过和已确认的响应广告字段。
@@ -200,7 +200,7 @@
 - 适用客户端/APP：Surge iOS/Mac；APP 为美团。
 - 类型：Rule + Map Local + Script + MITM。
 - 依赖关系：本地脚本 `JS/MeituanAds.js`。
-- 维护建议：只对购物车推荐接口和个人中心 `personalcenter_2154` 场景返回成功空数据；禁止扩大到 Shark、`d.meituan.net`、HTTPDNS、共享商品图片和全部 Horn 配置。
+- 维护建议：通过 Horn 关闭 MSC 推荐平台与缓存，并保留公开接口回退处理；禁止扩大到 Shark、`d.meituan.net`、HTTPDNS、共享商品图片和全部 Horn 配置。
 
 ### `Module/GoofishAds.sgmodule`
 - 作用：闲鱼 HTTPDNS 和响应广告字段清理。
