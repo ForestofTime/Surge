@@ -1,5 +1,5 @@
 #!name=美团去广告
-#!desc=清理美团开屏、营销素材、购物车与个人页推荐。v3
+#!desc=清理美团开屏、营销素材、购物车与个人页推荐。v4
 #!author=MeChenCC / fmz200 / ForestofTime Surge 原生整理
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
@@ -19,8 +19,9 @@ DOMAIN-SUFFIX,dreport.meituan.net,REJECT
 ^https?:\/\/wmapi\.meituan\.com\/api\/v7\/(?:loadInfo|openscreen|startpicture)(?:\?.*)?$ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 ^https?:\/\/apimobile\.meituan\.com\/group\/v4\/recommend\/home\/startPageChannel(?:\?.*)?$ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
-# 在 Shark MAPI 生成页面数据前关闭购物车与个人页交叉推荐实验。
-^https:\/\/apimobile\.meituan\.com\/group\/v1\/recommend\/unity\/abtest(?:\?.*)?$ data-type=text data="{\"status\":0,\"data\":{\"hotel_order_city_scenery\":1,\"jny_pay_city_hotel\":1,\"waimai_order_coupon\":1,\"daozong_deal_related\":1,\"hotel_poi_nearby_scenery\":1,\"jny_deal_more\":0,\"jwy_deal_related\":0,\"jny_poi_best\":1,\"pay_popup\":0,\"platform_collection_list\":1,\"daocan_poi_nearby\":1,\"maoyan_order_detail\":1,\"jny_deal_related\":0,\"jwy_deal_more\":0,\"shopping_cart\":0,\"platform_message_center\":1,\"platform_personal_center\":0,\"traffic_train_pay_cross\":0,\"train_pay_cross\":0,\"hotel_deal_related\":0,\"traffic_pay_cross\":0,\"daocan_deal_related\":1,\"daozong_poi_nearby\":1,\"traffic_train_order_life\":1,\"jwy_pay_coupon\":0,\"hotel_poi_nearby_hotel\":0,\"platform_order_list\":1,\"hotel_poi_combine\":0,\"jwy_poi_nearby\":0,\"daozong_deal_selected\":0,\"jwy_pay_more\":0,\"train_order_life\":0,\"traffic_order_life\":0}}" status-code=200 header="Content-Type:application/json"
+# 推荐专用接口返回成功空数据，防止网络失败继续读取旧推荐缓存。
+^https:\/\/apimobile\.meituan\.com\/group\/v1\/recommend\/unity\/recommends(?:\?.*)?$ data-type=text data="{\"status\":0,\"data\":[]}" status-code=200 header="Content-Type:application/json"
+^https:\/\/feedguess\.meituan\.com\/lycoris\/scene\/personalcenter_2154(?:\?.*)?$ data-type=text data="{\"code\":0,\"status\":0,\"data\":[],\"homeData\":[],\"isEnd\":true,\"hasMore\":false,\"extensionRequestOptions\":{}}" status-code=200 header="Content-Type:application/json"
 
 # 只处理社区方案中名称明确的广告素材，不拦截 p0/p1 等共享商品图片域名。
 ^https?:\/\/(?:s3plus|flowplus)\.meituan\.net\/v\d+\/\w+\/linglong\/\w+\.(?:gif|jpe?g|mp4)(?:\?.*)?$ data-type=tiny-gif status-code=200
@@ -31,9 +32,9 @@ DOMAIN-SUFFIX,dreport.meituan.net,REJECT
 
 [Script]
 # 精确修改广告字段与推荐数组，其他页面业务字段原样保留。
-美团-营销推送 = type=http-response,pattern=^https:\/\/h\.meituan\.com\/horn_ios\/mergeRequest(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=3,requires-body=true,max-size=1048576,timeout=10,engine=jsc
-美团-购物车推荐 = type=http-response,pattern=^https:\/\/apimobile\.meituan\.com\/group\/v1\/recommend\/unity\/recommends(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=3,requires-body=true,max-size=1048576,timeout=10,engine=jsc
-美团-个人页推荐 = type=http-response,pattern=^https?:\/\/gaea\.meituan\.com\/mapi\/usercenter(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=3,requires-body=true,max-size=1048576,timeout=10,engine=jsc
+美团-营销推送 = type=http-response,pattern=^https:\/\/h\.meituan\.com\/horn_ios\/mergeRequest(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=4,requires-body=true,max-size=1048576,timeout=10,engine=jsc
+美团-购物车推荐 = type=http-response,pattern=^https:\/\/apimobile\.meituan\.com\/group\/v1\/recommend\/unity\/recommends(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=4,requires-body=true,max-size=1048576,timeout=10,engine=jsc
+美团-个人页推荐 = type=http-response,pattern=^https?:\/\/gaea\.meituan\.com\/mapi\/usercenter(?:\?.*)?$,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/MeituanAds.js?v=4,requires-body=true,max-size=1048576,timeout=10,engine=jsc
 
 [MITM]
-hostname = %APPEND% wmapi.meituan.com, apimobile.meituan.com, s3plus.meituan.net, flowplus.meituan.net, img.meituan.net, h.meituan.com, gaea.meituan.com
+hostname = %APPEND% wmapi.meituan.com, apimobile.meituan.com, feedguess.meituan.com, s3plus.meituan.net, flowplus.meituan.net, img.meituan.net, h.meituan.com, gaea.meituan.com
