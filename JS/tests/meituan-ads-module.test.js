@@ -285,6 +285,7 @@ test('indexes the published module and its local maintenance files', () => {
   assert.match(readmeText, /Module\/MeituanAds\.sgmodule/);
   assert.match(readmeText, /surge:\/\/\/install-module\?url=https%3A%2F%2Fraw\.githubusercontent\.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FMeituanAds\.sgmodule/);
   assert.match(indexText, /### `JS\/MeituanAds\.js`/);
+  assert.match(indexText, /### `JS\/MeituanHornRequest\.js`/);
   assert.match(indexText, /### `JS\/tests\/meituan-ads-module\.test\.js`/);
   assert.match(indexText, /### `Module\/MeituanAds\.sgmodule`/);
 });
