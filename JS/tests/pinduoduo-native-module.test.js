@@ -26,6 +26,10 @@ const latestV12DetailRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-142431.har';
 const latestChatPersonalRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-23-153700.har';
+const latestV15ChatRegressionHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-03-150308.har';
+const latestV15PersonalRegressionHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-03-150410.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
@@ -40,11 +44,11 @@ function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
-test('uses QingRex native rules and passes through homepage, search, and product details in v14', () => {
+test('uses QingRex native rules and passes through homepage, search, and product details in v15', () => {
   assert.match(moduleText, /^#!name=拼多多去广告（QingRex 原生兼容）$/m);
   assert.match(
     moduleText,
-    /清理拼多多聊天与个人中心广告，透传首页、搜索和详情。v14/
+    /清理拼多多聊天与个人中心广告，透传首页、搜索和详情。v15/
   );
 
   // All retained body rewrites and map-local rules stay byte-identical.
@@ -64,6 +68,76 @@ test('uses QingRex native rules and passes through homepage, search, and product
     sha256(section('Map Local', 'MITM')),
     '4d7f7fdab6c3c2bfe3ed902c770752b30a3da6f1f76d80a2a2d81782042fa087'
   );
+});
+
+test('v15 covers both Pinduoduo API hostnames after the 8.23 chat and personal regression', {
+  skip: !fs.existsSync(latestV15ChatRegressionHarPath) ||
+    !fs.existsSync(latestV15PersonalRegressionHarPath),
+}, () => {
+  for (const harPath of [latestV15ChatRegressionHarPath, latestV15PersonalRegressionHarPath]) {
+    const har = JSON.parse(fs.readFileSync(harPath, 'utf8'));
+    const appRequests = har.log.entries.filter((entry) =>
+      entry.request.headers?.some(({ name, value }) =>
+        name.toLowerCase() === 'user-agent' &&
+        value.includes('BundleID/com.xunmeng.pinduoduo AppVersion/8.23.0')
+      )
+    );
+    assert.ok(appRequests.length > 0, `${path.basename(harPath)} must contain Pinduoduo 8.23 traffic`);
+
+    const mappedAdResponses = har.log.entries.filter((entry) =>
+      [
+        '/api/zaire_biz/chat/resource/get_list_data',
+        '/api/caterham/v3/query/new_chat_group',
+        '/api/alexa/goods/back_up',
+      ].includes(new URL(entry.request.url).pathname) &&
+      entry.response?.content?.text === '{}'
+    );
+    assert.ok(mappedAdResponses.length > 0);
+    assert.ok(mappedAdResponses.every((entry) =>
+      String(entry.comment).includes('Matched map local rule')
+    ));
+
+    const visibleJsonBodies = har.log.entries
+      .map((entry) => entry.response?.content?.text)
+      .filter((text) => {
+        if (typeof text !== 'string') return false;
+        try {
+          JSON.parse(text);
+          return true;
+        } catch {
+          return false;
+        }
+      });
+    const productImages = har.log.entries.filter((entry) =>
+      /\/(?:mms-(?:goods|material)-image|promo\/goods|aid-image)\//
+        .test(new URL(entry.request.url).pathname)
+    );
+    assert.ok(productImages.length > 0);
+    assert.ok(productImages.some((entry) => {
+      const imageName = new URL(entry.request.url).pathname.split('/').pop();
+      return !visibleJsonBodies.some((body) => body.includes(imageName));
+    }), '8.23 still downloads recommendation images without a visible JSON source');
+  }
+
+  const protectedHostPattern = 'api\\.\\(?:pinduoduo\\|yangkeduo\\)\\.com';
+  const mapLocal = section('Map Local', 'MITM');
+  for (const endpoint of [
+    'api\\/zaire_biz\\/chat\\/resource\\/get_list_data',
+    'api\\/caterham\\/v3\\/query\\/new_chat_group',
+    'api\\/alexa\\/goods\\/back_up',
+    'api\\/caterham\\/v3\\/query\\/personal',
+  ]) {
+    assert.ok(mapLocal.includes(`${protectedHostPattern}\\/${endpoint}`));
+  }
+
+  const mitm = moduleText.split('[MITM]\n', 2)[1];
+  assert.match(mitm, /^hostname = %APPEND% api\.pinduoduo\.com, api\.yangkeduo\.com$/m);
+  assert.match(mitm, /^tcp-connection = true$/m);
+  for (const hostname of ['api.pinduoduo.com', 'api.yangkeduo.com']) {
+    assert.ok(moduleText.includes(
+      `AND,((DOMAIN,${hostname},extended-matching),(PROTOCOL,QUIC)),REJECT`
+    ));
+  }
 });
 
 test('has zero homepage hub rewrites', () => {
