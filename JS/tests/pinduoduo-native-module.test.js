@@ -62,11 +62,11 @@ test('uses QingRex native rules and passes through homepage, search, and product
     .join('\n');
   assert.equal(
     sha256(unchangedBodyRewrite),
-    'c7ef6279aee9dd96690e481ad16e13e6d4f38268ff812253ccc41cd93ab013b8'
+    '3cf2f03af3c0367273c621540ad68c049d6142c8de508e25cd383d5d401a4222'
   );
   assert.equal(
     sha256(section('Map Local', 'MITM')),
-    '4d7f7fdab6c3c2bfe3ed902c770752b30a3da6f1f76d80a2a2d81782042fa087'
+    'beec1a781711d04ff1ffb0b3e027b4b9eb70d762c92c45dbd271d021483b8255'
   );
 });
 
@@ -119,7 +119,7 @@ test('v15 covers both Pinduoduo API hostnames after the 8.23 chat and personal r
     }), '8.23 still downloads recommendation images without a visible JSON source');
   }
 
-  const protectedHostPattern = 'api\\.\\(?:pinduoduo\\|yangkeduo\\)\\.com';
+  const protectedHostPattern = 'api\\.(?:pinduoduo|yangkeduo)\\.com';
   const mapLocal = section('Map Local', 'MITM');
   for (const endpoint of [
     'api\\/zaire_biz\\/chat\\/resource\\/get_list_data',
@@ -398,7 +398,10 @@ test('keeps QingRex ad blocks but leaves meta fully reachable like the July 2025
   }
   assert.equal(moduleText.includes('DOMAIN,meta.pinduoduo.com,REJECT'), false);
   assert.equal(moduleText.includes('[URL Rewrite]'), false);
-  assert.match(moduleText, /^hostname = %APPEND% api\.pinduoduo\.com$/m);
+  assert.match(
+    moduleText,
+    /^hostname = %APPEND% api\.pinduoduo\.com, api\.yangkeduo\.com$/m
+  );
 });
 
 test('removes the custom meta filter and homepage ordering script', () => {
