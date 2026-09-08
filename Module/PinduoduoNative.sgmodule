@@ -1,11 +1,11 @@
 #!name=拼多多去广告（QingRex 原生兼容）
-#!desc=清理拼多多聊天与个人中心广告，透传首页、搜索和详情。v15
+#!desc=清理拼多多聊天与个人中心广告，透传首页、搜索、详情和订单物流。v16
 #!author=ForestofTime
 #!category=AdBlock
 #!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/PinDuoDuo.png
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/PinduoduoNative.sgmodule
-#!date=2026-09-03
+#!date=2026-09-08
 
 [Rule]
 # QingRex 原规则，兼容拼多多 8.20.0 HAR 证实的 /v2/d 与 /v3/d HTTPDNS 路径。
@@ -33,14 +33,10 @@ http-response-jq ^https:\/\/api\.(?:pinduoduo|yangkeduo)\.com\/api\/philo\/perso
 http-response-jq ^https:\/\/api\.(?:pinduoduo|yangkeduo)\.com\/api\/philo\/personal\/hub\? 'delpaths([["icon_set","icons"]])'
 http-response-jq ^https:\/\/api\.(?:pinduoduo|yangkeduo)\.com\/api\/philo\/personal\/hub\? 'delpaths([["icon_set","top_personal_icons"]])'
 http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/caterham\/v3\/query\/order_detail_group\? 'delpaths([["data","goods_list"]])'
-http-response-jq ^https:\/\/api\.pinduoduo\.com\/order\/ 'delpaths([["marketing_banner_vo"]])'
-http-response-jq ^https:\/\/api\.pinduoduo\.com\/order\/ 'delpaths([["shipping","banner_above_recommend"]])'
 http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/aristotle\/order_list_v4\? '.orders |= map(.order_buttons |= map(del(.order_growth_tip)))'
 
 [Map Local]
 ^https:\/\/api\.pinduoduo\.com\/api\/aristotle\/unrated_order_for_unreceived_tab\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
-
-^https:\/\/api\.pinduoduo\.com\/api\/aristotle\/query_order_list_tabs_element\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 ^https:\/\/api\.pinduoduo\.com\/api\/aquarius\/hungary\/global\/homepage\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 

@@ -30,6 +30,8 @@ const latestV15ChatRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-03-150308.har';
 const latestV15PersonalRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-03-150410.har';
+const latestV16BusinessRegressionHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-08-155713.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
@@ -48,7 +50,7 @@ test('uses QingRex native rules and passes through homepage, search, and product
   assert.match(moduleText, /^#!name=拼多多去广告（QingRex 原生兼容）$/m);
   assert.match(
     moduleText,
-    /清理拼多多聊天与个人中心广告，透传首页、搜索和详情。v15/
+    /清理拼多多聊天与个人中心广告，透传首页、搜索、详情和订单物流。v16/
   );
 
   // All retained body rewrites and map-local rules stay byte-identical.
@@ -62,11 +64,11 @@ test('uses QingRex native rules and passes through homepage, search, and product
     .join('\n');
   assert.equal(
     sha256(unchangedBodyRewrite),
-    '3cf2f03af3c0367273c621540ad68c049d6142c8de508e25cd383d5d401a4222'
+    '4bebfb8b43f1b03d101a3db552c4a438805ed34138b94ed23bcb0f5849976bc0'
   );
   assert.equal(
     sha256(section('Map Local', 'MITM')),
-    'beec1a781711d04ff1ffb0b3e027b4b9eb70d762c92c45dbd271d021483b8255'
+    'bc78e0d2d979f40daacd37eb06364b3ad83bed06c6e472c7ac4e7a2f4ce7021b'
   );
 });
 
@@ -138,6 +140,43 @@ test('v15 covers both Pinduoduo API hostnames after the 8.23 chat and personal r
       `AND,((DOMAIN,${hostname},extended-matching),(PROTOCOL,QUIC)),REJECT`
     ));
   }
+});
+
+test('v16 preserves order counts and logistics detail responses from the 2026-09-08 HAR', {
+  skip: !fs.existsSync(latestV16BusinessRegressionHarPath),
+}, () => {
+  const har = JSON.parse(fs.readFileSync(latestV16BusinessRegressionHarPath, 'utf8'));
+  const tabResponses = har.log.entries.filter((entry) =>
+    new URL(entry.request.url).pathname === '/api/aristotle/query_order_list_tabs_element'
+  );
+  assert.ok(tabResponses.length >= 2);
+  assert.ok(tabResponses.every((entry) =>
+    entry.response?.status === 200 && entry.response.content.text === '{}'
+  ), 'the regression HAR must capture the empty order-tab response');
+  assert.ok(tabResponses.every((entry) =>
+    String(entry.comment).includes('Matched map local rule')
+  ));
+
+  const shippingResponses = har.log.entries.filter((entry) =>
+    new URL(entry.request.url).pathname.match(/^\/order\/[^/]+\/shipping$/)
+  );
+  assert.ok(shippingResponses.length >= 2);
+  assert.ok(shippingResponses.every((entry) =>
+    entry.response?.status === 200 &&
+    JSON.parse(entry.response.content.text).shipping?.traces?.length > 0
+  ));
+  assert.ok(shippingResponses.every((entry) =>
+    String(entry.comment).includes('Response body is modified by body rewrite rule')
+  ), 'the regression HAR must capture the broad logistics rewrite');
+
+  const bodyRewrite = section('Body Rewrite', 'Map Local');
+  assert.equal(bodyRewrite.includes('api\\.pinduoduo\\.com\\/order\\/'), false);
+  assert.equal(
+    section('Map Local', 'MITM').includes(
+      'api\\.pinduoduo\\.com\\/api\\/aristotle\\/query_order_list_tabs_element'
+    ),
+    false
+  );
 });
 
 test('has zero homepage hub rewrites', () => {
