@@ -32,6 +32,8 @@ const latestV15PersonalRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-03-150410.har';
 const latestV16BusinessRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-08-155713.har';
+const latestV17OrderBadgeRegressionHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-08-161410.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
@@ -50,7 +52,7 @@ test('uses QingRex native rules and passes through homepage, search, and product
   assert.match(moduleText, /^#!name=拼多多去广告（QingRex 原生兼容）$/m);
   assert.match(
     moduleText,
-    /清理拼多多聊天与个人中心广告，透传首页、搜索、详情和订单物流。v16/
+    /清理拼多多聊天与个人中心广告，保留首页、搜索、详情、物流和订单数量。v17/
   );
 
   // All retained body rewrites and map-local rules stay byte-identical.
@@ -64,7 +66,7 @@ test('uses QingRex native rules and passes through homepage, search, and product
     .join('\n');
   assert.equal(
     sha256(unchangedBodyRewrite),
-    '4bebfb8b43f1b03d101a3db552c4a438805ed34138b94ed23bcb0f5849976bc0'
+    'd601a40f508056d6f19810e6492ca1f17457d28ad37d8b8750b48ab79cb677af'
   );
   assert.equal(
     sha256(section('Map Local', 'MITM')),
@@ -177,6 +179,29 @@ test('v16 preserves order counts and logistics detail responses from the 2026-09
     ),
     false
   );
+});
+
+test('v17 preserves personal icon bindings that render existing order badges', {
+  skip: !fs.existsSync(latestV17OrderBadgeRegressionHarPath),
+}, () => {
+  const har = JSON.parse(fs.readFileSync(latestV17OrderBadgeRegressionHarPath, 'utf8'));
+  const personalHub = har.log.entries.find((entry) =>
+    new URL(entry.request.url).pathname === '/api/philo/personal/hub'
+  );
+  assert.ok(personalHub);
+  const payload = JSON.parse(personalHub.response.content.text);
+  assert.equal(payload.red_dot.order_un_receive.text, '待取件1');
+  assert.equal(payload.red_dot.order_un_comment.number, 4);
+  assert.equal(Object.hasOwn(payload.icon_set, 'icons'), false);
+  assert.equal(Object.hasOwn(payload.icon_set, 'top_personal_icons'), false);
+  assert.equal(
+    String(personalHub.comment).match(/Response body is modified by body rewrite rule/g)?.length,
+    4
+  );
+
+  const bodyRewrite = section('Body Rewrite', 'Map Local');
+  assert.equal(bodyRewrite.includes('[["icon_set","icons"]]'), false);
+  assert.equal(bodyRewrite.includes('[["icon_set","top_personal_icons"]]'), false);
 });
 
 test('has zero homepage hub rewrites', () => {
