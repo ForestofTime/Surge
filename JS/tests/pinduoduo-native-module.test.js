@@ -34,6 +34,8 @@ const latestV16BusinessRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-08-155713.har';
 const latestV17OrderBadgeRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-08-161410.har';
+const latestV18ChatPersonalRegressionHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-09-223414.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
@@ -52,10 +54,10 @@ test('uses QingRex native rules and passes through homepage, search, and product
   assert.match(moduleText, /^#!name=拼多多去广告（QingRex 原生兼容）$/m);
   assert.match(
     moduleText,
-    /清理拼多多聊天与个人中心广告，保留首页、搜索、详情、物流和订单数量。v17/
+    /清理拼多多聊天与个人中心广告，保留首页、搜索、详情、物流和订单数量。v18/
   );
 
-  // All retained body rewrites and map-local rules stay byte-identical.
+  // The validated v18 body rewrites and map-local rules stay byte-identical.
   const unchangedBodyRewrite = section('Body Rewrite', 'Map Local')
     .split('\n')
     .filter((line) =>
@@ -66,11 +68,11 @@ test('uses QingRex native rules and passes through homepage, search, and product
     .join('\n');
   assert.equal(
     sha256(unchangedBodyRewrite),
-    'd601a40f508056d6f19810e6492ca1f17457d28ad37d8b8750b48ab79cb677af'
+    '9e08ed0b01820ab94f92d8aec723ad9b959a458306b0623ee2c45b66bab3a257'
   );
   assert.equal(
     sha256(section('Map Local', 'MITM')),
-    'bc78e0d2d979f40daacd37eb06364b3ad83bed06c6e472c7ac4e7a2f4ce7021b'
+    '50e003d78ce27054b6f13ff15ecbcbc93f3eb57c5399152ce54bc2bb9bc889fc'
   );
 });
 
@@ -200,6 +202,24 @@ test('v17 preserves personal icon bindings that render existing order badges', {
   );
 
   const bodyRewrite = section('Body Rewrite', 'Map Local');
+  assert.equal(bodyRewrite.includes('[["icon_set","icons"]]'), false);
+  assert.equal(bodyRewrite.includes('[["icon_set","top_personal_icons"]]'), false);
+});
+
+test('v18 covers the updated chat extension and removes only personal promotional modules', {
+  skip: !fs.existsSync(latestV18ChatPersonalRegressionHarPath),
+}, () => {
+  const har = JSON.parse(fs.readFileSync(latestV18ChatPersonalRegressionHarPath, 'utf8'));
+  const paths = har.log.entries.map((entry) => new URL(entry.request.url).pathname);
+  assert.ok(paths.includes('/api/zaire_biz/chat/ext_conv/get_conv_list'));
+  assert.ok(paths.includes('/api/philo/personal/hub'));
+
+  const mapLocal = section('Map Local', 'MITM');
+  assert.ok(mapLocal.includes('api\\/zaire_biz\\/chat\\/ext_conv\\/get_conv_list'));
+
+  const bodyRewrite = section('Body Rewrite', 'Map Local');
+  assert.ok(bodyRewrite.includes('[[' + '"personal_banner"' + ']]'));
+  assert.ok(bodyRewrite.includes('[[' + '"show_recommend_feed_banner"' + ']]'));
   assert.equal(bodyRewrite.includes('[["icon_set","icons"]]'), false);
   assert.equal(bodyRewrite.includes('[["icon_set","top_personal_icons"]]'), false);
 });
