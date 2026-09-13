@@ -25,7 +25,8 @@ function execute({ body, argument }) {
 test('uses a narrow autoLogin request hook and Tailnet-only receiver argument', () => {
   assert.match(moduleText, /^#!arguments = receiver_url:https:\/\/hynmac-mini\.taila66285\.ts\.net\/cmcc-autologin$/m);
   assert.match(moduleText, /type=http-request/);
-  assert.match(moduleText, /uamrandcodelogin\\\/autoLogin/);
+  assert.ok(moduleText.includes('(?:uamrandcodelogin|uamonekeylogin)\\/autoLogin'));
+  assert.match(moduleText, /CMCCAutoLoginCapture\.js\?v=2/);
   assert.match(moduleText, /requires-body=true/);
   assert.match(moduleText, /hostname = %APPEND% client\.app\.coc\.10086\.cn/);
   assert.doesNotMatch(moduleText, /Authorization|token=/i);
