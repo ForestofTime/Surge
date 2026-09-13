@@ -1,5 +1,7 @@
 /* Captures only the China Mobile autoLogin request body and sends it to a private Tailnet receiver. */
 
+var DEFAULT_RECEIVER_URL = 'https://hynmac-mini.taila66285.ts.net/cmcc-autologin';
+
 function argumentValue(name) {
   if (typeof $argument === 'object' && $argument !== null) return $argument[name];
   if (typeof $argument !== 'string') return undefined;
@@ -11,12 +13,9 @@ function argumentValue(name) {
 }
 
 function validReceiver(value) {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:' && /\.ts\.net$/i.test(url.hostname) && url.pathname === '/cmcc-autologin';
-  } catch (_) {
-    return false;
-  }
+  // Do not rely on URL: Surge's JSC runtime is narrower than a browser runtime.
+  return typeof value === 'string'
+    && /^https:\/\/[a-z0-9-]+\.[a-z0-9-]+\.ts\.net\/cmcc-autologin$/i.test(value);
 }
 
 function validCapture(value) {
@@ -24,7 +23,10 @@ function validCapture(value) {
 }
 
 (() => {
-  const receiverUrl = argumentValue('receiver_url');
+  const configuredReceiver = argumentValue('receiver_url');
+  const receiverUrl = configuredReceiver === undefined || configuredReceiver === ''
+    ? DEFAULT_RECEIVER_URL
+    : configuredReceiver;
   const body = $request && $request.body;
   if (!validReceiver(receiverUrl) || !validCapture(body) || typeof $httpClient === 'undefined') {
     $done({});
@@ -35,5 +37,6 @@ function validCapture(value) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ body }),
     timeout: 3,
+    policy: 'Tailnet',
   }, () => $done({}));
 })();
