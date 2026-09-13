@@ -58,6 +58,7 @@
 | 30 | `Task/FallbackRules.sgmodule` | 兜底规则学习 | System | 记录显式兜底域名或 IP，每日投递至私有 GitHub Inbox。v1 | [Raw](https://raw.githubusercontent.com/ForestofTime/Surge/main/Task/FallbackRules.sgmodule) | [导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FTask%2FFallbackRules.sgmodule) |
 | 31 | `Task/Task.sgmodule` | 定时任务 | System | 运行欧可林与贴吧签到任务。v1 | [Raw](https://raw.githubusercontent.com/ForestofTime/Surge/main/Task/Task.sgmodule) | [导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FTask%2FTask.sgmodule) |
 | 32 | `modules/didi-adblock.sgmodule` | 滴滴开屏/弹窗去广告（精简版） | AdBlock | 仅拦截滴滴乘客与车主 App 的开屏和弹窗请求。v1 | [Raw](https://raw.githubusercontent.com/ForestofTime/Surge/main/modules/didi-adblock.sgmodule) | [导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2Fmodules%2Fdidi-adblock.sgmodule) |
+| 33 | `Module/CMCCAutoLoginCapture.sgmodule` | 中国移动 autoLogin 自动同步 | Automation | 打开已登录 App 时经私有 Tailnet 自动同步登录体到本机青龙。v1 | [Raw](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CMCCAutoLoginCapture.sgmodule) | [导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FCMCCAutoLoginCapture.sgmodule) |
 
 独立资源：[Module/boxjs/smzdm.boxjs.json](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/boxjs/smzdm.boxjs.json) 为 BoxJS 配置模板，发布前需要替换占位链接。
 
