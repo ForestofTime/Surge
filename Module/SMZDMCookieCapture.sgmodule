@@ -1,0 +1,14 @@
+#!name=什么值得买 Cookie 自动同步
+#!desc=打开已登录什么值得买 App 时，将 App Cookie 经 Tailnet 安全同步到本机青龙。仅限私有 Tailnet。
+#!author=ForestofTime
+#!category=Automation
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/SMZDMCookieCapture.sgmodule
+#!arguments = receiver_url:https://hynmac-mini.taila66285.ts.net/smzdm-cookie
+#!arguments-desc = receiver_url: Mac 上已启用的 Tailnet 接收地址，请勿改为公网地址
+
+[Script]
+什么值得买-Cookie自动同步 = type=http-request,pattern=^https:\/\/user-api\.smzdm\.com\/.+$,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/SMZDMCookieCapture.js?v=1,script-arguments="receiver_url=%receiver_url"
+
+[MITM]
+hostname = %APPEND% user-api.smzdm.com
