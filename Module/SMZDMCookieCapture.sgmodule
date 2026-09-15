@@ -8,7 +8,7 @@
 #!arguments-desc = receiver_url: Mac 上已启用的 Tailnet 接收地址，请勿改为公网地址
 
 [Script]
-什么值得买-Cookie自动同步 = type=http-request,pattern=^https:\/\/user-api\.smzdm\.com\/.+$,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/SMZDMCookieCapture.js?v=2,script-arguments="receiver_url=%receiver_url"
+什么值得买-Cookie自动同步 = type=http-request,pattern=^https?:\/\/(?:user-api\.smzdm\.com\/(?:checkin|vip)(?:[/?]|$)|zhiyou\.smzdm\.com\/user(?:[/?]|$)),timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/SMZDMCookieCapture.js?v=3,script-arguments="receiver_url=%receiver_url"
 
 [MITM]
-hostname = %APPEND% user-api.smzdm.com
+hostname = %APPEND% user-api.smzdm.com, zhiyou.smzdm.com
