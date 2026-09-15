@@ -42,6 +42,7 @@ function validCookie(value) {
   var configured = argumentValue('receiver_url');
   var receiver = configured === undefined || configured === '' ? DEFAULT_RECEIVER_URL : configured;
   var cookie = requestHeader($request && $request.headers, 'cookie');
+  var userAgent = requestHeader($request && $request.headers, 'user-agent');
   if (!validReceiver(receiver) || !validCookie(cookie) || typeof $httpClient === 'undefined') {
     $done({});
     return;
@@ -49,7 +50,7 @@ function validCookie(value) {
   $httpClient.post({
     url: receiver,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ cookie: cookie }),
+    body: JSON.stringify({ cookie: cookie, userAgent: userAgent }),
     timeout: 3,
     policy: 'Tailnet',
   }, function () { $done({}); });
