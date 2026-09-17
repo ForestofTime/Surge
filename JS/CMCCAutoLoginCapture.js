@@ -1,7 +1,7 @@
 /* Pairs a China Mobile autoLogin request with its successful response, then sends it to a private Tailnet receiver. */
 
 var DEFAULT_RECEIVER_URL = 'https://hynmac-mini.taila66285.ts.net/cmcc-autologin';
-var PENDING_KEY = 'cmcc_autologin_pending_v5';
+var PENDING_KEY = 'cmcc_autologin_pending_v6';
 var PENDING_TTL_MS = 5 * 60 * 1000;
 
 function argumentValue(name) {
@@ -58,6 +58,20 @@ function prunePending(pending, now) {
   return pending;
 }
 
+function postReceiver(receiverUrl, payload, done) {
+  if (typeof $httpClient === 'undefined') {
+    done();
+    return;
+  }
+  $httpClient.post({
+    url: receiverUrl,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    timeout: 3,
+    policy: 'Tailnet',
+  }, () => done());
+}
+
 (() => {
   const configuredReceiver = argumentValue('receiver_url');
   const receiverUrl = configuredReceiver === undefined || configuredReceiver === ''
@@ -74,7 +88,7 @@ function prunePending(pending, now) {
     const requestBody = $request && $request.body;
     if (requestId && validCapture(requestBody)) pending[requestId] = { body: requestBody, savedAt: Date.now() };
     savePending(pending);
-    $done({});
+    postReceiver(receiverUrl, { event: validCapture(requestBody) ? 'request-seen' : 'request-body-invalid' }, () => $done({}));
     return;
   }
   const saved = requestId ? pending[requestId] : null;
@@ -84,16 +98,16 @@ function prunePending(pending, now) {
   const responseBody = typeof $response !== 'undefined' && $response ? $response.body : '';
   const responseStatus = typeof $response !== 'undefined' && $response ? Number($response.status || $response.statusCode || 0) : 0;
   const setCookie = typeof $response !== 'undefined' && $response ? headerValue($response.headers, 'set-cookie') : '';
-  if (!validCapture(body) || responseStatus !== 200
-      || !setCookie || !validEncryptedResponse(responseBody) || typeof $httpClient === 'undefined') {
-    $done({});
+  if (!validCapture(body)) {
+    postReceiver(receiverUrl, { event: 'response-unpaired' }, () => $done({}));
     return;
   }
-  $httpClient.post({
-    url: receiverUrl,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ body, response: { status: responseStatus, body: responseBody, setCookie } }),
-    timeout: 3,
-    policy: 'Tailnet',
+  postReceiver(receiverUrl, {
+    body,
+    response: { status: responseStatus, body: responseBody, setCookie },
+    diagnostic: {
+      responseBodyValid: validEncryptedResponse(responseBody),
+      hasSetCookie: Boolean(setCookie),
+    },
   }, () => $done({}));
 })();

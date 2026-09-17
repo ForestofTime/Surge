@@ -36,7 +36,7 @@ test('uses paired narrow autoLogin hooks and a Tailnet-only receiver argument', 
   assert.match(moduleText, /type=http-request/);
   assert.match(moduleText, /type=http-response/);
   assert.ok(moduleText.includes('(?:uamrandcodelogin|uamonekeylogin)\\/autoLogin'));
-  assert.match(moduleText, /CMCCAutoLoginCapture\.js\?v=5/);
+  assert.match(moduleText, /CMCCAutoLoginCapture\.js\?v=6/);
   assert.match(moduleText, /requires-body=true/);
   assert.match(moduleText, /hostname = %APPEND% client\.app\.coc\.10086\.cn/);
   assert.doesNotMatch(moduleText, /Authorization|token=/i);
@@ -52,7 +52,7 @@ test('sends only a valid captured body to the configured Tailnet endpoint', () =
     store,
     argument: 'receiver_url=https%3A%2F%2Fhynmac-mini.taila66285.ts.net%2Fcmcc-autologin',
   });
-  assert.equal(requestResult.post, undefined);
+  assert.equal(JSON.parse(requestResult.post.body).event, 'request-seen');
   assert.equal(Object.keys(store).length, 1);
   const result = execute({
     id: 'paired-id',
