@@ -24,7 +24,7 @@ function headerValue(headers, name) {
 }
 
 function validTarget(value) {
-  return /^https:\/\/(?:coral2\.quark|broccoli\.uc)\.cn\//i.test(String(value || ''));
+  return /^https?:\/\/(?:coral2\.quark|broccoli\.uc)\.cn\//i.test(String(value || ''));
 }
 
 function validCookie(value) {
@@ -32,11 +32,44 @@ function validCookie(value) {
     && !/[\r\n]/.test(value) && /(?:^|;\s*)kps=[^;]+/.test(value);
 }
 
+function safeQueryValue(url, names) {
+  try {
+    const parsed = new URL(url);
+    for (const name of names) {
+      const value = String(parsed.searchParams.get(name) || '').trim();
+      if (value && value.length <= 8192 && !/[;\r\n]/.test(value)) return value;
+    }
+  } catch (_) {}
+  return '';
+}
+
+function normalizeCookie(url, rawCookie) {
+  let cookie = typeof rawCookie === 'string' && !/[\r\n]/.test(rawCookie) ? rawCookie.trim() : '';
+  if (!/(?:^|;\s*)kps=[^;]+/.test(cookie)) {
+    const kps = safeQueryValue(url, ['kps']);
+    if (kps) cookie = `${cookie ? `${cookie.replace(/;?\s*$/, '')}; ` : ''}kps=${kps};`;
+  }
+  if (!/(?:^|;\s*)(?:broccoli-user-id|ut)=[^;]+/.test(cookie)) {
+    const ut = safeQueryValue(url, ['ut', 'broccoli-user-id']);
+    if (ut) cookie = `${cookie ? `${cookie.replace(/;?\s*$/, '')}; ` : ''}ut=${ut};`;
+  }
+  return cookie;
+}
+
+function sanitizedCaptureUrl(value) {
+  try {
+    const url = new URL(value);
+    return `${url.protocol}//${url.host}${url.pathname}`;
+  } catch (_) { return ''; }
+}
+
 (() => {
   const configured = argumentValue('receiver_url');
   const receiverUrl = configured === undefined || configured === '' ? DEFAULT_RECEIVER_URL : configured;
   const url = typeof $request !== 'undefined' && $request ? String($request.url || '') : '';
-  const cookie = typeof $request !== 'undefined' && $request ? headerValue($request.headers, 'cookie') : '';
+  const rawCookie = typeof $request !== 'undefined' && $request ? headerValue($request.headers, 'cookie') : '';
+  const cookie = normalizeCookie(url, rawCookie);
+  const captureUrl = sanitizedCaptureUrl(url);
   if (!validReceiver(receiverUrl) || !validTarget(url) || !validCookie(cookie) || typeof $httpClient === 'undefined') {
     $done({});
     return;
@@ -44,7 +77,7 @@ function validCookie(value) {
   $httpClient.post({
     url: receiverUrl,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url, cookie }),
+    body: JSON.stringify({ url: captureUrl, cookie }),
     timeout: 3,
     policy: 'Tailnet',
   }, () => $done({}));

@@ -14,7 +14,7 @@ function execute({ url = 'https://coral2.quark.cn/quark/welfare/v3/query', cooki
   let done;
   let post;
   vm.runInNewContext(script, {
-    decodeURIComponent,
+    decodeURIComponent, URL,
     $argument: argument,
     $request: { url, headers: { Cookie: cookie } },
     $httpClient: { post: (options, callback) => { post = options; callback(); } },
@@ -36,8 +36,20 @@ test('relays only the URL and valid Cookie without iOS persistence or logs', () 
   assert.equal(result.post.url, 'https://hynmac-mini.taila66285.ts.net/quark-cookie');
   assert.equal(result.post.policy, 'Tailnet');
   assert.match(payload.cookie, /^kps=/);
-  assert.match(payload.url, /^https:\/\/coral2\.quark\.cn\//);
+  assert.equal(payload.url, 'https://coral2.quark.cn/quark/welfare/v3/query');
   assert.doesNotMatch(script, /persistentStore|console\.log|QUARK_COOKIE/);
+});
+
+test('recovers kps and identity from query parameters without relaying the query string', () => {
+  const result = execute({
+    url: 'https://broccoli.uc.cn/welfare/query?kps=url-kps-fixture&ut=url-user-fixture',
+    cookie: 'other=value;',
+  });
+  const payload = JSON.parse(result.post.body);
+  assert.match(payload.cookie, /(?:^|;\s*)kps=url-kps-fixture;/);
+  assert.match(payload.cookie, /(?:^|;\s*)ut=url-user-fixture;/);
+  assert.equal(payload.url, 'https://broccoli.uc.cn/welfare/query');
+  assert.doesNotMatch(result.post.body, /\?/);
 });
 
 test('passes through invalid hosts, missing kps, and public receivers', () => {
