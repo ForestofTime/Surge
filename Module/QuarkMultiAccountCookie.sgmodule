@@ -1,0 +1,9 @@
+#!name=夸克多账号Cookie捕获
+#!desc=自动捕获夸克福利中心凭据(kps/ut)，本地多账号聚合存储，修复同账号因 ut 缺失/kps 轮换被重复登记的问题。基于 czy13724 版本改进。
+#!category=Cookie 捕获
+
+[MITM]
+hostname = coral2.quark.cn, broccoli.uc.cn
+
+[Script]
+夸克-多账号Cookie捕获 = type=http-request,pattern=^https?:\/\/(coral2\.quark|broccoli\.uc)\.cn\/.+,requires-body=false,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/QuarkMultiAccountCookie.js
