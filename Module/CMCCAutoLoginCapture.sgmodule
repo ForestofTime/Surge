@@ -1,5 +1,5 @@
 #!name=中国移动 autoLogin 自动同步
-#!desc=打开已登录中国移动 App 时，自动把随机码或一键登录 autoLogin 登录体同步到本机青龙。仅限 Tailnet，v3
+#!desc=打开已登录中国移动 App 时，从成功响应同步随机码或一键登录 autoLogin 登录体到本机青龙。仅限 Tailnet，v4
 #!author=ForestofTime
 #!category=Automation
 #!homepage=https://github.com/ForestofTime/Surge
@@ -8,7 +8,7 @@
 #!arguments-desc = receiver_url: Mac 上已启用的 Tailnet 接收地址，请勿改为公网地址
 
 [Script]
-中国移动-autoLogin自动同步 = type=http-request,pattern=^https:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/LN\/(?:uamrandcodelogin|uamonekeylogin)\/autoLogin(?:\?.*)?$,requires-body=true,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCAutoLoginCapture.js?v=3,script-arguments="receiver_url=%receiver_url"
+中国移动-autoLogin自动同步 = type=http-response,pattern=^https:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/LN\/(?:uamrandcodelogin|uamonekeylogin)\/autoLogin(?:\?.*)?$,requires-body=true,max-size=32768,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCAutoLoginCapture.js?v=4,script-arguments="receiver_url=%receiver_url"
 
 [MITM]
 hostname = %APPEND% client.app.coc.10086.cn
