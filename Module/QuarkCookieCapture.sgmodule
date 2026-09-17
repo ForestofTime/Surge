@@ -1,14 +1,24 @@
 #!name=夸克 Cookie 自动同步青龙
-#!desc=避开证书锁定，自动同步夸克福利 Cookie 到青龙。v3
+#!desc=同步夸克福利 Cookie，并抑制广告 SDK 重试风暴。v4
 #!author=ForestofTime
 #!category=Automation
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/QuarkCookieCapture.sgmodule
-#!arguments = receiver_url:https://hynmac-mini.taila66285.ts.net/quark-cookie
-#!arguments-desc = receiver_url: Mac 私有 Tailnet 接收地址，请勿改为公网地址
+#!arguments=receiver_url:https://hynmac-mini.taila66285.ts.net/quark-cookie
+#!arguments-desc=receiver_url: Mac 私有 Tailnet 接收地址，请勿改为公网地址
+
+[Rule]
+DOMAIN,api-access.pangolin-sdk-toutiao.com,REJECT,pre-matching
+DOMAIN,api-access.pangolin-sdk-toutiao1.com,REJECT,pre-matching
+DOMAIN,api-access.pangolin-sdk-toutiao-b.com,REJECT,pre-matching
+DOMAIN,mobads.baidu.com,REJECT,pre-matching
+DOMAIN,mi.gdt.qq.com,REJECT,pre-matching
+DOMAIN,open.e.kuaishou.com,REJECT,pre-matching
+DOMAIN,et.tanx.com,REJECT,pre-matching
+DOMAIN,opehs.tanx.com,REJECT,pre-matching
 
 [Script]
-夸克-Cookie自动同步 = type=http-request,pattern=^https?:\/\/broccoli\.uc\.cn\/.+,requires-body=false,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/QuarkCookieCapture.js?v=3,script-arguments="receiver_url=%receiver_url"
+夸克-Cookie自动同步 = type=http-request,pattern=^https?:\/\/broccoli\.uc\.cn\/.+,requires-body=false,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/QuarkCookieCapture.js?v=3,script-arguments="receiver_url={{{receiver_url}}}"
 
 [MITM]
 hostname = %APPEND% broccoli.uc.cn

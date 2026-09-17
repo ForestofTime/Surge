@@ -28,8 +28,28 @@ test('only MITMs the welfare WebView and excludes the pinned native host', () =>
   assert.match(moduleText, /^hostname = %APPEND% broccoli\.uc\.cn$/m);
   assert.match(moduleText, /^hostname-disabled = %APPEND% coral2\.quark\.cn$/m);
   assert.match(moduleText, /receiver_url:https:\/\/hynmac-mini\.taila66285\.ts\.net\/quark-cookie/);
+  assert.match(moduleText, /script-arguments="receiver_url=\{\{\{receiver_url\}\}\}"/);
+  assert.doesNotMatch(moduleText, /receiver_url=%receiver_url/);
   assert.match(moduleText, /requires-body=false/);
   assert.doesNotMatch(moduleText, /Authorization|QUARK_COOKIE=/i);
+});
+
+test('pre-matches only observed ad SDK hosts to prevent retry storms', () => {
+  const expected = [
+    'api-access.pangolin-sdk-toutiao.com',
+    'api-access.pangolin-sdk-toutiao1.com',
+    'api-access.pangolin-sdk-toutiao-b.com',
+    'mobads.baidu.com',
+    'mi.gdt.qq.com',
+    'open.e.kuaishou.com',
+    'et.tanx.com',
+    'opehs.tanx.com',
+  ];
+  for (const host of expected) {
+    assert.ok(moduleText.split('\n').includes(`DOMAIN,${host},REJECT,pre-matching`), host);
+  }
+  assert.doesNotMatch(moduleText, /^DOMAIN-SUFFIX,/m);
+  assert.doesNotMatch(moduleText, /pangolin.*DIRECT|coral2\.quark\.cn,REJECT/m);
 });
 
 test('relays only the URL and valid Cookie without iOS persistence or logs', () => {
