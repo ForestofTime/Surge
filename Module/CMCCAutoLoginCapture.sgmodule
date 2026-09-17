@@ -8,8 +8,8 @@
 #!arguments-desc = receiver_url: Mac 上已启用的 Tailnet 接收地址，请勿改为公网地址
 
 [Script]
-中国移动-autoLogin请求转发 = type=http-request,pattern=^https:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/LN\/(?:uamrandcodelogin|uamonekeylogin)\/autoLogin(?:\?.*)?$,requires-body=true,max-size=4096,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCAutoLoginCapture.js?v=7,script-arguments="receiver_url=%receiver_url"
-中国移动-autoLogin响应转发 = type=http-response,pattern=^https:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/LN\/(?:uamrandcodelogin|uamonekeylogin)\/autoLogin(?:\?.*)?$,requires-body=true,max-size=32768,full-header-mode=true,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCAutoLoginCapture.js?v=7,script-arguments="receiver_url=%receiver_url"
+中国移动-autoLogin请求转发 = type=http-request,pattern=^https:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/LN\/[A-Za-z0-9_-]+\/autoLogin(?:\?.*)?$,requires-body=true,max-size=4096,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCAutoLoginCapture.js?v=7,script-arguments="receiver_url=%receiver_url"
+中国移动-autoLogin响应转发 = type=http-response,pattern=^https:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/LN\/[A-Za-z0-9_-]+\/autoLogin(?:\?.*)?$,requires-body=true,max-size=32768,full-header-mode=true,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCAutoLoginCapture.js?v=7,script-arguments="receiver_url=%receiver_url"
 
 [MITM]
 hostname = %APPEND% client.app.coc.10086.cn

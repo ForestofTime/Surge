@@ -22,11 +22,11 @@ function execute({ body, argument, response = null, id = 'request-1', url = 'htt
   return { done, post };
 }
 
-test('uses paired narrow autoLogin hooks and a Tailnet-only receiver argument', () => {
+test('captures every bounded LN autoLogin path and uses a Tailnet-only receiver argument', () => {
   assert.match(moduleText, /^#!arguments = receiver_url:https:\/\/hynmac-mini\.taila66285\.ts\.net\/cmcc-autologin$/m);
   assert.match(moduleText, /type=http-request/);
   assert.match(moduleText, /type=http-response/);
-  assert.ok(moduleText.includes('(?:uamrandcodelogin|uamonekeylogin)\\/autoLogin'));
+  assert.ok(moduleText.includes('[A-Za-z0-9_-]+\\/autoLogin'));
   assert.match(moduleText, /CMCCAutoLoginCapture\.js\?v=7/g);
   assert.match(moduleText, /requires-body=true/);
   assert.match(moduleText, /full-header-mode=true/);
