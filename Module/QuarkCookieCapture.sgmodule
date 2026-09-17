@@ -1,0 +1,14 @@
+#!name=夸克 Cookie 自动同步青龙
+#!desc=捕获夸克福利中心有效 Cookie，经 Tailnet 交给 Mac 脱敏去重并更新青龙 QUARK_COOKIE；iOS 不保存、不打印凭据，v1
+#!author=ForestofTime
+#!category=Automation
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/QuarkCookieCapture.sgmodule
+#!arguments = receiver_url:https://hynmac-mini.taila66285.ts.net/quark-cookie
+#!arguments-desc = receiver_url: Mac 私有 Tailnet 接收地址，请勿改为公网地址
+
+[Script]
+夸克-Cookie自动同步 = type=http-request,pattern=^https:\/\/(?:coral2\.quark|broccoli\.uc)\.cn\/.+,requires-body=false,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/QuarkCookieCapture.js?v=1,script-arguments="receiver_url=%receiver_url"
+
+[MITM]
+hostname = %APPEND% coral2.quark.cn, broccoli.uc.cn
