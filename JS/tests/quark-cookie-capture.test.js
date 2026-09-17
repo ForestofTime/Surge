@@ -23,8 +23,10 @@ function execute({ url = 'https://coral2.quark.cn/quark/welfare/v3/query', cooki
   return { done, post };
 }
 
-test('uses a narrow two-host MITM rule and private Tailnet receiver', () => {
-  assert.match(moduleText, /\(\?:coral2\\\.quark\|broccoli\\\.uc\)\\\.cn/);
+test('only MITMs the welfare WebView and excludes the pinned native host', () => {
+  assert.match(moduleText, /pattern=\^https\?:\\\/\\\/broccoli\\\.uc\\\.cn/);
+  assert.match(moduleText, /^hostname = %APPEND% broccoli\.uc\.cn$/m);
+  assert.match(moduleText, /^hostname-disabled = %APPEND% coral2\.quark\.cn$/m);
   assert.match(moduleText, /receiver_url:https:\/\/hynmac-mini\.taila66285\.ts\.net\/quark-cookie/);
   assert.match(moduleText, /requires-body=false/);
   assert.doesNotMatch(moduleText, /Authorization|QUARK_COOKIE=/i);
