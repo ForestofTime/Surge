@@ -36,6 +36,8 @@ const latestV17OrderBadgeRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-08-161410.har';
 const latestV18ChatPersonalRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-09-223414.har';
+const latestV19ChatPersonalRegressionHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-18-113046.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
@@ -54,10 +56,10 @@ test('uses QingRex native rules and passes through homepage, search, and product
   assert.match(moduleText, /^#!name=拼多多去广告（QingRex 原生兼容）$/m);
   assert.match(
     moduleText,
-    /清理拼多多聊天与个人中心广告，保留首页、搜索、详情、物流和订单数量。v18/
+    /清理拼多多聊天与个人中心广告，保留首页、搜索、详情、物流和订单数量。v19/
   );
 
-  // The validated v18 body rewrites and map-local rules stay byte-identical.
+  // The validated v19 body rewrites and map-local rules stay byte-identical.
   const unchangedBodyRewrite = section('Body Rewrite', 'Map Local')
     .split('\n')
     .filter((line) =>
@@ -68,7 +70,7 @@ test('uses QingRex native rules and passes through homepage, search, and product
     .join('\n');
   assert.equal(
     sha256(unchangedBodyRewrite),
-    '9e08ed0b01820ab94f92d8aec723ad9b959a458306b0623ee2c45b66bab3a257'
+    '7678c10556d5093b6d5148620a680242da1092ec1c950d106763afbc18f761a9'
   );
   assert.equal(
     sha256(section('Map Local', 'MITM')),
@@ -222,6 +224,28 @@ test('v18 covers the updated chat extension and removes only personal promotiona
   assert.ok(bodyRewrite.includes('[[' + '"show_recommend_feed_banner"' + ']]'));
   assert.equal(bodyRewrite.includes('[["icon_set","icons"]]'), false);
   assert.equal(bodyRewrite.includes('[["icon_set","top_personal_icons"]]'), false);
+});
+
+test('v19 filters updated personal marketing icons without removing order badge bindings', {
+  skip: !fs.existsSync(latestV19ChatPersonalRegressionHarPath),
+}, () => {
+  const har = JSON.parse(fs.readFileSync(latestV19ChatPersonalRegressionHarPath, 'utf8'));
+  const personalHub = har.log.entries.find((entry) =>
+    new URL(entry.request.url).pathname === '/api/philo/personal/hub'
+  );
+  assert.ok(personalHub);
+  const payload = JSON.parse(personalHub.response.content.text);
+  assert.deepEqual(
+    payload.icon_set.icons.map(({ app_name }) => app_name),
+    ['five_gifts', 'train', 'first_order_reduce']
+  );
+  assert.equal(payload.red_dot.order_un_comment.number, 4);
+  assert.equal(payload.icon_set.first_personal_icons[0].app_name, 'order_un_pay');
+
+  const bodyRewrite = section('Body Rewrite', 'Map Local');
+  assert.ok(bodyRewrite.includes('five_gifts'));
+  assert.ok(bodyRewrite.includes('first_order_reduce'));
+  assert.equal(bodyRewrite.includes('[["icon_set","icons"]]'), false);
 });
 
 test('has zero homepage hub rewrites', () => {

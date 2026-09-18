@@ -1,11 +1,11 @@
 #!name=拼多多去广告（QingRex 原生兼容）
-#!desc=清理拼多多聊天与个人中心广告，保留首页、搜索、详情、物流和订单数量。v18
+#!desc=清理拼多多聊天与个人中心广告，保留首页、搜索、详情、物流和订单数量。v19
 #!author=ForestofTime
 #!category=AdBlock
 #!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/PinDuoDuo.png
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/PinduoduoNative.sgmodule
-#!date=2026-09-09
+#!date=2026-09-18
 
 [Rule]
 # QingRex 原规则，兼容拼多多 8.20.0 HAR 证实的 /v2/d 与 /v3/d HTTPDNS 路径。
@@ -32,6 +32,7 @@ http-response-jq ^https:\/\/api\.(?:pinduoduo|yangkeduo)\.com\/api\/philo\/perso
 http-response-jq ^https:\/\/api\.(?:pinduoduo|yangkeduo)\.com\/api\/philo\/personal\/hub\? 'delpaths([["personal_center_style_v2_vo"]])'
 http-response-jq ^https:\/\/api\.(?:pinduoduo|yangkeduo)\.com\/api\/philo\/personal\/hub\? 'delpaths([["personal_banner"]])'
 http-response-jq ^https:\/\/api\.(?:pinduoduo|yangkeduo)\.com\/api\/philo\/personal\/hub\? 'delpaths([["show_recommend_feed_banner"]])'
+http-response-jq ^https:\/\/api\.(?:pinduoduo|yangkeduo)\.com\/api\/philo\/personal\/hub\? 'if (.icon_set.icons | type) == "array" then .icon_set.icons |= map(select(.app_name != "five_gifts" and .app_name != "first_order_reduce")) else . end'
 http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/caterham\/v3\/query\/order_detail_group\? 'delpaths([["data","goods_list"]])'
 http-response-jq ^https:\/\/api\.pinduoduo\.com\/api\/aristotle\/order_list_v4\? '.orders |= map(.order_buttons |= map(del(.order_growth_tip)))'
 
