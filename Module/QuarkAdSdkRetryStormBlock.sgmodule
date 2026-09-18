@@ -1,0 +1,16 @@
+#!name=夸克广告 SDK 重试风暴抑制
+#!desc=精确拦截已观测广告 SDK 域名，抑制失败后的高频重试；不拦截夸克业务域名。v1
+#!author=ForestofTime
+#!category=AdBlock
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/QuarkAdSdkRetryStormBlock.sgmodule
+
+[Rule]
+DOMAIN,api-access.pangolin-sdk-toutiao.com,REJECT,pre-matching
+DOMAIN,api-access.pangolin-sdk-toutiao1.com,REJECT,pre-matching
+DOMAIN,api-access.pangolin-sdk-toutiao-b.com,REJECT,pre-matching
+DOMAIN,mobads.baidu.com,REJECT,pre-matching
+DOMAIN,mi.gdt.qq.com,REJECT,pre-matching
+DOMAIN,open.e.kuaishou.com,REJECT,pre-matching
+DOMAIN,et.tanx.com,REJECT,pre-matching
+DOMAIN,opehs.tanx.com,REJECT,pre-matching
