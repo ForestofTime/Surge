@@ -7,3 +7,6 @@ docs/plans/*
 !docs/fallback-rule-learning-operation.md
 .work/
 .DS_Store
+
+# 本地 agent 工作笔记（引用本机 Hermes 技能与授权约定，不进公开仓库）
+AGENTS.md
