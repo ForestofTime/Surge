@@ -1,0 +1,126 @@
+{
+  "_source": "2026-09-20-114042.har (Surge iOS 5.102.0, JD 16.0.0 build 170980)",
+  "_why": "开屏图片与开屏视频都被规则命中的现场证据。图片条目 size=1 / text/plain 是data-type=text 的后果：1 字节文本喂给图片解码器失败，App 回退到本地缓存的旧开屏图，于是规则命中而广告照旧显示。改为 data-type=tiny-gif 后应得到可解码的 1x1 透明 GIF。",
+  "imageEntries": [
+    {
+      "startedDateTime": "2026-09-20T11:41:17+08:00",
+      "method": "GET",
+      "url": "https://m.360buyimg.com/mobilecms/s1125x2436_jfs/t1/521111/34/9265/148325/6aacd37aFbcac6648/0258465984ed629d.jpg.webp",
+      "requestHeaders": {
+        "referer": "download_Image_JDAppHome",
+        "user-agent": "jdmall;iphone;version/16.0.0;build/170980;network/5g;screen/1320x2868;os/27.0"
+      },
+      "status": 200,
+      "size": 1,
+      "mimeType": "text/plain",
+      "comment": "11:41:12.849931 [Connection] Handled by VIF\n11:41:12.850152 [TLS] TLS Client Hello SNI: m.360buyimg.com\n11:41:12.850174 [MITM] Enable MITM due to capture MITM override setting entry: *\n11:41:12.892642 [MITM] MITM via HTTP/2 mode\n11:41:17.809082 [Rewrite] Matched map local rule: ^https?:\\/\\/m\\.360buyimg\\.com\\/mobilecms\\/s1125x2436_jfs(?:\\/|$) (京东去开屏)"
+    },
+    {
+      "startedDateTime": "2026-09-20T11:41:17+08:00",
+      "method": "GET",
+      "url": "https://m.360buyimg.com/mobilecms/s1125x2436_jfs/t1/521111/34/9265/148325/6aacd37aFbcac6648/0258465984ed629d.jpg.avif",
+      "requestHeaders": {
+        "referer": "download_Image_JDAppHome",
+        "user-agent": "jdmall;iphone;version/16.0.0;build/170980;network/5g;screen/1320x2868;os/27.0"
+      },
+      "status": 200,
+      "size": 1,
+      "mimeType": "text/plain",
+      "comment": "11:41:12.849931 [Connection] Handled by VIF\n11:41:12.850152 [TLS] TLS Client Hello SNI: m.360buyimg.com\n11:41:12.850174 [MITM] Enable MITM due to capture MITM override setting entry: *\n11:41:12.892642 [MITM] MITM via HTTP/2 mode\n11:41:17.792839 [Rewrite] Matched map local rule: ^https?:\\/\\/m\\.360buyimg\\.com\\/mobilecms\\/s1125x2436_jfs(?:\\/|$) (京东去开屏)"
+    },
+    {
+      "startedDateTime": "2026-09-20T11:40:49+08:00",
+      "method": "GET",
+      "url": "https://m.360buyimg.com/mobilecms/s1125x2436_jfs/t1/521111/34/9265/148325/6aacd37aFbcac6648/0258465984ed629d.jpg.webp",
+      "requestHeaders": {
+        "referer": "download_Image_JDAppHome",
+        "user-agent": "jdmall;iphone;version/16.0.0;build/170980;network/5g;screen/1320x2868;os/27.0"
+      },
+      "status": 200,
+      "size": 1,
+      "mimeType": "text/plain",
+      "comment": "11:40:44.688905 [Connection] Handled by VIF\n11:40:44.704152 [TLS] TLS Client Hello SNI: m.360buyimg.com\n11:40:44.704193 [MITM] Enable MITM due to capture MITM override setting entry: *\n11:40:44.716640 [MITM] MITM via HTTP/2 mode\n11:40:49.836999 [Rewrite] Matched map local rule: ^https?:\\/\\/m\\.360buyimg\\.com\\/mobilecms\\/s1125x2436_jfs(?:\\/|$) (京东去开屏)"
+    },
+    {
+      "startedDateTime": "2026-09-20T11:40:49+08:00",
+      "method": "GET",
+      "url": "https://m.360buyimg.com/mobilecms/s1125x2436_jfs/t1/519016/34/12278/196424/6aad101bF37746a5d/0258465984aa33fc.jpg.webp",
+      "requestHeaders": {
+        "referer": "download_Image_JDAppHome",
+        "user-agent": "jdmall;iphone;version/16.0.0;build/170980;network/5g;screen/1320x2868;os/27.0"
+      },
+      "status": 200,
+      "size": 1,
+      "mimeType": "text/plain",
+      "comment": "11:40:44.688905 [Connection] Handled by VIF\n11:40:44.704152 [TLS] TLS Client Hello SNI: m.360buyimg.com\n11:40:44.704193 [MITM] Enable MITM due to capture MITM override setting entry: *\n11:40:44.716640 [MITM] MITM via HTTP/2 mode\n11:40:49.832346 [Rewrite] Matched map local rule: ^https?:\\/\\/m\\.360buyimg\\.com\\/mobilecms\\/s1125x2436_jfs(?:\\/|$) (京东去开屏)"
+    },
+    {
+      "startedDateTime": "2026-09-20T11:40:49+08:00",
+      "method": "GET",
+      "url": "https://m.360buyimg.com/mobilecms/s1125x2436_jfs/t1/521111/34/9265/148325/6aacd37aFbcac6648/0258465984ed629d.jpg.avif",
+      "requestHeaders": {
+        "referer": "download_Image_JDAppHome",
+        "user-agent": "jdmall;iphone;version/16.0.0;build/170980;network/5g;screen/1320x2868;os/27.0"
+      },
+      "status": 200,
+      "size": 1,
+      "mimeType": "text/plain",
+      "comment": "11:40:44.688905 [Connection] Handled by VIF\n11:40:44.704152 [TLS] TLS Client Hello SNI: m.360buyimg.com\n11:40:44.704193 [MITM] Enable MITM due to capture MITM override setting entry: *\n11:40:44.716640 [MITM] MITM via HTTP/2 mode\n11:40:49.826417 [Rewrite] Matched map local rule: ^https?:\\/\\/m\\.360buyimg\\.com\\/mobilecms\\/s1125x2436_jfs(?:\\/|$) (京东去开屏)"
+    },
+    {
+      "startedDateTime": "2026-09-20T11:40:49+08:00",
+      "method": "GET",
+      "url": "https://m.360buyimg.com/mobilecms/s1125x2436_jfs/t1/519016/34/12278/196424/6aad101bF37746a5d/0258465984aa33fc.jpg.avif",
+      "requestHeaders": {
+        "referer": "download_Image_JDAppHome",
+        "user-agent": "jdmall;iphone;version/16.0.0;build/170980;network/5g;screen/1320x2868;os/27.0"
+      },
+      "status": 200,
+      "size": 1,
+      "mimeType": "text/plain",
+      "comment": "11:40:44.688905 [Connection] Handled by VIF\n11:40:44.704152 [TLS] TLS Client Hello SNI: m.360buyimg.com\n11:40:44.704193 [MITM] Enable MITM due to capture MITM override setting entry: *\n11:40:44.716640 [MITM] MITM via HTTP/2 mode\n11:40:49.820405 [Rewrite] Matched map local rule: ^https?:\\/\\/m\\.360buyimg\\.com\\/mobilecms\\/s1125x2436_jfs(?:\\/|$) (京东去开屏)"
+    }
+  ],
+  "launchVideoEntries": [
+    {
+      "startedDateTime": "2026-09-20T11:41:16+08:00",
+      "method": "GET",
+      "url": "https://vod.300hu.com/1030/4c1f7a6atransbjngwcloud1oss/3dddf3821135232111038586881/1159_4508691293_2_3044cb7e0.mp4?source=1&h265=1159_4508691293_2_3044cb7e0.mp4",
+      "requestHeaders": {
+        "user-agent": "ffmpeg/4.0;jdmall;iphone;version/16.0.0;build/170980",
+        "referer": "play:ijkplayerSH_JDMainPageViewController_999_163_130000-163b",
+        "range": "bytes=0-"
+      },
+      "status": 204,
+      "size": 0,
+      "mimeType": "",
+      "comment": "11:41:16.506009 [Connection] Handled by VIF\n11:41:16.506337 [TLS] TLS Client Hello SNI: vod.300hu.com\n11:41:16.506366 [MITM] Enable MITM due to capture MITM override setting entry: *\n11:41:16.509502 [MITM] MITM via HTTP/1.1 mode\n11:41:16.513185 [Script] HTTP request script found: 京东-主页面启动视频跳过 (京东去开屏)"
+    },
+    {
+      "startedDateTime": "2026-09-20T11:40:53+08:00",
+      "method": "HEAD",
+      "url": "https://jvod.300hu.com/vod/product/d9a1651e-3480-489d-bea7-df2cab7a72da/ecaa374a9d2b4ed6a9d6fbabd9af870c.mp4",
+      "requestHeaders": {
+        "user-agent": "JD4iPhone/16.0.0 CFNetwork/3896.100.1.2.1 Darwin/27.0.0"
+      },
+      "status": 200,
+      "size": 5419339,
+      "mimeType": "video/mp4",
+      "comment": "11:40:53.317913 [Connection] Handled by VIF\n11:40:53.326550 [TLS] TLS Client Hello SNI: jvod.300hu.com\n11:40:53.326585 [MITM] Enable MITM due to capture MITM override setting entry: *\n11:40:53.375566 [MITM] MITM via HTTP/2 mode\n11:40:53.427881 [Rule] Rule evaluating requires DNS lookup for rule: RULE-SET LAN\n11:40:53.464499 [DNS] DNS lookup for jvod.300hu.com completed in 36.0ms. A record count: 1, AAAA record count: 0\n11:40:53.464566 [Rule] DNS completed, IPv4 address for matching: 112.48.153.83, IPv6 address for matching: N/A\n11:40:53.464629 [Rule] Rule matched: GEOIP CN\n11:40:53.465618 [Socket] Connecting with address: 112.48.153.83\n11:40:53.477858 [Socket] Connected to address 112.48.153.83 in 12.1ms\n11:40:53.477936 [Connector] TCP connection established\n11:40:53.491922 [TLS] TLS handshake completed, negotiated cipher: TLS_AES_128_GCM_SHA256, protocol TLSv1.3\n11:40:53.491939 [TLS] TLS ALPN: h2\n11:40:53.492022 [HTTP] HTTP protocol negotiation completed: HTTP/2"
+    },
+    {
+      "startedDateTime": "2026-09-20T11:40:48+08:00",
+      "method": "GET",
+      "url": "https://vod.300hu.com/1030/4c1f7a6atransbjngwcloud1oss/3dddf3821135232111038586881/1159_4508691293_2_3044cb7e0.mp4?source=1&h265=1159_4508691293_2_3044cb7e0.mp4",
+      "requestHeaders": {
+        "user-agent": "ffmpeg/4.0;jdmall;iphone;version/16.0.0;build/170980",
+        "referer": "play:ijkplayerSH_JDMainPageViewController_999_163_130000-163b",
+        "range": "bytes=0-"
+      },
+      "status": 204,
+      "size": 0,
+      "mimeType": "",
+      "comment": "11:40:48.753622 [Connection] Handled by VIF\n11:40:48.754639 [TLS] TLS Client Hello SNI: vod.300hu.com\n11:40:48.754681 [MITM] Enable MITM due to capture MITM override setting entry: *\n11:40:48.757297 [MITM] MITM via HTTP/1.1 mode\n11:40:48.759143 [Script] HTTP request script found: 京东-主页面启动视频跳过 (京东去开屏)"
+    }
+  ]
+}

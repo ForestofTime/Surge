@@ -7,15 +7,6 @@ const vm = require('node:vm');
 const modulePath = path.resolve(__dirname, '../../Module/JingdongAds.sgmodule');
 const scriptPath = path.resolve(__dirname, '../JingdongSplash.js');
 const readmePath = path.resolve(__dirname, '../../README.md');
-const splashHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-12-081629.har';
-const latestVideoSplashHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-17-090751.har';
-const cachedVideoSplashHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-142415.har';
-const latestLiveSplashHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-144156.har';
-
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const scriptText = fs.readFileSync(scriptPath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
@@ -48,7 +39,7 @@ function runRequest(url, headers) {
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
   assert.match(moduleText, /仅拦截京东开屏图片和启动媒体，保留页面业务/);
-  assert.match(moduleText, /v15$/m);
+  assert.match(moduleText, /v16$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m
@@ -72,7 +63,7 @@ test('publishes a splash-only native Surge module', () => {
     moduleText,
     /pattern=\^https\?:\\\/\\\/vod\\\.300hu\\\.com\\\/\\d\+\\\/\.\*\\\.mp4\(\?:\\\?\.\*\)\?\$/
   );
-  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=15/);
+  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=16/);
   assert.match(moduleText, /^京东-主页面启动流跳过 = type=http-request,/m);
   assert.match(
     moduleText,
@@ -80,23 +71,43 @@ test('publishes a splash-only native Surge module', () => {
   );
 });
 
-test('keeps only the three QUIC fallbacks required by the confirmed splash paths', () => {
+test('keeps only the QUIC fallbacks required by the confirmed splash paths', () => {
   assert.deepEqual(sectionLines(moduleText, 'Rule'), [
     'AND, ((PROTOCOL, UDP), (DOMAIN, m.360buyimg.com)), REJECT',
+    'AND, ((PROTOCOL, UDP), (DOMAIN, m15.360buyimg.com)), REJECT',
     'AND, ((PROTOCOL, UDP), (DOMAIN, vod.300hu.com)), REJECT',
     'AND, ((PROTOCOL, UDP), (DOMAIN, discover.300hu.com)), REJECT',
   ]);
 });
 
-test('maps only the HAR-confirmed full-screen canvas class', () => {
-  assert.deepEqual(sectionLines(moduleText, 'Map Local'), [
-    '^https?:\\/\\/m\\.360buyimg\\.com\\/mobilecms\\/s1125x2436_jfs(?:\\/|$) data-type=text data=" " status-code=200',
-  ]);
+test('maps the full-screen canvas class across the rotating image hosts', () => {
+  const rules = sectionLines(moduleText, 'Map Local');
+  assert.equal(rules.length, 1, 'exactly one Map Local rule');
+  const [rule] = rules;
+
+  // 尺寸段是稳定的；主机前缀会轮换（m. / m11. / m15. / img30. / storage.）。
+  assert.match(rule, /\^https\?:\\\/\\\//, 'anchored pattern');
+  assert.match(rule, /\\\.360buyimg\\\.com/, 'matches the 360buyimg host family');
+  assert.match(rule, /1125x2436/, 'covers the observed canvas class');
+  for (const other of ['1170x2532', '1242x2688', '1284x2778', '1290x2796', '1320x2868']) {
+    assert.ok(rule.includes(other), 'covers full-screen canvas class ' + other);
+  }
+  assert.match(rule, /_jfs\(\?:\\\/\|\$\)/, 'anchors on the jfs path segment');
+
+  // 绝不能退回 data-type=text：1 字节文本喂给图片解码器会失败，
+  // App 随即回退到本地缓存的旧开屏图 —— 规则命中但广告照旧显示。
+  assert.doesNotMatch(rule, /data-type=text/, 'must not serve text for an image request');
+  assert.match(rule, /data-type=tiny-gif/, 'must serve a decodable 1x1 transparent GIF');
+
+  // 方形商品图尺寸不能被卷进来。
+  for (const square of ['714x714', '357x357', '240x240', '225x225', '222x222']) {
+    assert.ok(!rule.includes(square), 'square product-image class ' + square + ' must stay out');
+  }
 });
 
-test('limits MITM to the three confirmed splash delivery hosts', () => {
+test('limits MITM to the confirmed splash delivery hosts', () => {
   assert.deepEqual(sectionLines(moduleText, 'MITM'), [
-    'hostname = %APPEND% m.360buyimg.com, vod.300hu.com, discover.300hu.com',
+    'hostname = %APPEND% m.360buyimg.com, m15.360buyimg.com, vod.300hu.com, discover.300hu.com',
     'tcp-connection = true',
   ]);
 });
@@ -214,112 +225,74 @@ test('blocks the launch-only discover stream fallback without blocking other dis
   }
 });
 
-test('the newest cleared-cache HAR exposes an unhandled launch-only discover stream fallback', { skip: !fs.existsSync(latestLiveSplashHarPath) }, () => {
-  const har = JSON.parse(fs.readFileSync(latestLiveSplashHarPath, 'utf8'));
-  const requestHeaders = (entry) =>
-    Object.fromEntries(
-      (entry.request && entry.request.headers || []).map((header) => [String(header.name).toLowerCase(), header.value])
-    );
-  const entries = har.log.entries.filter((entry) => {
-    const headers = requestHeaders(entry);
-    return (
-      /^https:\/\/discover\.300hu\.com\/.*\.(?:m3u8|ts)(?:\?|$)/i.test(entry.request && entry.request.url || '') &&
-      /^ffmpeg\/[^;]+;jdmall;(?:iphone|ipad);/i.test(headers['user-agent'] || '') &&
-      /^play:ijkplayerSH_JDMainPageViewController_/i.test(headers.referer || '')
-    );
-  });
+// ── 入库 fixture 回归 ────────────────────────────────────────────────
+//
+// 原先这四个测试依赖 iCloud 里按日期命名的 HAR，文件离开本机后永久 SKIP ——
+// 套件照样绿，覆盖为零。改为读仓库内的小 fixture（只含判定所需字段，~9KB），
+// 证据随代码走，不会腐坏。
+const fixturePath = path.resolve(__dirname, 'fixtures/jingdong-splash-2026-09-20.json');
+const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
 
-  assert.equal(entries.length, 6, 'the HAR must contain the six launch stream fallback requests');
-  assert.equal(
-    entries.reduce((total, entry) => total + Number(entry.response.content && entry.response.content.size || 0), 0),
-    1566150,
-    'the fallback must account for the observed 1,566,150 response bytes'
-  );
-  assert.ok(entries.every((entry) => !/HTTP request script found: 京东-主页面启动视频跳过/.test(entry.comment || '')));
-  for (const entry of entries) {
-    assert.deepEqual(runRequest(entry.request.url, requestHeaders(entry)), { response: { status: 204 } });
+function matchedMapLocal(entry) {
+  return /Matched map local rule/.test(entry.comment || '');
+}
+function matchedRequestScript(entry) {
+  return /HTTP request script found/.test(entry.comment || '');
+}
+
+test('fixture: the splash image rule actually fired on every full-screen launch image', () => {
+  assert.ok(fixture.imageEntries.length >= 2, 'fixture must carry the observed launch images');
+  for (const entry of fixture.imageEntries) {
+    assert.match(entry.url, /\/mobilecms\/s1125x2436_jfs\//, 'full-screen canvas class');
+    assert.equal(entry.status, 200);
+    assert.ok(matchedMapLocal(entry), 'the Map Local rule must be recorded as matched: ' + entry.url);
   }
 });
 
-test('the newest JD HAR proves the visible launch video was served from local cache', { skip: !fs.existsSync(cachedVideoSplashHarPath) }, () => {
-  const har = JSON.parse(fs.readFileSync(cachedVideoSplashHarPath, 'utf8'));
-  assert.deepEqual(har.log.creator, { version: '5.102.0', name: 'Surge iOS' });
-  assert.ok(
-    har.log.entries.some((entry) =>
-      (entry.request && entry.request.headers || []).some((header) =>
-        /JD4iPhone\/15\.10\.0|jdmall;iphone;version\/15\.10\.0/.test(String(header.value || ''))
-      )
-    ),
-    'the HAR must identify JD 15.10.0 traffic'
-  );
-
-  const videoEntries = har.log.entries.filter((entry) => {
-    const url = entry.request && entry.request.url || '';
-    const mimeType = entry.response && entry.response.content && entry.response.content.mimeType || '';
-    return /\.(?:mp4|m3u8|ts|flv)(?:\?|$)/i.test(url) || /^video\//i.test(mimeType);
-  });
-  assert.equal(videoEntries.length, 0, 'the visible launch video made no network media request');
-  assert.equal(
-    har.log.entries.filter((entry) => /\(京东去开屏\)|京东-主页面启动视频跳过/.test(entry.comment || '')).length,
-    0,
-    'v13 had no request opportunity while the cached video was playing'
-  );
-  assert.ok(
-    har.log.entries.some((entry) => /Handled by VIF/.test(entry.comment || '')),
-    'the capture must contain VIF-handled JD traffic'
-  );
+test('fixture: the old text stub is the documented cause of the still-visible splash', () => {
+  // size=1 + text/plain 正是 data-type=text 的指纹：1 字节文本喂给图片解码器必然失败，
+  // App 随即回退到本地缓存的旧开屏图 —— 规则命中，广告照旧显示。
+  for (const entry of fixture.imageEntries) {
+    assert.equal(entry.mimeType, 'text/plain', 'text stub is what the broken rule served');
+    assert.equal(entry.size, 1, 'exactly one byte of text');
+  }
+  // 新规则必须不再产出这种响应。
+  const rules = sectionLines(moduleText, 'Map Local');
+  assert.ok(rules.every((rule) => !/data-type=text/.test(rule)), 'no text stub may remain');
+  assert.ok(rules.every((rule) => /data-type=tiny-gif/.test(rule)), 'decodable image instead');
 });
 
-test('the latest HAR proves the AVPlayer launch video bypasses v12 while the old IJK path is blocked', { skip: !fs.existsSync(latestVideoSplashHarPath) }, () => {
-  const har = JSON.parse(fs.readFileSync(latestVideoSplashHarPath, 'utf8'));
-  const requestHeaders = (entry) =>
-    Object.fromEntries(
-      (entry.request && entry.request.headers || []).map((header) => [String(header.name).toLowerCase(), header.value])
-    );
-  const newLaunchVideo = har.log.entries.find((entry) => {
-    const headers = requestHeaders(entry);
-    return (
-      /^https:\/\/vod\.300hu\.com\/\d+\/.*\.mp4(?:\?|$)/.test(entry.request && entry.request.url || '') &&
-      /^CFNetwork;jdmall;(?:iphone|ipad);/i.test(headers['user-agent'] || '') &&
-      /^play:avplayerSH_JDMainPageViewController_61_/i.test(headers.referer || '')
-    );
-  });
-  assert.ok(newLaunchVideo, 'the latest HAR must contain the new AVPlayer launch video');
-  assert.equal(newLaunchVideo.response.status, 200);
-  assert.equal(newLaunchVideo.response.content.mimeType, 'video/mp4');
-  assert.doesNotMatch(newLaunchVideo.comment || '', /HTTP request script found: 京东-主页面启动视频跳过/);
-  assert.deepEqual(runRequest(newLaunchVideo.request.url, requestHeaders(newLaunchVideo)), {
-    response: { status: 204 },
-  });
+test('fixture: the launch video script fired and product video passed through', () => {
+  const blocked = fixture.launchVideoEntries.filter((e) => matchedRequestScript(e));
+  const passed = fixture.launchVideoEntries.filter((e) => !matchedRequestScript(e));
 
-  const oldLaunchVideo = har.log.entries.find((entry) =>
-    /^https:\/\/vod\.300hu\.com\/1030\/.*\.mp4(?:\?|$)/.test(entry.request && entry.request.url || '')
-  );
-  assert.ok(oldLaunchVideo, 'the latest HAR must retain the old launch-video regression sample');
-  assert.equal(oldLaunchVideo.response.status, 204);
-  assert.match(oldLaunchVideo.comment || '', /HTTP request script found: 京东-主页面启动视频跳过/);
+  assert.ok(blocked.length >= 1, 'the launch-player video must be recorded as handled');
+  for (const entry of blocked) {
+    assert.equal(entry.status, 204, 'handled launch video returns 204');
+    assert.deepEqual(
+      runRequest(entry.url, entry.requestHeaders),
+      { response: { status: 204 } },
+      'the shipped script must still block this exact request'
+    );
+  }
+
+  // 放行的那条是京东视频的普通广告片（UA 为 JD4iPhone/*，无启动播放器 Referer），
+  // 不是开屏 —— 必须继续放行，否则会误伤商品/内容视频。
+  for (const entry of passed) {
+    assert.deepEqual(
+      runRequest(entry.url, entry.requestHeaders),
+      {},
+      'non-launch video must stay passthrough: ' + entry.url
+    );
+  }
 });
 
-test('the latest device HAR proves both splash paths and the image rule result', { skip: !fs.existsSync(splashHarPath) }, () => {
-  const har = JSON.parse(fs.readFileSync(splashHarPath, 'utf8'));
-  const imageEntries = har.log.entries.filter((entry) =>
-    /^https:\/\/m\.360buyimg\.com\/mobilecms\/s1125x2436_jfs\//.test(entry.request && entry.request.url || '')
-  );
-  assert.ok(imageEntries.length >= 2, 'the HAR must contain the observed full-screen launch images');
-  assert.ok(
-    imageEntries.every((entry) => entry.response.content.mimeType === 'text/plain' && entry.response.content.size === 1),
-    'the image fallback must be observed as the one-byte Map Local response'
-  );
-
-  const videoEntries = har.log.entries.filter((entry) => {
-    const headers = entry.request && entry.request.headers || [];
-    const referer = headers.find((header) => String(header.name).toLowerCase() === 'referer');
-    return (
-      /^https:\/\/vod\.300hu\.com\/1030\/.*\.mp4(?:\?|$)/.test(entry.request && entry.request.url || '') &&
-      /play:ijkplayerSH_JDMainPageViewController_999_161_130000-/.test(referer && referer.value || '')
-    );
-  });
-  assert.ok(videoEntries.length >= 1, 'the HAR must contain the remaining launch-player video request');
+test('fixture: every blocked launch video carries the launch-player Referer and JD video UA', () => {
+  for (const entry of fixture.launchVideoEntries) {
+    if (!matchedRequestScript(entry)) continue;
+    assert.match(entry.requestHeaders['user-agent'] || '', /jdmall;(?:iphone|ipad);/i);
+    assert.match(entry.requestHeaders.referer || '', /^play:(?:ijkplayer|avplayer)SH_JDMainPageViewController_/i);
+  }
 });
 
 test('README describes the reduced scope and keeps the one-click import link', () => {
