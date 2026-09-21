@@ -8,7 +8,7 @@
 #!arguments-desc = receiver_url: Mac 上已启用的 Tailnet 接收地址，请勿改为公网地址
 
 [Script]
-中国移动-小程序JWT同步 = type=http-response,pattern=^https:\/\/wx\.online-cmcc\.cn\/wmhnewcenter\/(?:alipay|wechat86)-applet\/login(?:\?.*)?$,requires-body=true,max-size=131072,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCJwtCapture.js?v=1,script-arguments="receiver_url=%receiver_url"
+中国移动-小程序JWT同步 = type=http-response,pattern=^https:\/\/wx\.online-cmcc\.cn\/wmhnewcenter\/(?:alipay|wechat86)-applet\/login(?:\?.*)?$,requires-body=true,max-size=131072,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCJwtCapture.js?v=2,script-arguments="receiver_url=%receiver_url"
 
 [MITM]
 hostname = %APPEND% wx.online-cmcc.cn

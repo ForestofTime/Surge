@@ -31,6 +31,13 @@ test('module declares MITM for the wmhnewcenter host and a tailnet receiver', ()
   assert.match(moduleText, /receiver_url:https:\/\/[a-z0-9-]+\.taila66285\.ts\.net\/cmcc-jwt/);
 });
 
+test('module pins the script with a cache-busting version', () => {
+  // Surge 按 URL 缓存脚本；改了 JS 却不升版本号会让真机继续跑旧缓存。
+  const match = moduleText.match(/CMCCJwtCapture\.js\?v=(\d+)/);
+  assert.ok(match, 'script-path 必须带 ?v= 版本号');
+  assert.ok(Number(match[1]) >= 2, '转发密文版至少为 v2');
+});
+
 test('script accepts only a tailnet /cmcc-jwt receiver', () => {
   assert.match(scriptText, /\\\.ts\\\.net\\\/cmcc-jwt/);
   assert.doesNotMatch(scriptText, /http:\/\//);
