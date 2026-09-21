@@ -1,5 +1,5 @@
 #!name=中国移动 autoLogin 自动同步
-#!desc=完整转发中国移动 App 的 autoLogin 请求和响应，由 Mac 配对、验号并同步青龙；覆盖已登录刷新、一键登录和验证码登录，仅限 Tailnet，v7
+#!desc=转发中国移动 App 登录体，由 Mac 验号并同步青龙
 #!author=ForestofTime
 #!category=Automation
 #!homepage=https://github.com/ForestofTime/Surge

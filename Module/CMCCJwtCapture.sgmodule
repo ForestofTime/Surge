@@ -1,0 +1,14 @@
+#!name=中国移动小程序 JWT 自动同步
+#!desc=捕获支付宝/微信小程序 login 票据，经 Tailnet 写入青龙
+#!author=ForestofTime
+#!category=Automation
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CMCCJwtCapture.sgmodule
+#!arguments = receiver_url:https://hynmac-mini.taila66285.ts.net/cmcc-jwt
+#!arguments-desc = receiver_url: Mac 上已启用的 Tailnet 接收地址，请勿改为公网地址
+
+[Script]
+中国移动-小程序JWT同步 = type=http-response,pattern=^https:\/\/wx\.online-cmcc\.cn\/wmhnewcenter\/(?:alipay|wechat86)-applet\/login(?:\?.*)?$,requires-body=true,max-size=131072,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCJwtCapture.js?v=1,script-arguments="receiver_url=%receiver_url"
+
+[MITM]
+hostname = %APPEND% wx.online-cmcc.cn

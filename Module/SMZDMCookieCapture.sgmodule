@@ -1,5 +1,5 @@
 #!name=什么值得买 Cookie 自动同步
-#!desc=打开已登录什么值得买 App 时，将 App Cookie 经 Tailnet 安全同步到本机青龙。仅限私有 Tailnet。
+#!desc=同步什么值得买 App Cookie 到青龙
 #!author=ForestofTime
 #!category=Automation
 #!homepage=https://github.com/ForestofTime/Surge

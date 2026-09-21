@@ -1,0 +1,15 @@
+{
+  "_note": "中国移动 wmhnewcenter alipay-applet/login 结构夹具（合成数据）。",
+  "_source": "由固定假手机号加密生成，结构与真实响应一致，凭据为合成值。",
+  "end": "alipay",
+  "request": {
+    "method": "GET",
+    "url": "https://wx.online-cmcc.cn/wmhnewcenter/alipay-applet/login?code=<REDACTED>",
+    "path": "/wmhnewcenter/alipay-applet/login"
+  },
+  "response": {
+    "status": 200,
+    "mimeType": "application/json",
+    "encryptData": "QTVpTXBkM0JZN3V2cXVSUEpFUXFmUzZKNHQxT3NHK3VhT08vbnQxOFdtc1N0YkFielBBeVB4c2lvR1pseFpyVHVHL3lCNWxidnVvVllHbTAzeHdIamtsUjJqRUZwRE1YVW4xUi9TSTZLT2Yrc0IrcXFPcmpKbm4vYlduWEk0ZUp0N3l2b1drVXc3YUVrWnBwblpnRStYK0NEblU4eUFNY3lBUHhDbUlnNXFobEEydmc2RmNyVkhYcEtlNHpnblNNRG5NWGpmOEg5ejQ1U2JzcDVkQ2pCQ3NuR3R2eXJsNExQTHlJZHZYbEhpbjJDRE1kaG96cC9CU29yUzFyNHhsWGxuNVhDWkhwWXJVeERJL3dhUTdOYVhoWlJOVlZQeThPTktWbjR6UU10ZGlBSEgrQ1YvYkVhMDFnRC9JemdaSi9tZzZpZS9KNWFCV0wwSi9lWXN5MWNkL2pFSGZ1R282ellvVlV3cHdxa2owPQ=="
+  }
+}
