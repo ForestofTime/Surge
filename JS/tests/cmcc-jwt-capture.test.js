@@ -42,19 +42,26 @@ test('script detects the applet end from the URL, not the user agent', () => {
   assert.doesNotMatch(scriptText, /AlipayClient|MicroMessenger/);
 });
 
-test('script only posts when both a valid JWT and an 11-digit phone were decoded', () => {
-  assert.match(scriptText, /sessionId/);
-  assert.match(scriptText, /telephone/);
-  assert.match(scriptText, /\^1\\d\{10\}\$/);
-  // JWT 形态守卫：url-safe base64，长度 40~512。
-  assert.match(scriptText, /length < 40 \|\| jwt\.length > 512/);
-  assert.match(scriptText, /\^\[A-Za-z0-9_-\]\+\$/);
+test('script forwards the raw envelope instead of decrypting it', () => {
+  // Surge 的 JSC 引擎没有 atob / Buffer，任何本地解密都会在真机上抛异常。
+  // 只看代码，注释里提到这些名字不算。
+  const code = scriptText
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('//') && !line.trim().startsWith('*') && !line.trim().startsWith('/*'))
+    .join('\n');
+  assert.doesNotMatch(code, /atob\s*\(/);
+  assert.doesNotMatch(code, /\bBuffer\b/);
+  assert.doesNotMatch(code, /Uint8Array/);
+  assert.doesNotMatch(code, /\$crypto\b/);
+  assert.doesNotMatch(code, /require\s*\(\s*['"]crypto['"]\s*\)/);
+  // 转发原始密文，解密由接收器负责。
+  assert.match(scriptText, /encryptData/);
+  assert.match(scriptText, /postReceiver/);
 });
 
-test('script decrypts the login envelope with the shared h5 AES parameters', () => {
-  assert.match(scriptText, /1234123412ABCDEF/);
-  assert.match(scriptText, /ABCDEF1234123412/);
-  assert.match(scriptText, /aes-128-cbc|AES-CBC/);
+test('script validates the envelope length before forwarding', () => {
+  assert.match(scriptText, /encryptData\.length < 64/);
+  assert.match(scriptText, /encryptData\.length > 131072/);
 });
 
 test('fixture decrypts back to synthetic credentials, never real ones', () => {
