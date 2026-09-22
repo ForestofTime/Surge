@@ -27,7 +27,7 @@ test('captures every bounded LN autoLogin path and uses a Tailnet-only receiver 
   assert.match(moduleText, /type=http-request/);
   assert.match(moduleText, /type=http-response/);
   assert.ok(moduleText.includes('[A-Za-z0-9_-]+\\/autoLogin'));
-  assert.match(moduleText, /CMCCAutoLoginCapture\.js\?v=7/g);
+  assert.match(moduleText, /CMCCAutoLoginCapture\.js\?v=8/g);
   assert.match(moduleText, /requires-body=true/);
   assert.match(moduleText, /full-header-mode=true/);
   assert.match(moduleText, /hostname = %APPEND% client\.app\.coc\.10086\.cn/);
