@@ -1,11 +1,18 @@
-#!name=夸克广告 SDK 重试风暴抑制
-#!desc=精确拦截已观测广告 SDK 域名，抑制失败后的高频重试；不拦截夸克业务域名。v1
+#!name=夸克长连接 Real-IP 防孤儿
+#!desc=夸克域名走真实IP,杜绝fake-IP映射淘汰后的死循环重试;兼并v1广告SDK拦截
 #!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/QuarkAdSdkRetryStormBlock.sgmodule
 
+[General]
+# 夸克/UC 全域名族走真实 IP: fake-IP 映射被淘汰后客户端仍会缓存旧 fake-IP 并无限重试
+# (Unknown VIF virtual IP 风暴, 2026-09-22 两次触发 Surge 重启), real-IP 从根上消除该形态。
+# 附带收益: 长连接不再因映射刷新被切断。
+always-real-ip = %APPEND% *.quark.cn, *.uc.cn, quark.cn, uc.cn
+
 [Rule]
+# v1 保留: 已观测广告 SDK 域名, 失败后的高频重试风暴抑制 (域名级, pre-matching)
 DOMAIN,api-access.pangolin-sdk-toutiao.com,REJECT,pre-matching
 DOMAIN,api-access.pangolin-sdk-toutiao1.com,REJECT,pre-matching
 DOMAIN,api-access.pangolin-sdk-toutiao-b.com,REJECT,pre-matching
