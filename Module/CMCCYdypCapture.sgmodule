@@ -1,0 +1,15 @@
+#!name=移动云盘凭据自动同步
+#!desc=捕获移动云盘 RCS 票与市场域 JWT，经 Tailnet 写入青龙（cmcc_ydyp.js 用）
+#!author=ForestofTime
+#!category=Automation
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CMCCYdypCapture.sgmodule
+#!arguments = receiver_url:https://hynmac-mini.taila66285.ts.net/cmcc-ydyp
+#!arguments-desc = receiver_url: Mac 上已启用的 Tailnet 接收地址，请勿改为公网地址
+
+[Script]
+移动云盘-凭据同步 = type=http-request,pattern=^https?:\\/\\/(?:[a-z0-9-]+\\.)+(?:yun|139)\\.139\\.com\\//,requires-body=false,max-size=0,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCYdypCapture.js?v=1,script-arguments="receiver_url=%receiver_url"
+移动云盘-凭据同步-市场域 = type=http-request,pattern=^https?:\\/\\/m\\.mcloud\\.139\\.com\\//,requires-body=false,max-size=0,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCYdypCapture.js?v=1,script-arguments="receiver_url=%receiver_url"
+
+[MITM]
+hostname = %APPEND% *.yun.139.com, m.mcloud.139.com, orches.yun.139.com, caiyun.feixin.10086.cn
