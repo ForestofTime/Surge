@@ -1,5 +1,5 @@
 #!name=京东去开屏
-#!desc=仅拦截京东开屏图片和启动媒体，保留页面业务。v16
+#!desc=仅拦截京东开屏图片和启动媒体，保留页面业务。v17
 #!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
@@ -27,8 +27,12 @@ AND, ((PROTOCOL, UDP), (DOMAIN, discover.300hu.com)), REJECT
 
 [Script]
 # 只将已确认的 MP4 与流媒体路径交给脚本，再用京东视频 UA 和启动播放器 Referer 二次校验后返回 204。
-京东-主页面启动视频跳过 = type=http-request, pattern=^https?:\/\/vod\.300hu\.com\/\d+\/.*\.mp4(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=16, timeout=10
-京东-主页面启动流跳过 = type=http-request, pattern=^https?:\/\/discover\.300hu\.com\/.*\.(?:m3u8|ts)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=16, timeout=10
+京东-主页面启动视频跳过 = type=http-request, pattern=^https?:\/\/vod\.300hu\.com\/\d+\/.*\.mp4(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=17, timeout=10
+京东-主页面启动流跳过 = type=http-request, pattern=^https?:\/\/discover\.300hu\.com\/.*\.(?:m3u8|ts)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=17, timeout=10
+  # v17：开屏图 AVIF 分支。客户端升级后开屏图 URL 尾巴变 .jpg.avif/.png.avif，
+  # Map Local 的 tiny-gif 无法被 AVIF 解码器接受 → App 回退本地缓存广告图 → 广告重现。
+  # 由脚本返回合法 1x1 透明 AVIF（473 字节内嵌），解码成功 → 开屏空白消失。
+  京东-开屏图AVIF跳过 = type=http-request, pattern=^https?:\/\/(?:m|m\d{1,2}|img\d{1,2}|storage\d{0,2})\.360buyimg\.com\/mobilecms\/s(?:1125x2436|1170x2532|1242x2688|1284x2778|1290x2796|1320x2868)_jfs\/.*\.avif(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=17, timeout=10
 
 [MITM]
 hostname = %APPEND% m.360buyimg.com, m15.360buyimg.com, vod.300hu.com, discover.300hu.com
