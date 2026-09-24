@@ -83,12 +83,13 @@ function postReceiver(receiverUrl, payload) {
     log('失败: 宿主没有 $httpClient，无法上报');
     return;
   }
+  // v2: 不再显式指定 policy —— 手机配置里若不存在同名策略组会导致上报静默失败。
+  // taila66285.ts.net 已由 Surge Tailscale 集成的 MagicDNS 分流规则兜底。
   $httpClient.post({
     url: receiverUrl,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
     timeout: 3,
-    policy: 'Tailnet',
   }, (error, response) => {
     if (error) {
       log('上报失败: ' + String(error));
