@@ -7,3 +7,8 @@ DOMAIN-SUFFIX,9867361.xyz
 DOMAIN-SUFFIX,sntp.me
 IP-CIDR,129.150.35.245/32,no-resolve
 IP-CIDR,43.129.254.146/32,no-resolve
+# 中国移动全域直连（autoLogin 票据绑定国内 IP，走代理会被 213245 风控拒）
+DOMAIN-SUFFIX,10086.cn
+DOMAIN-SUFFIX,139.com
+DOMAIN-SUFFIX,cmcc.com
+DOMAIN-SUFFIX,monline.cn
