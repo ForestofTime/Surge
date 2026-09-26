@@ -1,12 +1,13 @@
-# 农业银行 App 开屏广告跳过 v1
-# ============================================================================
-# 原理：农行开屏广告图由 midc.cdn-static 下发，URL 无后缀无尺寸信息，
-#       无法用 Map Local 正则按尺寸过滤。由 http-response 脚本解析 JPEG/PNG
-#       宽高：竖版全屏比例（宽≥1000 且 高/宽≥1.7）→ 返回 1x1 透明 GIF，
-#       App 解码显示空白；活动小图/横幅/弹窗图原样放行，不误伤。
-# 验证：2026-09-24-170947.har 真实样本 6/6（真实开屏 1125x2082 拦截 ✅，
-#       670x200 / 319x184 / 1005x231 / 323x382 活动图全放行 ✅）。
-# ============================================================================
+#!name=农业银行开屏尺寸过滤
+#!desc=解析 midc 开屏素材尺寸，竖版全屏图返回透明 GIF。v1
+#!author=ForestofTime
+#!category=AdBlock
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/ABCSplash.sgmodule
+# 原理：农行开屏广告图由 midc.cdn-static 下发，URL 无后缀无尺寸信息，无法用 Map Local 正则按尺寸过滤。
+#       由 http-response 脚本解析 JPEG/PNG 宽高：竖版全屏比例（宽≥1000 且 高/宽≥1.7）→ 返回 1x1 透明 GIF。
+#       活动小图/横幅/弹窗图原样放行。
+# 验证：2026-09-24-170947.har 真实样本 6/6（开屏 1125x2082 拦截，670x200 / 319x184 / 1005x231 / 323x382 放行）。
 
 [General]
 # 无需 General 配置

@@ -12,11 +12,11 @@ const scriptText = fs.readFileSync(path.join(repoRoot, 'JS/CMCCYdypCapture.js'),
 
 test('module only intercepts ydyp auth-bearing hosts', () => {
   const scriptLines = moduleText.split('\n').filter((line) => line.startsWith('移动云盘-'));
-  assert.equal(scriptLines.length, 2);
+  assert.equal(scriptLines.length, 1);
   for (const line of scriptLines) {
     assert.match(line, /type=http-request/);
     assert.doesNotMatch(line, /type=http-response/);
-    assert.match(line, /139\\\\\.com/);
+    assert.ok(line.includes('139' + String.fromCharCode(92) + '.com'), 'pattern must anchor on the 139.com apex');
   }
   // 业务域不用响应阶段：只抓请求头里的票/JWT，不碰响应体
   assert.doesNotMatch(moduleText, /authTokenRefresh/);

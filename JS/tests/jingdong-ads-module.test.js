@@ -39,7 +39,7 @@ function runRequest(url, headers) {
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
   assert.match(moduleText, /仅拦截京东开屏图片和启动媒体，保留页面业务/);
-  assert.match(moduleText, /v16$/m);
+  assert.match(moduleText, /v17$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m
@@ -63,7 +63,7 @@ test('publishes a splash-only native Surge module', () => {
     moduleText,
     /pattern=\^https\?:\\\/\\\/vod\\\.300hu\\\.com\\\/\\d\+\\\/\.\*\\\.mp4\(\?:\\\?\.\*\)\?\$/
   );
-  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=16/);
+  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=17/);
   assert.match(moduleText, /^京东-主页面启动流跳过 = type=http-request,/m);
   assert.match(
     moduleText,

@@ -1,5 +1,5 @@
 #!name=移动云盘凭据自动同步
-#!desc=捕获移动云盘 RCS 票与市场域 JWT，经 Tailnet 写入青龙（cmcc_ydyp.js 用）
+#!desc=捕获移动云盘 RCS 票与市场域 JWT，经 Tailnet 写入青龙。v2
 #!author=ForestofTime
 #!category=Automation
 #!homepage=https://github.com/ForestofTime/Surge

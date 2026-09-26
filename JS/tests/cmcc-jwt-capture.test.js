@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const vm = require('node:vm');
 
 const repoRoot = path.resolve(__dirname, '../..');
 const moduleText = fs.readFileSync(path.join(repoRoot, 'Module/CMCCJwtCapture.sgmodule'), 'utf8');
@@ -35,7 +36,7 @@ test('module pins the script with a cache-busting version', () => {
   // Surge 按 URL 缓存脚本；改了 JS 却不升版本号会让真机继续跑旧缓存。
   const match = moduleText.match(/CMCCJwtCapture\.js\?v=(\d+)/);
   assert.ok(match, 'script-path 必须带 ?v= 版本号');
-  assert.ok(Number(match[1]) >= 2, '转发密文版至少为 v2');
+  assert.ok(Number(match[1]) >= 3, '转发登录元数据版至少为 v3');
 });
 
 test('script accepts only a tailnet /cmcc-jwt receiver', () => {
@@ -69,6 +70,43 @@ test('script forwards the raw envelope instead of decrypting it', () => {
 test('script validates the envelope length before forwarding', () => {
   assert.match(scriptText, /encryptData\.length < 64/);
   assert.match(scriptText, /encryptData\.length > 131072/);
+});
+
+test('script forwards only allowlisted login request metadata', () => {
+  let posted;
+  let done = false;
+  const context = {
+    $argument: 'receiver_url=https%3A%2F%2Ffixture.taila66285.ts.net%2Fcmcc-jwt',
+    $request: {
+      url: fixture.request.url,
+      method: 'GET',
+      headers: {
+        'User-Agent': 'fixture-agent',
+        Referer: 'https://fixture.invalid/',
+        'X-APPLET-ASK-CONFIG': 'fixture-config',
+        Cookie: 'must-not-leave-device',
+        Authorization: 'must-not-leave-device',
+      },
+    },
+    $response: { body: JSON.stringify(fixture.response) },
+    $httpClient: {
+      post(options, callback) {
+        posted = JSON.parse(options.body);
+        callback();
+      },
+    },
+    $done() { done = true; },
+  };
+  vm.runInNewContext(scriptText, context);
+  assert.equal(done, true);
+  assert.equal(posted.end, 'alipay');
+  assert.equal(posted.method, 'GET');
+  assert.equal(posted.url, fixture.request.url);
+  assert.equal(posted.headers['user-agent'], 'fixture-agent');
+  assert.equal(posted.headers.referer, 'https://fixture.invalid/');
+  assert.equal(posted.headers['x-applet-ask-config'], 'fixture-config');
+  assert.equal(Object.hasOwn(posted.headers, 'cookie'), false);
+  assert.equal(Object.hasOwn(posted.headers, 'authorization'), false);
 });
 
 test('fixture decrypts back to synthetic credentials, never real ones', () => {
