@@ -1,0 +1,11 @@
+#!name=中国移动 短信码落码
+#!desc=把手机收到的移动短信验证码推给青龙 100元话费券秒杀任务（写本机存储 + 推 ntfy）
+#!author=ForestofTime
+#!category=Automation
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CMCCSmsCode.sgmodule
+#!arguments = ntfy_topic:CHANGE_ME_SET_VIA_ARGUMENT
+#!arguments-desc = ntfy_topic: 青龙侧轮询的主题，须与 cmcc_100dh.js 的 cmcc_ntfy_topic 一致
+
+[Script]
+中国移动-短信码落码 = type=http-request,pattern=^http:\/\/example\.com\/,requires-body=true,max-size=4096,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCSmsCode.js?v=1,script-arguments="ntfy_topic=%ntfy_topic"
