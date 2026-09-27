@@ -38,6 +38,8 @@ const latestV18ChatPersonalRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-09-223414.har';
 const latestV19ChatPersonalRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-18-113046.har';
+const latestV20SplashRegressionHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-27-200913.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
@@ -56,7 +58,7 @@ test('uses QingRex native rules and passes through homepage, search, and product
   assert.match(moduleText, /^#!name=拼多多去广告（QingRex 原生兼容）$/m);
   assert.match(
     moduleText,
-    /清理拼多多聊天与个人中心广告，保留首页、搜索、详情、物流和订单数量。v19/
+    /清理拼多多启动广告、聊天与个人中心广告，保留首页、搜索、详情、物流和订单数量。v20/
   );
 
   // The validated v19 body rewrites and map-local rules stay byte-identical.
@@ -246,6 +248,27 @@ test('v19 filters updated personal marketing icons without removing order badge 
   assert.ok(bodyRewrite.includes('five_gifts'));
   assert.ok(bodyRewrite.includes('first_order_reduce'));
   assert.equal(bodyRewrite.includes('[["icon_set","icons"]]'), false);
+});
+
+test('v20 blocks the newly observed rotating Pinduoduo launch banner asset family', {
+  skip: !fs.existsSync(latestV20SplashRegressionHarPath),
+}, () => {
+  const har = JSON.parse(fs.readFileSync(latestV20SplashRegressionHarPath, 'utf8'));
+  const launchAssets = har.log.entries.filter((entry) => {
+    const url = new URL(entry.request.url);
+    return url.hostname === 'promotion-2.pddpic.com' &&
+      url.pathname.startsWith('/vgt/app_banner/');
+  });
+  assert.ok(launchAssets.length > 0, 'latest HAR must contain the rotating launch banner family');
+  assert.ok(launchAssets.some((entry) => entry.response?.status === 200));
+  assert.ok(launchAssets.some((entry) => String(entry.request.headers?.find(({ name }) =>
+    name.toLowerCase() === 'user-agent')?.value).includes('BundleID/com.xunmeng.pinduoduo')));
+
+  const rule = section('Rule', 'Body Rewrite');
+  assert.ok(
+    rule.includes('^https://promotion-2\\.pddpic\\.com/vgt/app_banner/'),
+    'all rotating app_banner filenames must be blocked without blocking other promotion assets'
+  );
 });
 
 test('has zero homepage hub rewrites', () => {
