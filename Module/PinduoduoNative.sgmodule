@@ -1,11 +1,11 @@
 #!name=拼多多去广告（QingRex 原生兼容）
-#!desc=清理拼多多启动广告、聊天与个人中心广告，保留首页、搜索、详情、物流和订单数量。v20
+#!desc=清理拼多多启动广告、聊天与个人中心广告，保留首页、搜索、详情、物流和订单数量。v21
 #!author=ForestofTime
 #!category=AdBlock
 #!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/PinDuoDuo.png
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/PinduoduoNative.sgmodule
-#!date=2026-09-27
+#!date=2026-09-28
 
 [Rule]
 # QingRex 原规则，兼容拼多多 8.20.0 HAR 证实的 /v2/d 与 /v3/d HTTPDNS 路径。
@@ -13,8 +13,8 @@ AND,((URL-REGEX,"^http:\/\/((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]
 AND,((URL-REGEX,"^http:\/\/\[[0-9a-fA-F:]+\]\/(?:d\d?|v[23]\/d)(?:\?|$)",extended-matching),(USER-AGENT,"*com.xunmeng.pinduoduo*")),REJECT
 AND,((DOMAIN,api.pinduoduo.com,extended-matching),(PROTOCOL,QUIC)),REJECT
 AND,((DOMAIN,api.yangkeduo.com,extended-matching),(PROTOCOL,QUIC)),REJECT
-# 8.25.0 HAR 启动时 promotion-2 下发轮换 GIF；按稳定目录拦截，保留同域其他活动/商品图。
-URL-REGEX,^https://promotion-2\.pddpic\.com/vgt/app_banner/.*$,REJECT
+# 8.25.0 HAR 显示启动 GIF 在 promotion-1/2/3 轮换；只拦截 app_banner 素材目录。
+URL-REGEX,^https://promotion-[0-9]+\.pddpic\.com/vgt/app_banner/.*$,REJECT
 DOMAIN,titan.pinduoduo.com,REJECT-NO-DROP,extended-matching,pre-matching
 DOMAIN,xg.pinduoduo.com,REJECT,extended-matching,pre-matching
 DOMAIN,cdl-1.pddpic.com,REJECT,extended-matching,pre-matching

@@ -40,6 +40,8 @@ const latestV19ChatPersonalRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-18-113046.har';
 const latestV20SplashRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-27-200913.har';
+const latestV21HostRotationHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-28-135435.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
@@ -58,7 +60,7 @@ test('uses QingRex native rules and passes through homepage, search, and product
   assert.match(moduleText, /^#!name=拼多多去广告（QingRex 原生兼容）$/m);
   assert.match(
     moduleText,
-    /清理拼多多启动广告、聊天与个人中心广告，保留首页、搜索、详情、物流和订单数量。v20/
+    /清理拼多多启动广告、聊天与个人中心广告，保留首页、搜索、详情、物流和订单数量。v21/
   );
 
   // The validated v19 body rewrites and map-local rules stay byte-identical.
@@ -266,8 +268,33 @@ test('v20 blocks the newly observed rotating Pinduoduo launch banner asset famil
 
   const rule = section('Rule', 'Body Rewrite');
   assert.ok(
-    rule.includes('^https://promotion-2\\.pddpic\\.com/vgt/app_banner/'),
+    rule.includes('/vgt/app_banner/'),
     'all rotating app_banner filenames must be blocked without blocking other promotion assets'
+  );
+});
+
+test('v21 covers app_banner CDN host rotation observed after v20', {
+  skip: !fs.existsSync(latestV21HostRotationHarPath),
+}, () => {
+  const har = JSON.parse(fs.readFileSync(latestV21HostRotationHarPath, 'utf8'));
+  const launchAssets = har.log.entries.filter((entry) => {
+    const url = new URL(entry.request.url);
+    return /^promotion-[0-9]+\.pddpic\.com$/.test(url.hostname) &&
+      url.pathname.startsWith('/vgt/app_banner/');
+  });
+  assert.ok(launchAssets.some((entry) =>
+    new URL(entry.request.url).hostname === 'promotion-1.pddpic.com' &&
+    entry.response?.status === 200
+  ), 'the latest HAR must prove v20 missed the alternate promotion host');
+  assert.ok(launchAssets.some((entry) =>
+    new URL(entry.request.url).hostname === 'promotion-2.pddpic.com' &&
+    /Rejected by rule/.test(entry.comment || '')
+  ), 'the latest HAR must prove v20 still blocked its original host');
+
+  const rule = section('Rule', 'Body Rewrite');
+  assert.ok(
+    rule.includes('^https://promotion-[0-9]+\\.pddpic\\.com/vgt/app_banner/'),
+    'the stable app_banner path rule must cover numbered promotion CDN hosts'
   );
 });
 
