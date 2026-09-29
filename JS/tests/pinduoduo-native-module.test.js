@@ -42,6 +42,8 @@ const latestV20SplashRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-27-200913.har';
 const latestV21HostRotationHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-28-135435.har';
+const latestV22ChatPersonalRegressionHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-29-113848.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
@@ -60,7 +62,7 @@ test('uses QingRex native rules and passes through homepage, search, and product
   assert.match(moduleText, /^#!name=拼多多去广告（QingRex 原生兼容）$/m);
   assert.match(
     moduleText,
-    /清理拼多多启动广告、聊天与个人中心广告，保留首页、搜索、详情、物流和订单数量。v21/
+    /清理拼多多启动广告、商品推广、聊天与个人中心广告，保留普通商品及业务功能。v22/
   );
 
   // The validated v19 body rewrites and map-local rules stay byte-identical.
@@ -298,6 +300,44 @@ test('v21 covers app_banner CDN host rotation observed after v20', {
   );
 });
 
+test('v22 removes only explicitly ad-marked shared feed cards from the latest Pinduoduo HAR', {
+  skip: !fs.existsSync(latestV22ChatPersonalRegressionHarPath),
+}, () => {
+  const har = JSON.parse(fs.readFileSync(latestV22ChatPersonalRegressionHarPath, 'utf8'));
+  const feeds = har.log.entries.filter((entry) =>
+    new URL(entry.request.url).pathname === '/api/alexa/cells/hub/v3' &&
+    entry.response?.status === 200
+  );
+  assert.ok(feeds.length > 0, 'latest HAR must include the shared goods feed');
+
+  const initialFeed = feeds.find((entry) => {
+    const query = new URL(entry.request.url).searchParams;
+    return query.get('page_id') === 'index_list.html' &&
+      query.get('page_sn') === '10002' &&
+      query.get('scene') === 'homegoods_dy_tpl';
+  });
+  assert.ok(initialFeed, 'HAR must identify the homepage feed context');
+  const payload = JSON.parse(initialFeed.response.content.text);
+  const goods = payload.data.goods_list;
+  const ads = goods.filter((item) => Object.hasOwn(item?.data || {}, 'ad'));
+  const organic = goods.filter((item) => !Object.hasOwn(item?.data || {}, 'ad'));
+  assert.equal(goods.length, 10);
+  assert.equal(ads.length, 4);
+  assert.equal(organic.length, 6);
+
+  const rewrite = section('Body Rewrite', 'Map Local');
+  assert.ok(rewrite.includes(
+    'http-response-jq ^https:\\/\\/api\\.pinduoduo\\.com\\/api\\/alexa\\/cells\\/hub\\/v3\\?'
+  ));
+  assert.match(rewrite, /has\("ad"\)/);
+  assert.match(moduleText, /#!desc=.*v22/m);
+
+  const filtered = goods.filter((item) => !Object.hasOwn(item?.data || {}, 'ad'));
+  assert.equal(filtered.length, 6);
+  assert.deepEqual(filtered, organic, 'organic goods must remain byte-structure equivalent');
+  assert.deepEqual(payload.data.goods_list, goods, 'HAR fixture must remain unmodified');
+});
+
 test('has zero homepage hub rewrites', () => {
   const homepageRules = section('Body Rewrite', 'Map Local')
     .split('\n')
@@ -352,8 +392,9 @@ test('v11 fully passes through homepage hub after v10 still modified complete pa
   ));
 });
 
-test('fully passes through shared homepage cells while retaining dedicated chat and personal rules', () => {
-  assert.equal(moduleText.includes('api\\/alexa\\/cells\\/hub\\/v3'), false);
+test('filters only marked shared-feed ads while retaining dedicated chat and personal rules', () => {
+  assert.equal(moduleText.includes('api\\/alexa\\/cells\\/hub\\/v3'), true);
+  assert.match(moduleText, /has\("ad"\)/);
 
   const mapLocal = section('Map Local', 'MITM');
   for (const endpoint of [
