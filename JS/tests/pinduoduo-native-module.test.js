@@ -44,6 +44,8 @@ const latestV21HostRotationHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-28-135435.har';
 const latestV22ChatPersonalRegressionHarPath =
   '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-29-113848.har';
+const latestV23BusinessRegressionHarPath =
+  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-29-115526.har';
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 
@@ -62,22 +64,10 @@ test('uses QingRex native rules and passes through homepage, search, and product
   assert.match(moduleText, /^#!name=拼多多去广告（QingRex 原生兼容）$/m);
   assert.match(
     moduleText,
-    /清理拼多多启动广告、商品推广、聊天与个人中心广告，保留普通商品及业务功能。v22/
+    /清理拼多多启动、聊天与个人中心推广，保留首页商品、订单角标及业务功能。v23/
   );
 
-  // The validated v19 body rewrites and map-local rules stay byte-identical.
-  const unchangedBodyRewrite = section('Body Rewrite', 'Map Local')
-    .split('\n')
-    .filter((line) =>
-      !line.includes('8.20.0 HAR') &&
-      !line.includes('api\\/alexa\\/cells\\/hub\\/v3') &&
-      !line.includes('api\\/alexa\\/homepage\\/hub')
-    )
-    .join('\n');
-  assert.equal(
-    sha256(unchangedBodyRewrite),
-    '7678c10556d5093b6d5148620a680242da1092ec1c950d106763afbc18f761a9'
-  );
+  // The dedicated chat and personal recommendation responses stay blocked.
   assert.equal(
     sha256(section('Map Local', 'MITM')),
     '50e003d78ce27054b6f13ff15ecbcbc93f3eb57c5399152ce54bc2bb9bc889fc'
@@ -232,7 +222,7 @@ test('v18 covers the updated chat extension and removes only personal promotiona
   assert.equal(bodyRewrite.includes('[["icon_set","top_personal_icons"]]'), false);
 });
 
-test('v19 filters updated personal marketing icons without removing order badge bindings', {
+test('v19 HAR shows personal marketing icons and order badge bindings share a payload', {
   skip: !fs.existsSync(latestV19ChatPersonalRegressionHarPath),
 }, () => {
   const har = JSON.parse(fs.readFileSync(latestV19ChatPersonalRegressionHarPath, 'utf8'));
@@ -249,8 +239,8 @@ test('v19 filters updated personal marketing icons without removing order badge 
   assert.equal(payload.icon_set.first_personal_icons[0].app_name, 'order_un_pay');
 
   const bodyRewrite = section('Body Rewrite', 'Map Local');
-  assert.ok(bodyRewrite.includes('five_gifts'));
-  assert.ok(bodyRewrite.includes('first_order_reduce'));
+  assert.equal(bodyRewrite.includes('five_gifts'), false);
+  assert.equal(bodyRewrite.includes('first_order_reduce'), false);
   assert.equal(bodyRewrite.includes('[["icon_set","icons"]]'), false);
 });
 
@@ -300,7 +290,7 @@ test('v21 covers app_banner CDN host rotation observed after v20', {
   );
 });
 
-test('v22 removes only explicitly ad-marked shared feed cards from the latest Pinduoduo HAR', {
+test('v23 restores the complete homepage feed after the v22 device regression', {
   skip: !fs.existsSync(latestV22ChatPersonalRegressionHarPath),
 }, () => {
   const har = JSON.parse(fs.readFileSync(latestV22ChatPersonalRegressionHarPath, 'utf8'));
@@ -319,23 +309,42 @@ test('v22 removes only explicitly ad-marked shared feed cards from the latest Pi
   assert.ok(initialFeed, 'HAR must identify the homepage feed context');
   const payload = JSON.parse(initialFeed.response.content.text);
   const goods = payload.data.goods_list;
-  const ads = goods.filter((item) => Object.hasOwn(item?.data || {}, 'ad'));
-  const organic = goods.filter((item) => !Object.hasOwn(item?.data || {}, 'ad'));
   assert.equal(goods.length, 10);
-  assert.equal(ads.length, 4);
-  assert.equal(organic.length, 6);
+  assert.equal(goods.filter((item) => Object.hasOwn(item?.data || {}, 'ad')).length, 4);
 
   const rewrite = section('Body Rewrite', 'Map Local');
-  assert.ok(rewrite.includes(
-    'http-response-jq ^https:\\/\\/api\\.pinduoduo\\.com\\/api\\/alexa\\/cells\\/hub\\/v3\\?'
-  ));
-  assert.match(rewrite, /has\("ad"\)/);
-  assert.match(moduleText, /#!desc=.*v22/m);
+  assert.equal(rewrite.includes('api\\/alexa\\/cells\\/hub\\/v3'), false);
+  assert.equal(rewrite.includes('has("ad")'), false);
+});
 
-  const filtered = goods.filter((item) => !Object.hasOwn(item?.data || {}, 'ad'));
-  assert.equal(filtered.length, 6);
-  assert.deepEqual(filtered, organic, 'organic goods must remain byte-structure equivalent');
-  assert.deepEqual(payload.data.goods_list, goods, 'HAR fixture must remain unmodified');
+test('v23 keeps the 11:55 homepage and personal badge payloads intact', {
+  skip: !fs.existsSync(latestV23BusinessRegressionHarPath),
+}, () => {
+  const har = JSON.parse(fs.readFileSync(latestV23BusinessRegressionHarPath, 'utf8'));
+  const homeFeeds = har.log.entries.filter((entry) =>
+    new URL(entry.request.url).pathname === '/api/alexa/cells/hub/v3'
+  );
+  assert.equal(homeFeeds.length, 6);
+  assert.ok(homeFeeds.every((entry) =>
+    entry.response?.status === 200 &&
+    JSON.parse(entry.response.content.text).data.goods_list.length > 0 &&
+    String(entry.comment).includes('Response body is modified by body rewrite rule')
+  ), 'v22 rewrote each successful feed response before the UI failed');
+
+  const personalHub = har.log.entries.find((entry) =>
+    new URL(entry.request.url).pathname === '/api/philo/personal/hub'
+  );
+  assert.ok(personalHub);
+  const payload = JSON.parse(personalHub.response.content.text);
+  assert.equal(payload.red_dot.order_un_comment.number, 1);
+  assert.equal(payload.red_dot.order_un_receive.text, '待取件2');
+  assert.deepEqual(payload.icon_set.first_personal_icons.map(({ app_name }) => app_name), [
+    'order_un_pay', 'order_groupping', 'order_un_delivery', 'order_un_receive', 'order_un_comment'
+  ]);
+  assert.deepEqual(payload.icon_set.icons.map(({ app_name }) => app_name), ['train']);
+  const rewrite = section('Body Rewrite', 'Map Local');
+  assert.equal(rewrite.includes('five_gifts'), false);
+  assert.equal(rewrite.includes('first_order_reduce'), false);
 });
 
 test('has zero homepage hub rewrites', () => {
@@ -392,9 +401,8 @@ test('v11 fully passes through homepage hub after v10 still modified complete pa
   ));
 });
 
-test('filters only marked shared-feed ads while retaining dedicated chat and personal rules', () => {
-  assert.equal(moduleText.includes('api\\/alexa\\/cells\\/hub\\/v3'), true);
-  assert.match(moduleText, /has\("ad"\)/);
+test('passes through shared homepage cells while retaining dedicated chat and personal rules', () => {
+  assert.equal(moduleText.includes('api\\/alexa\\/cells\\/hub\\/v3'), false);
 
   const mapLocal = section('Map Local', 'MITM');
   for (const endpoint of [
