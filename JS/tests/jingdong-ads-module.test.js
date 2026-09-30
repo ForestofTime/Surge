@@ -22,7 +22,7 @@ function sectionLines(text, sectionName) {
     .filter((line) => line && !line.startsWith('#'));
 }
 
-function runRequest(url, headers) {
+function runRawRequest(url, headers) {
   const doneCalls = [];
   vm.runInNewContext(
     scriptText,
@@ -33,13 +33,39 @@ function runRequest(url, headers) {
     { filename: scriptPath }
   );
   assert.equal(doneCalls.length, 1, 'request script must call $done exactly once');
-  return JSON.parse(JSON.stringify(doneCalls[0]));
+  return doneCalls[0];
 }
+
+function runRequest(url, headers) {
+  return JSON.parse(JSON.stringify(runRawRequest(url, headers)));
+}
+
+test('AVIF splash bypasses the GIF Map Local and receives actual AVIF bytes', () => {
+  // 2026-09-30-104036 HAR: this path class received image/gif, 35 bytes,
+  // via Map Local; the AVIF request script did not run.
+  const url = 'https://m.360buyimg.com/mobilecms/s1125x2436_jfs/t1/example/launch.jpg.avif';
+  const mapPattern = sectionLines(moduleText, 'Map Local')[0].split(' ')[0];
+  assert.equal(new RegExp(mapPattern).test(url), false, 'GIF mapping must not shadow AVIF script');
+  assert.equal(new RegExp(mapPattern).test(url.replace('.avif', '')), true, 'JPEG mapping must remain');
+
+  const scriptRule = sectionLines(moduleText, 'Script').find(line => line.startsWith('京东-开屏图AVIF跳过'));
+  assert.ok(scriptRule);
+  assert.match(scriptRule, /binary-body-mode=true/);
+  const result = runRawRequest(url, {});
+  assert.equal(result.response.status, 200);
+  assert.equal(result.response.headers['Content-Type'], 'image/avif');
+  assert.ok(ArrayBuffer.isView(result.response.body), 'body must be binary, not a data URL string');
+  const body = Buffer.from(result.response.body);
+  assert.equal(body.toString('ascii', 4, 8), 'ftyp');
+  assert.equal(body.toString('ascii', 8, 12), 'avif');
+  assert.equal(body.length, 473);
+  assert.deepEqual(runRequest(url.replace('s1125x2436', 's240x240'), {}), {}, 'product AVIF must pass');
+});
 
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
   assert.match(moduleText, /仅拦截京东开屏图片和启动媒体，保留页面业务/);
-  assert.match(moduleText, /v17$/m);
+  assert.match(moduleText, /v18$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m
@@ -63,7 +89,7 @@ test('publishes a splash-only native Surge module', () => {
     moduleText,
     /pattern=\^https\?:\\\/\\\/vod\\\.300hu\\\.com\\\/\\d\+\\\/\.\*\\\.mp4\(\?:\\\?\.\*\)\?\$/
   );
-  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=17/);
+  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=18/);
   assert.match(moduleText, /^京东-主页面启动流跳过 = type=http-request,/m);
   assert.match(
     moduleText,

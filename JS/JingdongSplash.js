@@ -20,23 +20,37 @@ function requestHeader(name) {
   return key ? String(headers[key]) : '';
 }
 
-// ── v17：开屏图 AVIF 分支 ─────────────────────────────────────────
-// 京东客户端升级后开屏图 URL 尾巴从 .jpg/.png 变 .jpg.avif/.png.avif。
-// 对 AVIF 请求回 tiny-gif 会被 AVIF 解码器拒绝 → App 回退本地缓存广告图。
-// 返回合法 1x1 透明 AVIF（473 字节），解码成功 → 开屏画面空白消失。
+// 开屏 AVIF 使用同格式的透明图片，避免返回文本或异格式图片。
 var ONE_PIXEL_AVIF_B64 = 'AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAAGGbWV0YQAAAAAAAAAhaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAAAAAAAOcGl0bQAAAAAAAQAAACxpbG9jAAAAAEQAAAIAAQAAAAEAAAHCAAAAFwACAAAAAQAAAa4AAAAUAAAAQmlpbmYAAAAAAAIAAAAaaW5mZQIAAAAAAQAAYXYwMUNvbG9yAAAAABppbmZlAgAAAAACAABhdjAxQWxwaGEAAAAAGmlyZWYAAAAAAAAADmF1eGwAAgABAAEAAADDaXBycAAAAJ1pcGNvAAAAFGlzcGUAAAAAAAAAAQAAAAEAAAAQcGl4aQAAAAADCAgIAAAADGF2MUOBAAwAAAAAE2NvbHJuY2x4AAEADQAGgAAAAA5waXhpAAAAAAEIAAAADGF2MUOBABwAAAAAOGF1eEMAAAAAdXJuOm1wZWc6bXBlZ0I6Y2ljcDpzeXN0ZW1zOmF1eGlsaWFyeTphbHBoYQAAAAAeaXBtYQAAAAAAAAACAAEEAQKDBAACBAEFhgcAAAAzbWRhdBIACgQYAAYVMgoUAAwxAAF1VEgIEgAKBRgABgQgMgwUAAMMMMQAAHlM04Y=';
+
+function decodeBase64(value) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const input = value.replace(/=+$/, '');
+  const output = new Uint8Array(Math.floor(input.length * 6 / 8));
+  let bits = 0;
+  let buffer = 0;
+  let offset = 0;
+  for (let index = 0; index < input.length; index += 1) {
+    buffer = (buffer << 6) | alphabet.indexOf(input[index]);
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      output[offset++] = (buffer >>> bits) & 255;
+    }
+  }
+  return output;
+}
 
 function handleAvifSplash() {
   var url = String($request.url || '');
   if (!/^https?:\/\/(?:m|m\d{1,2}|img\d{1,2}|storage\d{0,2})\.360buyimg\.com\/mobilecms\/s(?:1125x2436|1170x2532|1242x2688|1284x2778|1290x2796|1320x2868)_jfs\/.*\.avif(?:\?.*)?$/i.test(url)) {
     return false;
   }
-  console.log('JingdongSplash v17: AVIF 开屏图命中，返回 1x1 透明 AVIF');
   $done({
     response: {
       status: 200,
       headers: { 'Content-Type': 'image/avif', 'Cache-Control': 'no-store' },
-      body: 'data:image/avif;base64,' + ONE_PIXEL_AVIF_B64,
+      body: decodeBase64(ONE_PIXEL_AVIF_B64),
     },
   });
   return true;
