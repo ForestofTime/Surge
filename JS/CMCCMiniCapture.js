@@ -1,26 +1,29 @@
 /**
- * 心愿金凭据抓取 — Surge 适配版（自 Quantumult X 版 cmcc_mini.js 移植，平台层双端自适应）
- *   命中 wmhnewcenter wmhsso 请求 → 取 JWT → 换出 openid 与 QWHD 票
- *   → 以云端账号库为准合并 → 写回云端 → 本地顺带备份
+ * 心愿金凭据抓取 — Surge 版 v2（Tailnet receiver 落库）
+ *   命中 wmhnewcenter wmhsso 请求 → 取 JWT → 本机完成三步识别链
+ *   → POST Mac Tailnet receiver → receiver 按 openid 合并写青龙 env cmcc_mini
  *
- * 三步链（与 QX 版逐字节同源，仅平台层重写）：
+ * 三步链（与 QX 版逐字节同源）：
  *   ① wmhsso   : 带 JWT 换 token
  *   ② qwhdmark : 用 token 换 QWHD_SESSION_TOKEN（票下发在中间的 302 里，必须禁自动跟随）
  *   ③ user/info: 取 openid / nickName
  *
- * Surge 模块（cmcc_mini.sgmodule）：
- *   [Script] cmcc-mini-capture = type=http-request,
+ * 落库：receiver（cmcc-mini-receiver.js，hynmac-mini Tailnet）是唯一基准；
+ *   receiver 按 openid 去重合并 → 青龙 env cmcc_mini（cmcc_mini.py 直接消费）。
+ *   同 JWT 重复上报由 receiver 去重，重复开心愿金小程序无副作用。
+ *
+ * Surge 模块（CMCCMiniCapture.sgmodule）：
+ *   [Script] 中国移动-心愿金凭据捕获 = type=http-request,
  *     pattern=^https?:\/\/wx\.online-cmcc\.cn\/wmhnewcenter\/(?:alipay-applet|wechat86-applet)\/wmhsso,
- *     script-path=<本文件托管URL>, timeout=60,
- *     argument=UpStash_URL={{UpStash_URL}}&UpStash_Token={{UpStash_Token}}
+ *     script-path=<仓库raw>, timeout=60, engine=jsc,
+ *     script-arguments="receiver_url=https://hynmac-mini.taila66285.ts.net/cmcc-mini"
  *   [MITM] hostname = %APPEND% wx.online-cmcc.cn
  *
- * Upstash 配置双源：模块参数（$argument，URL 编码 k=v&k=v）优先 → 持久化存储键
- *   UpStash_URL / UpStash_Token 兜底（Surge=$persistentStore，QX=$prefs，两 App 各自可配）。
+ * receiver 地址三源：模块参数 receiver_url > $persistentStore 键 Mini_Receiver_URL > 内置默认
+ *   （默认 https://hynmac-mini.taila66285.ts.net/cmcc-mini，一般无需配置）
  *
- * 云端（Upstash）是唯一基准：去重与合并都基于云端账号库；
- * 落库顺序：读云端 → 去重 → 识别 → 合并进云端库 → SET 云端 → 成功 → 本地备份
- * 未配置 UpStash_URL / UpStash_Token，或云端读写失败 → 本地不写
+ * 落库：Mac receiver（cmcc-mini-receiver.js）按 openid 去重合并 → 青龙 env cmcc_mini；
+ *   同 JWT 重复上报被 receiver 二层去重，重复开心愿金小程序无副作用
  */
 
 // ==================== 配置（取自 cmcc_xyj.js，行号已标注） ====================
@@ -34,8 +37,9 @@ const UA_WX = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKi
 const ASK_ALI = 'rechargeUrl,broadband,noReal,noPuk,callBalance,fareLink,recommendCard,showGrayUI,aliCommodityDisableProvince,netAge,wmhHideDetail,wmhHideDetailMarket,domainNameSelection,hideStarProvince';  // L227
 const ASK_WX = 'feeCard,callBalance,broadband,noReal,noPuk,fareLink,recommendCard,xmeFloatBar,showGrayUI,NBEJXHSN,commodityDisableProvince,netAge,oneKeyLogin,miniSubscribePopup,wmhHideDetail,wmhHideDetailMarket,domainNameSelection,wmhHideDetailWeChat,hideStarProvince';  // L228
 const STORE_KEY = 'cmcc_mini';
-const UPSTASH_URL_KEY = 'UpStash_URL';
-const UPSTASH_TOKEN_KEY = 'UpStash_Token';
+const DEFAULT_RECEIVER_URL = 'https://hynmac-mini.taila66285.ts.net/cmcc-mini';
+const RECEIVER_URL_KEY = 'Mini_Receiver_URL';
+const LOCAL_BACKUP_KEY = 'cmcc_mini_local';
 const FIELDS = ['cmcc_ali_session_id', 'cmcc_wx_login_session_id', 'cmcc_qwhd_ali', 'nickName'];
 const TIMEOUT_RETRY = 3;
 
@@ -150,51 +154,31 @@ function getCookie(headers, name) {
 
 function log(s) { try { console.log('[cmcc_mini] ' + s); } catch (e) { } }
 
-// ==================== Upstash ====================
-/** 读 UpStash_URL / UpStash_Token：模块参数($argument)优先 → 持久化存储兜底；缺任一项返回 null */
-function loadUpstash() {
+// ==================== Mac receiver 上报（落库唯一出口） ====================
+
+/** receiver 地址：模块参数 receiver_url > $persistentStore Mini_Receiver_URL > 内置默认 */
+function receiverUrl() {
   const a = argMap();
-  let url = String(a['UpStash_URL'] || '').trim().replace(/\/+$/, '');
-  let token = String(a['UpStash_Token'] || '').trim();
-  if (!url) url = String(getVal(UPSTASH_URL_KEY, '') || '').trim().replace(/\/+$/, '');
-  if (!token) token = String(getVal(UPSTASH_TOKEN_KEY, '') || '').trim();
-  if (!url || !token) return null;
-  return { url: url, token: token };
+  if (a['receiver_url']) return String(a['receiver_url']).replace(/\/+$/, '');
+  const stored = getVal(RECEIVER_URL_KEY, '');
+  if (stored) return String(stored).replace(/\/+$/, '');
+  return DEFAULT_RECEIVER_URL;
 }
 
-/**
- * 执行一条 Upstash REST 命令，返回 { ok, result } 或 { ok: false, err }
- * 只发一次，不重试 —— 失败即整体中止，避免半截状态。
- */
-async function upstashCmd(cmd) {
-  const cfg = loadUpstash();
-  if (!cfg) return { ok: false, err: '未配置 UpStash_URL / UpStash_Token' };
-  const r = await req('POST', cfg.url, {
-    'Authorization': 'Bearer ' + cfg.token,
-    'Content-Type': 'application/json',
-  }, JSON.stringify(cmd), 1);
-  if (r.status < 200 || r.status >= 300) {
-    return { ok: false, err: 'HTTP ' + r.status + ' ' + String(r.body || '').slice(0, 120) };
-  }
-  try {
-    const j = JSON.parse(r.body);
-    if (j && j.error) return { ok: false, err: 'Upstash: ' + j.error };
-    return { ok: true, result: j && j.result };
-  } catch (e) {
-    return { ok: false, err: '响应解析失败: ' + String(r.body || '').slice(0, 120) };
-  }
-}
-
-/** 读取云端账号库文本；键不存在时 Upstash 返回 null → 归一为空串 */
-async function upstashGet(key) {
-  const r = await upstashCmd(['GET', key]);
-  if (!r.ok) return r;
-  return { ok: true, result: r.result == null ? '' : String(r.result) };
-}
-
-/** SET <key> <value>（Upstash REST） */
-async function upstashSet(key, value) {
-  return await upstashCmd(['SET', key, value]);
+/** 识别链结果上报 Tailnet receiver；成功返回 {ok, action, accounts}，失败 {ok:false, err} */
+function reportReceiver(payload) {
+  return new Promise(resolve => {
+    const url = receiverUrl();
+    const body = JSON.stringify(payload);
+    req('POST', url, { 'content-type': 'application/json', 'content-length': String(body.length) }, body, 2, false)
+      .then(r => {
+        if (r.status < 200 || r.status >= 300) {
+          resolve({ ok: false, err: 'HTTP ' + r.status + (r.body ? ' ' + String(r.body).slice(0, 120) : '') });
+          return;
+        }
+        try { resolve(JSON.parse(r.body)); } catch (e) { resolve({ ok: r.status === 200, action: 'unknown', accounts: 0 }); }
+      });
+  });
 }
 
 /** 解析账号库文本（云端与本地的存储格式一致） */
@@ -341,50 +325,48 @@ async function syncCapture(capture) {
     return;
   }
 
-  // 云端是唯一基准：先读云端账号库，去重与合并都在它之上进行
-  const cloud = await upstashGet(STORE_KEY);
-  if (!cloud.ok) {
-    log(`❌ 读取云端失败: ${cloud.err} → 中止，未写任何存储`);
-    notify('中国移动 Mini 获取Cookie失败', `读取云端失败：${cloud.err}`);
-    return;
-  }
-
-  const store = parseStore(cloud.result);
-  const dup = store.find(x => x.cmcc_ali_session_id === jwt || x.cmcc_wx_login_session_id === jwt);
-  if (dup) {
-    log(`JWT 已存在（云端 openid=${dup.openid}），跳过`);
+  // 本地缓存挡重复：同一 JWT 已报过就不再打识别链（receiver 侧也有一层按 openid+JWT 去重）
+  const seen = parseStore(getVal(LOCAL_BACKUP_KEY, ''));
+  const dupLocal = seen.find(x => x.cmcc_ali_session_id === jwt || x.cmcc_wx_login_session_id === jwt);
+  if (dupLocal) {
+    log(`JWT 已上报过（本地 openid=${dupLocal.openid}），跳过`);
     return;
   }
 
   const id = await identify(jwt, end);
   if (!id) {
-    log('❌ 识别失败，未落库');
+    log('❌ 识别失败，未上报');
     notify('心愿金凭据', '❌ 识别失败', 'JWT 可能已过期，请重开心愿金小程序');
     return;
   }
 
-  const merged = upsert(store, id.openid, {
+  // 上报 Mac receiver（唯一落库出口）：receiver 按 openid 合并写青龙 env cmcc_mini
+  const rep = await reportReceiver({
+    openid: id.openid,
     nickName: id.nickName,
-    cmcc_ali_session_id: jwt,
-    cmcc_wx_login_session_id: jwt,
-    cmcc_qwhd_ali: id.qwhdAli,
+    jwt: jwt,
+    qwhd: id.qwhdAli,
+    end: end,
   });
-  const text = JSON.stringify(store);
-  const count = ['cmcc_ali_session_id', 'cmcc_wx_login_session_id', 'cmcc_qwhd_ali']
-    .filter(k => merged.rec[k]).length;
-
-  // 先写云端；云端成功才算成功，本地只是顺带存一份
-  const uploaded = await upstashSet(STORE_KEY, text);
-  if (!uploaded.ok) {
-    log(`❌ ${merged.action} openid=${id.openid} nick=${id.nickName} 凭据${count}/3 | 写云端失败: ${uploaded.err} → 未写本地`);
-    notify('中国移动 Mini 获取Cookie失败', `[${id.nickName}] ❌ 云端写入失败，未写本地`);
+  if (!rep.ok) {
+    log(`❌ ${id.nickName} 上报 receiver 失败: ${rep.err || '未知'}`);
+    notify('中国移动 Mini 获取Cookie失败', `[${id.nickName}] ❌ receiver 上报失败\n${rep.err || ''}`);
     return;
   }
 
-  const localOk = writeLocalBackup(text);
-  log(`✅ ${merged.action} openid=${id.openid} nick=${id.nickName} 凭据${count}/3 | 云端已写入 | 本地备份: ${localOk ? '成功' : '失败'} 库内${store.length}个账号`);
+  // 本地备份（仅缓存用途；真值在青龙 env cmcc_mini）
+  const store = parseStore(getVal(LOCAL_BACKUP_KEY, ''));
+  upsert(store, id.openid, {
+    nickName: id.nickName,
+    cmcc_ali_session_id: end === 'alipay' ? jwt : '',
+    cmcc_wx_login_session_id: end === 'wxmini' ? jwt : '',
+    cmcc_qwhd_ali: id.qwhdAli,
+  });
+  const localOk = setVal(JSON.stringify(store), LOCAL_BACKUP_KEY);
+
+  log(`✅ ${rep.action || 'ok'} openid=${id.openid} nick=${id.nickName} | receiver 已入库（库内${rep.accounts}个）| 本地缓存: ${localOk ? '成功' : '失败'}`);
   notify('中国移动 Mini 获取Cookie成功',
-    `[${id.nickName}] ✅ ${merged.action}Cookie成功` + (localOk ? '' : '（本地备份失败）'));
+    `[${id.nickName}] ✅ ${rep.action === 'created' ? '新增' : rep.action === 'updated' ? '更新' : '已存在'}，青龙库内${rep.accounts}个账号`);
 }
 
 // ==================== 入口 ====================
@@ -400,5 +382,5 @@ async function syncCapture(capture) {
 })();
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { identify, parseStore, upsert, wmhssoDecrypt, loadUpstash, upstashCmd, upstashGet, upstashSet, getVal, setVal, req };
+  module.exports = { identify, parseStore, upsert, wmhssoDecrypt, reportReceiver, receiverUrl, argMap, getVal, setVal, req };;
 }

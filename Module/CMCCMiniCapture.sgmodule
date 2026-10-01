@@ -1,15 +1,15 @@
-#!name=中国移动心愿金凭据抓取（Upstash 同步）
-#!desc=捕获支付宝/微信小程序 wmhsso 请求头 JWT，自动换链取 openid 与 QWHD 票，合并写 Upstash 云端账号库（键 cmcc_mini），配套青龙 cmcc_mini.py 三端签到。v1
+#!name=中国移动心愿金凭据抓取（Tailnet 同步）
+#!desc=捕获支付宝/微信小程序 wmhsso 请求头 JWT，本机完成识别链取 openid 与 QWHD 票，上报 Mac Tailnet receiver 合并写青龙 env cmcc_mini，配套青龙 cmcc_mini.py 三端签到。v2
 #!author=ForestofTime
 #!category=Automation
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CMCCMiniCapture.sgmodule
-#!arguments=upstash_url:https://xxx.upstash.io,upstash_token:AXXXXXXXXX
-#!arguments-desc=upstash_url: Upstash REST 地址（与青龙 UPSTASH_URL 同值）；upstash_token: Upstash REST Token（与青龙 UPSTASH_TOKEN 同值）。脚本以云端键 cmcc_mini 为唯一账号库基准。
+#!arguments=receiver_url:https://hynmac-mini.taila66285.ts.net/cmcc-mini
+#!arguments-desc=receiver_url: Mac Tailnet receiver 地址（默认已内置 hynmac-mini/cmcc-mini，一般无需修改）。凭据按 openid 合并写入青龙 env cmcc_mini。
 #!icon=https://raw.githubusercontent.com/shindgewongxj/WHATINStash/main/icon/cmcc.png
 
 [Script]
-中国移动-心愿金凭据捕获 = type=http-request,pattern=^https?:\/\/wx\.online-cmcc\.cn\/wmhnewcenter\/(?:alipay-applet|wechat86-applet)\/wmhsso(?:\?.*)?$,requires-body=false,timeout=60,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCMiniCapture.js?v=1,script-arguments="UpStash_URL={{{upstash_url}}}&UpStash_Token={{{upstash_token}}}"
+中国移动-心愿金凭据捕获 = type=http-request,pattern=^https?:\/\/wx\.online-cmcc\.cn\/wmhnewcenter\/(?:alipay-applet|wechat86-applet)\/wmhsso(?:\?.*)?$,requires-body=false,timeout=60,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCMiniCapture.js?v=2,script-arguments="receiver_url={{{receiver_url}}}"
 
 [MITM]
 hostname = %APPEND% wx.online-cmcc.cn

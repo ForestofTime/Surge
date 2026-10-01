@@ -24,11 +24,11 @@ test('module only intercepts the two applet wmhsso request endpoints', () => {
   assert.doesNotMatch(line, /\\\/login(?:\\|[^/])/);
 });
 
-test('module declares MITM for the wmhnewcenter host and upstash arguments', () => {
+test('module declares MITM for the wmhnewcenter host and receiver argument', () => {
   assert.match(moduleText, /\[MITM\]/);
   assert.match(moduleText, /%APPEND% wx\.online-cmcc\.cn/);
-  assert.match(moduleText, /upstash_url:/);
-  assert.match(moduleText, /upstash_token:/);
+  assert.match(moduleText, /receiver_url:/);
+  assert.doesNotMatch(moduleText, /[Uu]pstash/);
 });
 
 test('module pins the script with a cache-busting version', () => {
@@ -43,7 +43,6 @@ test('script carries the full three-step chain verbatim', () => {
   assert.match(scriptText, /for \(let hop = 0; hop < 6/);
   assert.match(scriptText, /user\/info/);
   assert.match(scriptText, /QWHD_SESSION_TOKEN/);
-  assert.match(scriptText, /upstashGet|upstashSet/);
   assert.match(scriptText, /dFZrZGFSV1JZMFprVjFWcg==/); // AES 引擎密钥同源
 });
 
@@ -56,12 +55,22 @@ test('script strips hand-written Content-Length for Surge framing', () => {
   assert.match(scriptText, /content-length/);
 });
 
-test('script argument map takes precedence over persistent storage', () => {
-  const argIdx = scriptText.indexOf('function argMap()');
-  const loadIdx = scriptText.indexOf('function loadUpstash()');
-  assert.ok(argIdx >= 0 && loadIdx > argIdx, 'argMap 必须先定义');
-  assert.match(scriptText, /a\['UpStash_URL'\]/);
-  assert.match(scriptText, /getVal\(UPSTASH_URL_KEY/); // 兜底源
+test('receiver URL resolution: argument overrides store overrides default', () => {
+  assert.match(scriptText, /DEFAULT_RECEIVER_URL = 'https:\/\/hynmac-mini\.taila66285\.ts\.net\/cmcc-mini'/);
+  assert.match(scriptText, /a\['receiver_url'\]/);
+  assert.match(scriptText, /getVal\(RECEIVER_URL_KEY/);
+  assert.doesNotMatch(scriptText, /[Uu]pstash/); // Upstash 线已彻底移除
+});
+
+test('reportReceiver posts five-field payload to the tailnet receiver', () => {
+  const i = scriptText.indexOf('const rep = await reportReceiver({');
+  const seg = scriptText.slice(i, i + 300);
+  assert.ok(i >= 0, '调用点存在');
+  assert.match(seg, /openid: id\.openid/);
+  assert.match(seg, /nickName: id\.nickName/);
+  assert.match(seg, /jwt: jwt/);
+  assert.match(seg, /qwhd: id\.qwhdAli/);
+  assert.match(seg, /end: end/);
 });
 
 test('script notifies via Surge first and QX fallback', () => {
@@ -106,9 +115,14 @@ test('script runs under a Surge-shaped sandbox and captures the 302 ticket', asy
     calls.push({ url: options.url, autoRedirect: options['auto-redirect'] });
     callback(null, { status, headers }, body || '');
   };
+  const reported = [];
   const routes = [
-    (o) => (o.url.indexOf('upstash') >= 0 && calls.filter((c) => c.url.indexOf('upstash') >= 0).length === 0)
-      ? step(200, {}, JSON.stringify({ result: '[]' })) : null, // upstashGet → 空库
+    (o) => (o.url.indexOf('hynmac-mini.taila66285.ts.net/cmcc-mini') >= 0)
+      ? (o2, cb) => {
+          reported.push(JSON.parse(o2.body));
+          calls.push({ url: o2.url, autoRedirect: o2['auto-redirect'] });
+          cb(null, { status: 200, headers: {} }, JSON.stringify({ ok: true, action: 'created', accounts: 1 }));
+        } : null,
     (o) => (o.url.indexOf('/wmhsso') >= 0) ? step(200, {}, wmhssoBody) : null,
     (o) => (o.url.indexOf('/qwhdmark/') >= 0 && !calls.some((c) => c.url.indexOf('/qwhdmark/') >= 0))
       ? step(302, { Location: 'https://wx.10086.cn/qwhdhub/qwhdmark/next' }) : null,
@@ -116,7 +130,6 @@ test('script runs under a Surge-shaped sandbox and captures the 302 ticket', asy
       ? step(302, { 'Set-Cookie': 'QWHD_SESSION_TOKEN=QWHDSSOD20261001T000000000DU1021122301H000000000000; Path=/' }) : null,
     (o) => (o.url.indexOf('user/info') >= 0)
       ? step(200, {}, JSON.stringify({ data: { openid: 'oTEST1', nickName: '13800001111' } })) : null,
-    (o) => (o.url.indexOf('upstash') >= 0) ? step(200, {}, JSON.stringify({ result: 'OK' })) : null, // upstashSet
   ];
   const httpClient = {};
   for (const m of ['get', 'post', 'put', 'delete', 'head', 'patch']) {
@@ -130,7 +143,7 @@ test('script runs under a Surge-shaped sandbox and captures the 302 ticket', asy
   }
 
   loadScript({
-    $argument: 'UpStash_URL=' + encodeURIComponent('https://example.upstash.io') + '&UpStash_Token=TESTTOKEN',
+    $argument: '',
     $persistentStore: { read: (k) => (k in store ? store[k] : null), write: (v, k) => { store[k] = String(v); return true; } },
     $httpClient: httpClient,
     $notification: { post: () => {} },
@@ -144,13 +157,20 @@ test('script runs under a Surge-shaped sandbox and captures the 302 ticket', asy
   for (let i = 0; i < 40 && calls.length < 4; i++) {
     await new Promise((r) => setTimeout(r, 50));
   }
-  // qwhdmark 两跳按 URL 识别（calls 前置有 upstash 读云端与 wmhsso，位置不定）
+  // qwhdmark 两跳按 URL 识别（calls 里还有 wmhsso 与 receiver 上报，位置不定）
   const hops = calls.filter((c) => c.url.indexOf('/qwhdmark/') >= 0);
   assert.ok(hops.length >= 2, `qwhdmark 应至少两跳，实际 ${hops.length}`);
   assert.ok(hops.every((c) => c.autoRedirect === false), 'qwhdmark 所有跳必须禁自动跟随');
   const wmhssoCall = calls.find((c) => c.url.indexOf('/wmhsso') >= 0);
   assert.ok(wmhssoCall, '应发出 wmhsso 换 token');
   assert.equal(wmhssoCall.autoRedirect, true, 'wmhsso 允许自动跟随（非票据跳）');
+  assert.equal(reported.length, 1, '识别链完成应上报 receiver');
+  const payload = reported[0];
+  assert.equal(payload.openid, 'oTEST1');
+  assert.equal(payload.jwt, 'JWT_TEST_1234567890');
+  assert.equal(payload.nickName, '13800001111');
+  assert.match(payload.qwhd, /^QWHDSSOD/);
+  assert.equal(payload.end, 'alipay');
 });
 
 test('wmhsso roundtrip decrypts a token from a real AES payload', async () => {
