@@ -183,3 +183,20 @@ test('wmhsso roundtrip decrypts a token from a real AES payload', async () => {
   const dec = await vm.runInContext(`wmhssoDecrypt(${JSON.stringify(enc)})`, context);
   assert.equal(dec && dec.token, 'ROUNDTRIPTOKEN');
 });
+
+test('notify pads to three string arguments (no "undefined" body line)', () => {
+  const posts = [];
+  const context = loadScript({
+    $notification: { post: (...a) => posts.push(a) },
+    $persistentStore: { read: () => null, write: () => true },
+  });
+  const vm = require('node:vm');
+  vm.runInContext('notify("t", "s")', context);
+  vm.runInContext('notify("t", "s", null)', context);
+  assert.equal(posts.length, 2);
+  for (const post of posts) {
+    assert.equal(post.length, 3);
+    assert.ok(post.every((x) => typeof x === 'string'));
+    assert.ok(!post.includes(undefined));
+  }
+});

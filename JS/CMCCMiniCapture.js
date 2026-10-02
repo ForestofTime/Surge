@@ -313,6 +313,9 @@ function writeLocalBackup(text) {
 function notify() {
   try {
     const args = Array.prototype.slice.call(arguments);
+    // Surge/QX 通知都是 (title, subtitle, body) 三参；不足三参时第三行会渲染成 "undefined"
+    while (args.length < 3) args.push('');
+    for (let i = 0; i < 3; i++) args[i] = args[i] == null ? '' : String(args[i]);
     if (typeof $notification !== 'undefined' && $notification && $notification.post) $notification.post.apply($notification, args);
     else if (typeof $notify !== 'undefined') $notify.apply(null, args);
   } catch (e) { }

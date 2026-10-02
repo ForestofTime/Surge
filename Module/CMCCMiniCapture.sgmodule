@@ -1,5 +1,5 @@
 #!name=中国移动心愿金凭据抓取（Tailnet 同步）
-#!desc=捕获支付宝/微信小程序 wmhsso 请求头 JWT，本机完成识别链取 openid 与 QWHD 票，上报 Mac Tailnet receiver 合并写青龙 env cmcc_mini，配套青龙 cmcc_mini.py 三端签到。v2
+#!desc=捕获支付宝/微信小程序 wmhsso 请求头 JWT，本机完成识别链取 openid 与 QWHD 票，上报 Mac Tailnet receiver 合并写青龙 env cmcc_mini，配套青龙 cmcc_mini.py 三端签到。v2（通知参数修复）
 #!author=ForestofTime
 #!category=Automation
 #!homepage=https://github.com/ForestofTime/Surge
@@ -9,7 +9,7 @@
 #!icon=https://raw.githubusercontent.com/shindgewongxj/WHATINStash/main/icon/cmcc.png
 
 [Script]
-中国移动-心愿金凭据捕获 = type=http-request,pattern=^https?:\/\/wx\.online-cmcc\.cn\/wmhnewcenter\/(?:alipay-applet|wechat86-applet)\/wmhsso(?:\?.*)?$,requires-body=false,timeout=60,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCMiniCapture.js?v=2,script-arguments="receiver_url={{{receiver_url}}}"
+中国移动-心愿金凭据捕获 = type=http-request,pattern=^https?:\/\/wx\.online-cmcc\.cn\/wmhnewcenter\/(?:alipay-applet|wechat86-applet)\/wmhsso(?:\?.*)?$,requires-body=false,timeout=60,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCMiniCapture.js?v=3,script-arguments="receiver_url={{{receiver_url}}}"
 
 [MITM]
 hostname = %APPEND% wx.online-cmcc.cn
