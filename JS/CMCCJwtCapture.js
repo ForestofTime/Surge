@@ -56,6 +56,15 @@ function selectRequestHeaders(headers) {
   return selected;
 }
 
+function notifyCapture(title, subtitle, body) {
+  try {
+    const args = [title, subtitle, body];
+    for (let i = 0; i < 3; i++) args[i] = args[i] == null ? '' : String(args[i]);
+    if (typeof $notification !== 'undefined' && $notification && $notification.post) $notification.post.apply($notification, args);
+    else if (typeof $notify !== 'undefined') $notify.apply(null, args);
+  } catch (_) { }
+}
+
 function postReceiver(receiverUrl, payload, end) {
   if (typeof $httpClient === 'undefined') {
     log('失败: 宿主没有 $httpClient，无法上报');
@@ -68,12 +77,16 @@ function postReceiver(receiverUrl, payload, end) {
     timeout: 3,
     policy: 'Tailnet',
   }, (error, response, data) => {
+    const status = response && (response.status || response.statusCode);
     if (error) {
       log('上报失败 ' + end + ': ' + String(error));
+      notifyCapture('移动 JWT 同步失败', end, 'receiver 不可达: ' + String(error).slice(0, 80));
       return;
     }
-    const status = response && (response.status || response.statusCode);
+    const ok = status >= 200 && status < 300;
     log('上报完成 ' + end + ' HTTP=' + status + ' → ' + receiverUrl);
+    notifyCapture(ok ? '移动 JWT 已同步' : '移动 JWT 同步失败', end,
+      ok ? '凭据已上报 Mac receiver → 青龙' : 'receiver HTTP=' + status);
   });
 }
 

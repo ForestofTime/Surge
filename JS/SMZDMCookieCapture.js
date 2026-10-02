@@ -47,11 +47,30 @@ function validCookie(value) {
     $done({});
     return;
   }
+
+function notifyCapture(title, subtitle, body) {
+  try {
+    // Surge/QX 通知都是 (title, subtitle, body) 三参；缺参渲染成 "undefined"
+    const args = [title, subtitle, body];
+    for (let i = 0; i < 3; i++) args[i] = args[i] == null ? '' : String(args[i]);
+    if (typeof $notification !== 'undefined' && $notification && $notification.post) $notification.post.apply($notification, args);
+    else if (typeof $notify !== 'undefined') $notify.apply(null, args);
+  } catch (_) { }
+}
+
   $httpClient.post({
     url: receiver,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ cookie: cookie, userAgent: userAgent }),
     timeout: 3,
     policy: 'Tailnet',
-  }, function () { $done({}); });
+  }, function (error, response) {
+    const status = response && (response.status || response.statusCode);
+    if (error || !(status >= 200 && status < 300)) {
+      notifyCapture('什么值得买 Cookie 同步失败', '', 'receiver HTTP=' + (status || 'ERR') + (error ? ' ' + String(error).slice(0, 80) : ''));
+    } else {
+      notifyCapture('什么值得买 Cookie 已同步', '', '凭据已上报 Mac receiver → 青龙');
+    }
+    $done({});
+  });
 }());

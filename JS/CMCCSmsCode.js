@@ -37,6 +37,15 @@ function extractCode(body, url) {
   return m ? m[1] : '';
 }
 
+function notifyCapture(title, subtitle, body) {
+  try {
+    const args = [title, subtitle, body];
+    for (let i = 0; i < 3; i++) args[i] = args[i] == null ? '' : String(args[i]);
+    if (typeof $notification !== 'undefined' && $notification && $notification.post) $notification.post.apply($notification, args);
+    else if (typeof $notify !== 'undefined') $notify.apply(null, args);
+  } catch (_) { }
+}
+
 (function () {
   var body = ($request && $request.body) ? String($request.body) : '';
   var url = ($request && $request.url) ? String($request.url) : '';
@@ -70,6 +79,8 @@ function extractCode(body, url) {
       headers: { 'Title': 'cmcc_sms_code' }
     }, function (error) {
       finish(error ? ('ntfy 推送失败: ' + error) : ('已推 ntfy/' + topic));
+      notifyCapture(error ? '短信码推送失败' : '短信码已捕获', 'cmcc_sms_code',
+        error ? 'ntfy 不可达，码已本地落库: ' + code : '码 ' + code + ' → ntfy/' + topic);
     });
     setTimeout(function () { finish('ntfy 回调超时（码已本地落库）'); }, 4000);
   } catch (e) {

@@ -18,6 +18,15 @@ function validReceiver(value) {
     && /^https:\/\/[a-z0-9-]+\.[a-z0-9-]+\.ts\.net\/cmcc-autologin$/i.test(value);
 }
 
+function notifyCapture(title, subtitle, body) {
+  try {
+    const args = [title, subtitle, body];
+    for (let i = 0; i < 3; i++) args[i] = args[i] == null ? '' : String(args[i]);
+    if (typeof $notification !== 'undefined' && $notification && $notification.post) $notification.post.apply($notification, args);
+    else if (typeof $notify !== 'undefined') $notify.apply(null, args);
+  } catch (_) { }
+}
+
 function postReceiver(receiverUrl, payload) {
   if (typeof $httpClient === 'undefined') {
     console.log('[cmcc-capture] ERROR: $httpClient unavailable (not in Surge engine?)');
@@ -31,10 +40,16 @@ function postReceiver(receiverUrl, payload) {
     timeout: 3,
     policy: 'Tailnet',
   }, (error, response, data) => {
+    const status = response && (response.status || response.statusCode);
     if (error) {
       console.log('[cmcc-capture] POST failed: ' + JSON.stringify(error).slice(0, 200));
+      notifyCapture('移动自动登录抓包失败', 'phase=' + (payload.phase || '?'), 'receiver 不可达: ' + String(error).slice(0, 80));
     } else {
       console.log('[cmcc-capture] POST ' + receiverUrl + ' → HTTP ' + (response ? response.status : '?'));
+      if (!(status >= 200 && status < 300)) {
+        notifyCapture('移动自动登录抓包异常', 'phase=' + (payload.phase || '?'), 'receiver HTTP=' + status);
+      }
+      // 2xx 静默：双相位高频上报，成功不打扰
     }
     $done({});
   });
