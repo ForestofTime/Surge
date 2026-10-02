@@ -8,44 +8,45 @@ const modulePath = path.resolve(__dirname, '../../Module/PinduoduoNative.sgmodul
 const obsoleteScriptPath = path.resolve(__dirname, '../PinduoduoNative.js');
 const subsidyScriptPath = path.resolve(__dirname, '../PinduoduoSubsidy.js');
 const readmePath = path.resolve(__dirname, '../../README.md');
+const harDir = process.env.SURGE_HAR_DIR || '/Users/USER/Library/Mobile Documents/com~apple~CloudDocs/文档';
 const fullMetaHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-100425.har';
+  path.join(harDir, '2026-08-13-100425.har');
 const latestV6HarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-111547.har';
+  path.join(harDir, '2026-08-13-111547.har');
 const latestChatHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-122121.har';
+  path.join(harDir, '2026-08-13-122121.har');
 const latestPersonalHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-140744.har';
+  path.join(harDir, '2026-08-13-140744.har');
 const latestV9RegressionHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-143611.har';
+  path.join(harDir, '2026-08-13-143611.har');
 const latestV10RegressionHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-145210.har';
+  path.join(harDir, '2026-08-13-145210.har');
 const latestV11RegressionHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-150719.har';
+  path.join(harDir, '2026-08-13-150719.har');
 const latestV12DetailRegressionHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-142431.har';
+  path.join(harDir, '2026-08-20-142431.har');
 const latestChatPersonalRegressionHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-23-153700.har';
+  path.join(harDir, '2026-08-23-153700.har');
 const latestV15ChatRegressionHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-03-150308.har';
+  path.join(harDir, '2026-09-03-150308.har');
 const latestV15PersonalRegressionHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-03-150410.har';
+  path.join(harDir, '2026-09-03-150410.har');
 const latestV16BusinessRegressionHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-08-155713.har';
+  path.join(harDir, '2026-09-08-155713.har');
 const latestV17OrderBadgeRegressionHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-08-161410.har';
+  path.join(harDir, '2026-09-08-161410.har');
 const latestV18ChatPersonalRegressionHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-09-223414.har';
+  path.join(harDir, '2026-09-09-223414.har');
 const latestV19ChatPersonalRegressionHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-18-113046.har';
+  path.join(harDir, '2026-09-18-113046.har');
 const latestV20SplashRegressionHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-27-200913.har';
+  path.join(harDir, '2026-09-27-200913.har');
 const latestV21HostRotationHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-28-135435.har';
+  path.join(harDir, '2026-09-28-135435.har');
 const latestV22ChatPersonalRegressionHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-29-113848.har';
+  path.join(harDir, '2026-09-29-113848.har');
 const latestV23BusinessRegressionHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-09-29-115526.har';
+  path.join(harDir, '2026-09-29-115526.har');
 const moduleText = fs.readFileSync(modulePath, 'utf8');
 const readmeText = fs.readFileSync(readmePath, 'utf8');
 

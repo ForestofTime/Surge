@@ -7,23 +7,24 @@ const vm = require('node:vm');
 const modulePath = path.resolve(__dirname, '../../Module/CainiaoMiniProgram.sgmodule');
 const scriptPath = path.resolve(__dirname, '../CainiaoMiniProgram.js');
 const moduleText = fs.existsSync(modulePath) ? fs.readFileSync(modulePath, 'utf8') : '';
+const harDir = process.env.SURGE_HAR_DIR || '/Users/USER/Library/Mobile Documents/com~apple~CloudDocs/文档';
 const scriptText = fs.existsSync(scriptPath) ? fs.readFileSync(scriptPath, 'utf8') : '';
 const latestHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-13-085037.har';
+  path.join(harDir, '2026-08-13-085037.har');
 const batchRegressionHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-17-203959.har';
+  path.join(harDir, '2026-08-17-203959.har');
 const latestV5HarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-17-211008.har';
+  path.join(harDir, '2026-08-17-211008.har');
 const latestV6HarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-17-212317.har';
+  path.join(harDir, '2026-08-17-212317.har');
 const latestV7HarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-184052.har';
+  path.join(harDir, '2026-08-20-184052.har');
 const latestV8CacheHarPaths = [
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-193709.har',
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-20-201036.har',
+  path.join(harDir, '2026-08-20-193709.har'),
+  path.join(harDir, '2026-08-20-201036.har'),
 ];
 const latestV9PromotionalSchemaHarPath =
-  '/Users/huangyinan/Library/Mobile Documents/com~apple~CloudDocs/文档/2026-08-23-230214.har';
+  path.join(harDir, '2026-08-23-230214.har');
 
 function sectionLines(sectionName) {
   const section = moduleText.match(

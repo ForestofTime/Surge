@@ -4,8 +4,9 @@
 
 const fs = require('fs');
 const vm = require('vm');
+const path = require('path');
 
-const scriptText = fs.readFileSync('/Users/huangyinan/Documents/Surge/JS/ABCSplash.js', 'utf8');
+const scriptText = fs.readFileSync(path.resolve(__dirname, '../ABCSplash.js'), 'utf8');
 const har = JSON.parse(fs.readFileSync('/tmp/abc.har', 'utf8'));
 const entries = har.log.entries;
 
