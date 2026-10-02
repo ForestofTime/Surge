@@ -28,16 +28,20 @@ function notifyCapture(title, subtitle, body) {
 }
 
 function postReceiver(receiverUrl, payload) {
+  let settled = false;
+  const finish = () => { if (!settled) { settled = true; try { $done({}); } catch (_) {} } };
+  // 兜底: 上报再慢也不能拖住原请求放行 (tailnet 冷启动握手可超 3s)
+  setTimeout(finish, 1200);
   if (typeof $httpClient === 'undefined') {
     console.log('[cmcc-capture] ERROR: $httpClient unavailable (not in Surge engine?)');
-    $done({});
+    finish();
     return;
   }
   $httpClient.post({
     url: receiverUrl,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
-    timeout: 3,
+    timeout: 8,
     policy: 'Tailnet',
   }, (error, response, data) => {
     const status = response && (response.status || response.statusCode);
@@ -51,7 +55,7 @@ function postReceiver(receiverUrl, payload) {
       }
       // 2xx 静默：双相位高频上报，成功不打扰
     }
-    $done({});
+    finish();
   });
 }
 

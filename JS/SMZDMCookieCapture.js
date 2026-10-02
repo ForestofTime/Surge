@@ -58,11 +58,14 @@ function notifyCapture(title, subtitle, body) {
   } catch (_) { }
 }
 
+  let settled = false;
+  const finish = function () { if (!settled) { settled = true; try { $done({}); } catch (_) {} } };
+  setTimeout(finish, 1200);
   $httpClient.post({
     url: receiver,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ cookie: cookie, userAgent: userAgent }),
-    timeout: 3,
+    timeout: 8,
     policy: 'Tailnet',
   }, function (error, response) {
     const status = response && (response.status || response.statusCode);
@@ -71,6 +74,6 @@ function notifyCapture(title, subtitle, body) {
     } else {
       notifyCapture('什么值得买 Cookie 已同步', '', '凭据已上报 Mac receiver → 青龙');
     }
-    $done({});
+    finish();
   });
 }());

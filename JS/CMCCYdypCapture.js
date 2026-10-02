@@ -88,6 +88,10 @@ function notifyCapture(title, subtitle, body) {
 }
 
 function postReceiver(receiverUrl, payload) {
+  let settled = false;
+  const finish = () => { if (!settled) { settled = true; try { finish(); } catch (_) {} } };
+  // 兜底: 上报再慢也不能拖住原请求放行 (tailnet 冷启动握手可超 3s)
+  setTimeout(finish, 1200);
   if (typeof $httpClient === 'undefined') {
     log('失败: 宿主没有 $httpClient，无法上报');
     return;
@@ -98,7 +102,7 @@ function postReceiver(receiverUrl, payload) {
     url: receiverUrl,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
-    timeout: 3,
+    timeout: 8,
   }, (error, response) => {
     const status = response && (response.status || response.statusCode);
     const kind = payload.kind === 'rcs' ? '云盘 RCS 票' : '云盘 JWT';

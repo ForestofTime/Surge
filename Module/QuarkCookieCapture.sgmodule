@@ -8,7 +8,7 @@
 #!arguments-desc=receiver_url: Mac 私有 Tailnet 接收地址，请勿改为公网地址
 
 [Script]
-夸克-Cookie自动同步 = type=http-request,pattern=^https?:\/\/(?:coral2\.quark|broccoli\.uc)\.cn\/.+,requires-body=false,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/QuarkCookieCapture.js?v=6,script-arguments="receiver_url={{{receiver_url}}}"
+夸克-Cookie自动同步 = type=http-request,pattern=^https?:\/\/(?:coral2\.quark|broccoli\.uc)\.cn\/.+,requires-body=false,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/QuarkCookieCapture.js?v=7,script-arguments="receiver_url={{{receiver_url}}}"
 
 [MITM]
 hostname = %APPEND% coral2.quark.cn, broccoli.uc.cn

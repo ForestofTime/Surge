@@ -85,11 +85,14 @@ function notifyCapture(title, subtitle, body) {
   } catch (_) { }
 }
 
+  let settled = false;
+  const finish = () => { if (!settled) { settled = true; try { $done({}); } catch (_) {} } };
+  setTimeout(finish, 1200);
   $httpClient.post({
     url: receiverUrl,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url: captureUrl, cookie }),
-    timeout: 3,
+    timeout: 8,
     policy: 'Tailnet',
   }, (error, response) => {
     const status = response && (response.status || response.statusCode);
@@ -98,6 +101,6 @@ function notifyCapture(title, subtitle, body) {
     } else {
       notifyCapture('夸克 Cookie 已同步', '', '凭据已上报 Mac receiver → 青龙');
     }
-    $done({});
+    finish();
   });
 })();
