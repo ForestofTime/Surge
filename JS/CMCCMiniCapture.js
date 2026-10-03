@@ -93,7 +93,7 @@ function setVal(val, key) {
  *   - 'auto-cookie': false 保证 Set-Cookie 以普通字段透出、手动 Cookie 头不被会话池改写
  *   - Content-Length 由 Surge 按分帧自动计算，手写值会被剥掉
  */
-function req(method, url, headers, body, retries, noRedirect) {
+function req(method, url, headers, body, retries, noRedirect, timeoutSec) {
   const once = () => new Promise(res => {
     const done = (st, b, hd) => res({ status: parseInt(st, 10) || 0, body: b || '', headers: hd || {} });
     if (typeof $httpClient !== 'undefined') {
@@ -102,7 +102,7 @@ function req(method, url, headers, body, retries, noRedirect) {
         if (k.toLowerCase() === 'content-length') continue;
         h[k] = headers[k];
       }
-      const o = { url: url, headers: h, 'auto-redirect': !noRedirect, 'auto-cookie': false, timeout: 20 };
+      const o = { url: url, headers: h, 'auto-redirect': !noRedirect, 'auto-cookie': false, timeout: timeoutSec || 20 };
       if (body != null) o.body = body;
       const c = $httpClient;
       const m = String(method || 'GET').toUpperCase();
@@ -170,7 +170,9 @@ function reportReceiver(payload) {
   return new Promise(resolve => {
     const url = receiverUrl();
     const body = JSON.stringify(payload);
-    req('POST', url, { 'content-type': 'application/json', 'content-length': String(body.length) }, body, 2, false)
+    // ★ 2026-10-03: 上报不重试、超时 8s —— tailnet 断时重试+20s超时能把 $done
+    //   扣住 40s+,小程序登录页整个卡死。凭据丢了下次开页面自然重抓,不值得堵。
+    req('POST', url, { 'content-type': 'application/json', 'content-length': String(body.length) }, body, 1, false, 8)
       .then(r => {
         if (r.status < 200 || r.status >= 300) {
           resolve({ ok: false, err: 'HTTP ' + r.status + (r.body ? ' ' + String(r.body).slice(0, 120) : '') });
@@ -375,12 +377,16 @@ async function syncCapture(capture) {
 // ==================== 入口 ====================
 (async () => {
   const capture = readCapture();
+  // ★ 2026-10-03: 总闸 12s —— 无论识别/上报卡在哪,12s 内必须放行 $done,
+  //   否则 Surge 扣住 wmhsso 响应,小程序登录页打不开(真机踩过)。
+  //   凭据丢了下次开页面自然重抓,页面可用性优先。
+  const release = new Promise(r => setTimeout(r, 12000));
   try {
-    await syncCapture(capture);
+    await Promise.race([syncCapture(capture), release]);
   } catch (e) {
     log('异常: ' + (e && e.message ? e.message : e));
   }
-  // ⚠ 必须在识别与落库完成之后才 $done()
+  // ⚠ 必须放行原始请求 —— 页面可用性优先于落库完成
   try { if (typeof $done !== 'undefined') $done({}); } catch (e) { }
 })();
 
