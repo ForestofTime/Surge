@@ -1,0 +1,16 @@
+#!name=中国移动广东 ECOP 会话抓取（Tailnet 同步）
+#!desc=捕获真机广东 ECOP 会话，经 Tailnet 落青龙并即时触发转盘。v1
+#!author=ForestofTime
+#!category=Automation
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CMCCEcopCapture.sgmodule
+#!arguments=receiver_url:https://hynmac-mini.taila66285.ts.net/cmcc-ecop
+#!arguments-desc=receiver_url: Mac 上已启用的 Tailnet 接收地址，请勿改为公网地址。会话按号码写入青龙 env cmcc_ck，并即时触发转盘 cron。
+#!icon=https://raw.githubusercontent.com/shindgewongxj/WHATINStash/main/icon/cmcc.png
+
+[Script]
+中国移动-ECOP业务请求抓取 = type=http-request,pattern=^https:\/\/wap\.gd\.10086\.cn\/ech\/ecop\/app\/act\/,requires-body=false,timeout=8,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCEcopCapture.js?v=1,script-arguments="receiver_url={{{receiver_url}}}"
+中国移动-ECOP换端响应抓取 = type=http-response,pattern=^https:\/\/wap\.gd\.10086\.cn\/ech\/ecop\/common\/sso\/groupAppTokenLogin,requires-body=false,timeout=8,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CMCCEcopCapture.js?v=1,script-arguments="receiver_url={{{receiver_url}}}"
+
+[MITM]
+hostname = %APPEND% wap.gd.10086.cn

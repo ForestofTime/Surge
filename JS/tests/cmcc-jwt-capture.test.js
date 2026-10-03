@@ -76,6 +76,8 @@ test('script forwards only allowlisted login request metadata', () => {
   let posted;
   let done = false;
   const context = {
+    setTimeout: () => 0,
+    clearTimeout: () => {},
     $argument: 'receiver_url=https%3A%2F%2Ffixture.taila66285.ts.net%2Fcmcc-jwt',
     $request: {
       url: fixture.request.url,

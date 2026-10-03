@@ -15,6 +15,8 @@ function execute({ url = 'https://coral2.quark.cn/quark/welfare/v3/query', cooki
   let post;
   vm.runInNewContext(script, {
     decodeURIComponent, URL,
+    setTimeout: () => 0,
+    clearTimeout: () => {},
     $argument: argument,
     $request: { url, headers: { Cookie: cookie } },
     $httpClient: { post: (options, callback) => { post = options; callback(); } },

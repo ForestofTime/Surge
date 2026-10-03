@@ -13,6 +13,8 @@ function execute({ body, argument, response = null, id = 'request-1', url = 'htt
   let post;
   vm.runInNewContext(script, {
     decodeURIComponent,
+    setTimeout: () => 0,
+    clearTimeout: () => {},
     $request: { id, url, method: 'POST', ...(body === undefined ? {} : { body }) },
     ...(response ? { $response: response } : {}),
     $argument: argument,
@@ -27,7 +29,10 @@ test('captures every bounded LN autoLogin path and uses a Tailnet-only receiver 
   assert.match(moduleText, /type=http-request/);
   assert.match(moduleText, /type=http-response/);
   assert.ok(moduleText.includes('uamthreenetworklogin'));
-  assert.match(moduleText, /CMCCAutoLoginCapture\.js\?v=8/g);
+  // 只校验"带版本号且两条规则一致"，不写死具体数字（模块升级不该弄挂测试）
+  const versionMatches = moduleText.match(/CMCCAutoLoginCapture\.js\?v=(\d+)/g) || [];
+  assert.ok(versionMatches.length >= 1, 'script-path 必须带 ?v= 版本号');
+  assert.equal(new Set(versionMatches).size, 1, '两条规则必须同版本');
   assert.match(moduleText, /requires-body=true/);
   assert.match(moduleText, /full-header-mode=true/);
   assert.match(moduleText, /hostname = %APPEND% client\.app\.coc\.10086\.cn/);
