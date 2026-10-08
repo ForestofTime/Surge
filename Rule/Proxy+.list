@@ -16,6 +16,3 @@ DOMAIN-SUFFIX,missav.ai
 DOMAIN-SUFFIX,missav.ws
 DOMAIN-SUFFIX,pikpak.me
 DOMAIN-SUFFIX,sheerid.com
-IP-CIDR,103.107.90.33/32,no-resolve
-IP-CIDR,43.160.156.23/32,no-resolve
-IP-CIDR,43.160.156.39/32,no-resolve
