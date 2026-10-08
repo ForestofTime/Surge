@@ -40,6 +40,28 @@ function runRequest(url, headers) {
   return JSON.parse(JSON.stringify(runRawRequest(url, headers)));
 }
 
+test('October 8 launch MP4 fallback under /vod/numeric is handled while business playback passes', () => {
+  // HAR: old /100831 MP4 returned 204, then /vod/24 MP4 returned 206 (3,141,898 bytes).
+  const url = 'https://vod.300hu.com/vod/24/example/launch.mp4';
+  const headers = {
+    'User-Agent': 'ffmpeg/4.0;jdmall;iphone;version/16.0.70;build/171012',
+    Referer: 'play:ijkplayerSH_JDMainPageViewController_999_161_130000-163b',
+  };
+  const rule = sectionLines(moduleText, 'Script').find(line => line.startsWith('京东-主页面启动视频跳过'));
+  const pattern = rule.match(/pattern=(.*?), script-path=/)[1];
+  assert.equal(new RegExp(pattern).test(url), true, 'module must dispatch the new launch path');
+  assert.deepEqual(runRequest(url, headers), { response: { status: 204 } });
+  for (const [otherUrl, otherHeaders] of [
+    [url, { ...headers, Referer: 'play:ijkplayerProductDetail' }],
+    [url, { ...headers, Referer: 'play:ijkplayerSH_DiscoverViewController_24_' }],
+    [url, { 'User-Agent': 'JD4iPhone/16.0.70 CFNetwork/3896.200.52 Darwin/27.2.0' }],
+    [url.replace('/vod/24/', '/vod/product/'), headers],
+    [url.replace('vod.300hu', 'jvod.300hu'), headers],
+  ]) {
+    assert.deepEqual(runRequest(otherUrl, otherHeaders), {}, 'non-launch context must pass');
+  }
+});
+
 test('AVIF splash bypasses the GIF Map Local and receives actual AVIF bytes', () => {
   // 2026-09-30-104036 HAR: this path class received image/gif, 35 bytes,
   // via Map Local; the AVIF request script did not run.
@@ -65,7 +87,7 @@ test('AVIF splash bypasses the GIF Map Local and receives actual AVIF bytes', ()
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
   assert.match(moduleText, /仅拦截京东开屏图片和启动媒体，保留页面业务/);
-  assert.match(moduleText, /v18$/m);
+  assert.match(moduleText, /v19$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m
@@ -85,11 +107,8 @@ test('publishes a splash-only native Surge module', () => {
   }
 
   assert.match(moduleText, /^京东-主页面启动视频跳过 = type=http-request,/m);
-  assert.match(
-    moduleText,
-    /pattern=\^https\?:\\\/\\\/vod\\\.300hu\\\.com\\\/\\d\+\\\/\.\*\\\.mp4\(\?:\\\?\.\*\)\?\$/
-  );
-  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=18/);
+  assert.ok(moduleText.includes('pattern=^https?:\\/\\/vod\\.300hu\\.com\\/(?:vod\\/)?\\d+\\/.*\\.mp4(?:\\?.*)?$'));
+  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=19/);
   assert.match(moduleText, /^京东-主页面启动流跳过 = type=http-request,/m);
   assert.match(
     moduleText,
