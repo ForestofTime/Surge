@@ -86,17 +86,15 @@ test('AVIF splash bypasses the GIF Map Local and receives actual AVIF bytes', ()
 
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
-  assert.match(moduleText, /仅拦截京东开屏图片和启动媒体，保留页面业务/);
-  assert.match(moduleText, /v19$/m);
+  assert.match(moduleText, /清理京东开屏配置并拦截开屏素材，保留页面业务/);
+  assert.match(moduleText, /v20$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m
   );
 
   for (const removed of [
-    'api.m.jd.com',
     'JingdongAds.js',
-    'client.action',
     'functionId',
     'jddebug.com',
     'uniformRecommend',
@@ -108,7 +106,8 @@ test('publishes a splash-only native Surge module', () => {
 
   assert.match(moduleText, /^京东-主页面启动视频跳过 = type=http-request,/m);
   assert.ok(moduleText.includes('pattern=^https?:\\/\\/vod\\.300hu\\.com\\/(?:vod\\/)?\\d+\\/.*\\.mp4(?:\\?.*)?$'));
-  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=19/);
+  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=20/);
+  assert.match(moduleText, /京东-开屏配置清理 = type=http-response,.*JingdongSplashConfig\.js\?v=20, requires-body=true/);
   assert.match(moduleText, /^京东-主页面启动流跳过 = type=http-request,/m);
   assert.match(
     moduleText,
@@ -152,7 +151,7 @@ test('maps the full-screen canvas class across the rotating image hosts', () => 
 
 test('limits MITM to the confirmed splash delivery hosts', () => {
   assert.deepEqual(sectionLines(moduleText, 'MITM'), [
-    'hostname = %APPEND% m.360buyimg.com, m15.360buyimg.com, vod.300hu.com, discover.300hu.com',
+    'hostname = %APPEND% api.m.jd.com, m.360buyimg.com, m15.360buyimg.com, vod.300hu.com, discover.300hu.com',
     'tcp-connection = true',
   ]);
 });
@@ -343,7 +342,7 @@ test('fixture: every blocked launch video carries the launch-player Referer and 
 test('README describes the reduced scope and keeps the one-click import link', () => {
   assert.match(
     readmeText,
-    /`Module\/JingdongAds\.sgmodule` \| 京东去开屏 \| AdBlock \| 仅拦截京东开屏图片和启动媒体/
+    /`Module\/JingdongAds\.sgmodule` \| 京东去开屏 \| AdBlock \| 清理京东开屏配置并拦截开屏素材/
   );
   assert.match(
     readmeText,
