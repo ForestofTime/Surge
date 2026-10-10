@@ -11,9 +11,9 @@
 ^https?:\/\/.*\.cib\.com\.cn\/.*\/banner - reject
 
 [Map Local]
-# 拦截广告接口，返回空数据
-^https?:\/\/.*\.cib\.com\.cn\/.*\/advertisement data-type=json data="{}"
-^https?:\/\/.*\.cib\.com\.cn\/.*\/advert data-type=json data="{}"
+# 拦截广告接口，返回空数据 (data-type 必须为 text, 并显式声明 status-code + Content-Type)
+^https?:\/\/.*\.cib\.com\.cn\/.*\/advertisement data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/.*\.cib\.com\.cn\/.*\/advert data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 [MITM]
 hostname = %APPEND% *.cib.com.cn

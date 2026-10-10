@@ -9,8 +9,8 @@
 易捷加油去广告 = type=http-response, pattern=^https:\/\/a\.sinopecsales\.com\/app\/cms\/AppCmsPage\.json, requires-body=true, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/refs/heads/main/JS/yjjy.js, timeout=10
 
 [Map Local]
-# 拦截底部横幅广告，返回空字典避免卡顿
-https:\/\/ocrifs\.ejoy\.sinopec\.com\/advertitfs\/advert\/findAdvertInfo data-type=json data="{}"
+# 拦截底部横幅广告，返回空 JSON 避免卡顿 (data-type 必须为 text, 并显式声明 status-code + Content-Type)
+^https:\/\/ocrifs\.ejoy\.sinopec\.com\/advertitfs\/advert\/findAdvertInfo data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 [MITM]
 hostname = %APPEND% a.sinopecsales.com, ocrifs.ejoy.sinopec.com
