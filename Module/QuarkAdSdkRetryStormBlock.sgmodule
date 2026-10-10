@@ -21,3 +21,8 @@ DOMAIN,mi.gdt.qq.com,REJECT,pre-matching
 DOMAIN,open.e.kuaishou.com,REJECT,pre-matching
 DOMAIN,et.tanx.com,REJECT,pre-matching
 DOMAIN,opehs.tanx.com,REJECT,pre-matching
+# v2 追加: 广告 SDK 的真实 IP 端点。always-real-ip 使夸克域名解析到真实 IP 后,
+# SDK 会缓存该 IP 直连; 域名规则拦不住。观测(2026-10-10 打开夸克): 单 IP:port 50 req/s
+# 重试风暴 (黑洞超时, 6s×50=网络雪崩), 与 2026-09-22 同形态。精确 /32 + no-resolve:
+# 让客户端立即拿到 connection-refused, 快速失败退出重试循环 (而非超时紧循环)。
+IP-CIDR,111.13.216.161/32,REJECT,no-resolve
