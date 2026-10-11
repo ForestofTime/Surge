@@ -1,0 +1,12 @@
+#!name=渝卡通城市漫步 token 同步
+#!desc=捕获渝卡通 wxOneClickLogin 响应 token，经 Tailnet 写入青龙 ykt_data
+#!author=ForestofTime
+#!category=Automation
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/YKTCapture.sgmodule
+
+[Script]
+渝卡通-token同步 = type=http-response,pattern=^https:\/\/ggfw\.rlsbj\.cq\.gov\.cn\/yyjy\/ykt_hd\/app\/user\/wxOneClickLogin$,requires-body=true,max-size=131072,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/YKTCapture.js?v=1
+
+[MITM]
+hostname = %APPEND% ggfw.rlsbj.cq.gov.cn
