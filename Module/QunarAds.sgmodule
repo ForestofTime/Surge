@@ -1,0 +1,18 @@
+#!name=去哪儿去开屏
+#!desc=拦截去哪儿开屏配置、预加载和开屏广告代理请求。v1
+#!author=ForestofTime, fmz200
+#!category=AdBlock
+#!homepage=https://github.com/ForestofTime/Surge
+#!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/QunarAds.sgmodule
+
+# 来源与取舍见 docs/qunar-adblock-sources.md；不拦截共享图片与业务主域。
+[URL Rewrite]
+# 仅匹配完整 qrt 参数，允许参数换序。
+^https?:\/\/client\.qunar\.com\/pitcher-proxy\?(?:[^#]*&)?qrt=p_splashAd(?:&|$) - reject
+
+[Map Local]
+^https?:\/\/qde\.qunar\.com\/preload(?:\?|$) data-type=text data="" status-code=200
+^https?:\/\/homefront\.qunar\.com\/front\/splash\/ad(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+[MITM]
+hostname = %APPEND% client.qunar.com, homefront.qunar.com, qde.qunar.com
