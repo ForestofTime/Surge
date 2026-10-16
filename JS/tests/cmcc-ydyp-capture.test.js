@@ -117,3 +117,51 @@ test('script posts nothing when neither ticket nor jwt is present', () => {
   vm.runInContext(scriptText, sandbox, { timeout: 1000 });
   assert.equal(posts, 0);
 });
+
+// —— v3 内存治理：去重 + 节流（防止 App 内连点海量重复 POST 爆内存）——
+
+function makeDedupSandbox() {
+  const store = new Map();
+  const posts = [];
+  const sandbox = {
+    $argument: 'receiver_url=https%3A%2F%2Ffixture.taila66285.ts.net%2Fcmcc-ydyp',
+    $request: {
+      url: 'https://m.mcloud.139.com/market/signin/page/infoV3?client=app',
+      headers: { Cookie: 'jwtToken=eyJhbG...4In0.sig; userDomainId=abc' },
+    },
+    $httpClient: {
+      post(opts, cb) { posts.push(opts); if (cb) cb(null, { status: 202 }, '{}'); },
+    },
+    $persistentStore: {
+      read(k) { return store.get(k) || ''; },
+      write(v, k) { store.set(k, v); return true; },
+    },
+    console,
+    setTimeout,
+    atob,
+    $done() {},
+  };
+  vm.createContext(sandbox);
+  return { sandbox, posts };
+}
+
+test('dedup: same jwt posts only once within cooldown (anti memory-leak)', () => {
+  const { sandbox, posts } = makeDedupSandbox();
+  // 第一次：上报
+  vm.runInContext(scriptText, sandbox, { timeout: 1000 });
+  assert.equal(posts.length, 1, '首次必须上报');
+  // 第二次（同值，冷却内）：去重跳过
+  vm.runInContext(scriptText, sandbox, { timeout: 1000 });
+  assert.equal(posts.length, 1, '同值冷却期内不应重复上报');
+});
+
+test('dedup: different value still posts after cooldown window', () => {
+  const { sandbox, posts } = makeDedupSandbox();
+  vm.runInContext(scriptText, sandbox, { timeout: 1000 });
+  assert.equal(posts.length, 1);
+  // 换一个不同的 jwt（不同指纹）：应通过去重，再次上报
+  sandbox.$request.headers.Cookie = 'jwtToken=eyJhbG...DIFFERENT.sig; userDomainId=abc';
+  vm.runInContext(scriptText, sandbox, { timeout: 1000 });
+  assert.equal(posts.length, 2, '不同凭据应正常上报');
+});
+

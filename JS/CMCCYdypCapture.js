@@ -10,6 +10,9 @@
 
 var DEFAULT_RECEIVER_URL = 'https://hynmac-mini.taila66285.ts.net/cmcc-ydyp';
 var LOG_TAG = '[CMCCYDYP]';
+// v3 内存治理：同值凭据在冷却窗口内只上报一次，避免 App 内连点海量重复 POST 堆积爆内存。
+var COOLDOWN_SECONDS = 60;
+var STORE_KEY_PREFIX = 'cmcc_ydyp_dedup_';
 
 function log(message) {
   try { console.log(LOG_TAG + ' ' + message); } catch (_) { /* 无 console 时忽略 */ }
@@ -37,6 +40,52 @@ function headerValue(headers, name) {
     if (String(key).toLowerCase() === lower) return String(headers[key] || '');
   }
   return '';
+}
+
+/** 持久化读（Surge $persistentStore / QX $prefs 兜底）。 */
+function storeGet(key) {
+  try {
+    if (typeof $persistentStore !== 'undefined' && $persistentStore && $persistentStore.read) {
+      return $persistentStore.read(key) || '';
+    }
+    if (typeof $prefs !== 'undefined' && $prefs && $prefs.valueForKey) {
+      return $prefs.valueForKey(key) || '';
+    }
+  } catch (_) { }
+  return '';
+}
+
+/** 持久化写（Surge $persistentStore / QX $prefs 兜底）。 */
+function storeSet(key, value) {
+  try {
+    if (typeof $persistentStore !== 'undefined' && $persistentStore && $persistentStore.write) {
+      return $persistentStore.write(value, key);
+    }
+    if (typeof $prefs !== 'undefined' && $prefs && $prefs.setValueForKey) {
+      return $prefs.setValueForKey(value, key);
+    }
+  } catch (_) { }
+  return false;
+}
+
+/** djb2 指纹（仅去重，非加密）。 */
+function fingerprint(str) {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) + h + str.charCodeAt(i)) >>> 0;
+  }
+  return 'f' + h.toString(36);
+}
+
+/** 去重+节流：同 kind+指纹在 COOLDOWN_SECONDS 内只允许一次，返回是否放行（并记录时间戳）。 */
+function shouldReport(kind, value) {
+  if (!value) return false;
+  const key = STORE_KEY_PREFIX + kind + '_' + fingerprint(value);
+  const now = Math.floor(Date.now() / 1000);
+  const prev = parseInt(storeGet(key) || '0', 10) || 0;
+  if (now - prev < COOLDOWN_SECONDS) return false;
+  storeSet(key, String(now));
+  return true;
 }
 
 /**
@@ -89,7 +138,7 @@ function notifyCapture(title, subtitle, body) {
 
 function postReceiver(receiverUrl, payload) {
   let settled = false;
-  const finish = () => { if (!settled) { settled = true; try { finish(); } catch (_) {} } };
+  const finish = () => { if (settled) return; settled = true; };
   // 兜底: 上报再慢也不能拖住原请求放行 (tailnet 冷启动握手可超 3s)
   setTimeout(finish, 1200);
   if (typeof $httpClient === 'undefined') {
@@ -115,6 +164,7 @@ function postReceiver(receiverUrl, payload) {
     log('上报完成 HTTP=' + status + ' kind=' + (payload.kind || '?') + ' → ' + receiverUrl);
     notifyCapture(ok ? '移动云盘凭据已同步' : '移动云盘凭据同步失败', kind,
       ok ? '凭据已上报 Mac receiver → 青龙' : 'receiver HTTP=' + status);
+    finish();
   });
 }
 
@@ -148,7 +198,11 @@ function postReceiver(receiverUrl, payload) {
   // ② 市场域 JWT：Cookie 里的 jwtToken
   const jwt = extractJwt(cookie);
 
-  if (ticket) {
+  // v3 去重+节流：同值凭据在冷却窗口内不再上报（App 内连点不再海量重复 POST）
+  const rcsOk = ticket && shouldReport('rcs', ticket);
+  const jwtOk = jwt && shouldReport('jwt', jwt);
+
+  if (rcsOk) {
     const payload = { kind: 'rcs', ticket: ticket, url: url.slice(0, 256) };
     if (phone) payload.phone = phone;
     if (payload.ticket.length <= 4096) {
@@ -160,11 +214,17 @@ function postReceiver(receiverUrl, payload) {
     }
   }
 
-  if (jwt && jwt.length <= 4096) {
+  if (jwtOk && jwt.length <= 4096) {
     log('捕获 jwtToken (' + jwt.length + '位)');
     postReceiver(receiverUrl, { kind: 'jwt', jwt: jwt, url: url.slice(0, 256) });
   }
 
-  if (!ticket && !jwt) log('本请求无可捕获凭据: ' + url.slice(0, 120));
+  if ((ticket || jwt) && !rcsOk && !jwtOk) {
+    // 有凭据但被冷却节流：静默跳过（不刷日志，避免连点时日志也堆积）
+  } else if (!ticket && !jwt) {
+    log('本请求无可捕获凭据: ' + url.slice(0, 120));
+  }
+
+  // 立即放行原请求（上报异步，不阻塞）
   return $done({});
 })();
