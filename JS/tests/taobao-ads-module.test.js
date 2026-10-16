@@ -38,10 +38,10 @@ function runScript({ url, body }) {
   return doneCalls[0];
 }
 
-test('declares a repository-native Taobao v1 module', () => {
+test('declares a repository-native Taobao v2 module', () => {
   assert.notEqual(moduleText, '', 'Module/TaobaoAds.sgmodule must exist');
   assert.match(moduleText, /^#!name=淘宝广告净化$/m);
-  assert.match(moduleText, /^#!desc=.*开屏.*Tanx.*v1$/m);
+  assert.match(moduleText, /^#!desc=.*开屏.*Tanx.*v2$/m);
   assert.match(moduleText, /^#!category=AdBlock$/m);
   assert.match(moduleText, /^#!homepage=https:\/\/github\.com\/ForestofTime\/Surge$/m);
   assert.match(
@@ -90,8 +90,9 @@ test('uses unique bounded response rules and the minimum MITM host set', () => {
   assert.match(scripts[1], /poplayer\\\.template\\\.alibaba\\\.com\\\/popcdn\\\/2\\\/config\\\.json/);
   assert.deepEqual(sectionLines('MITM'), [
     'hostname = %APPEND% heic.alicdn.com, gw.alicdn.com, guide-acs.m.taobao.com, poplayer.template.alibaba.com',
+    'tcp-connection = true',
   ]);
-  assert.doesNotMatch(moduleText, /mobileDispatch|<ip-address>|tcp-connection\s*=\s*true/);
+  assert.doesNotMatch(moduleText, /mobileDispatch|<ip-address>/);
 });
 
 test('removes the Taobao splash payload while preserving sibling home data', () => {

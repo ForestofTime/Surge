@@ -1,5 +1,5 @@
 #!name=淘宝广告净化
-#!desc=清理淘宝开屏、PopLayer 和 Tanx 广告，保留商品业务。v1
+#!desc=清理淘宝开屏、PopLayer 和 Tanx 广告，保留商品业务。v2
 #!author=RuCu6 / 树先生 / zirawell / ForestofTime Surge 原生整理
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
@@ -30,3 +30,5 @@ DOMAIN,h-adashx.ut.taobao.com,REJECT,extended-matching,pre-matching
 
 [MITM]
 hostname = %APPEND% heic.alicdn.com, gw.alicdn.com, guide-acs.m.taobao.com, poplayer.template.alibaba.com
+# 接管直接建立的 TLS 连接；不扩大 hostname 或清空共享 HTTPDNS。
+tcp-connection = true
