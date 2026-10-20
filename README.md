@@ -69,6 +69,9 @@
 | 41 | `Module/CMCCSmsCode.sgmodule` | 中国移动短信码落码 | Automation | 把手机收到的移动短信验证码推给青龙话费券秒杀任务。v1 | [Raw](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CMCCSmsCode.sgmodule) | [导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FCMCCSmsCode.sgmodule) |
 | 42 | `Module/CMCCMiniCapture.sgmodule` | 中国移动心愿金凭据抓取（Tailnet 同步） | Automation | 捕获支付宝/微信小程序 wmhsso 请求头 JWT，本机完成识别链取 openid 与 QWHD 票，上报 Mac Tailnet receiver 合并写青龙 env cmcc_mini，配套青龙 cmcc_mini.py 三端签到。v2 | [Raw](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/CMCCMiniCapture.sgmodule) | [导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FCMCCMiniCapture.sgmodule) |
 | 43 | `Module/QunarAds.sgmodule` | 去哪儿去开屏 | AdBlock | 拦截去哪儿开屏配置、预加载和开屏广告代理请求。v1 | [Raw](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/QunarAds.sgmodule) | [导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FQunarAds.sgmodule) |
+| 44 | `Module/AmapAds.sgmodule` | 高德地图广告净化 | AdBlock | 清理高德开屏、搜索、打车推广并精简我的页面。v1 | [Raw](https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/AmapAds.sgmodule) | [导入](surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2FForestofTime%2FSurge%2Fmain%2FModule%2FAmapAds.sgmodule) |
+
+高德为附件规则及两份固定版本 JQ 的原生转换，来源、兼容要求与验收边界见 [说明](docs/amap-native-conversion.md)。
 
 去哪儿模块的社区来源、整合范围和验收边界见 [说明](docs/qunar-adblock-sources.md)。
 
