@@ -3,12 +3,13 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
+const vm = require('node:vm');
 
 const moduleText = fs.readFileSync(path.join(__dirname, '../../Module/AmapAds.sgmodule'), 'utf8');
-const jqRules = moduleText.split('\n').filter(line => line.startsWith('http-response-jq ')).map(line => {
-  const match = line.match(/^http-response-jq (\S+) '(.*)'$/);
-  assert.ok(match, `Unrecognized native JQ rule: ${line}`);
-  return { pattern: match[1], expression: match[2] };
+const scripts = moduleText.split('\n').filter(line => line.includes(' = type=http-response,')).map(line => {
+  const match = line.match(/pattern=(.*?), script-path=.*\/JS\/([^/?]+)\.js\?v=2/);
+  assert.ok(match);
+  return { pattern: match[1], file: match[2] + '.js' };
 });
 function regex(pattern) {
   return new RegExp(pattern.replace(/^\(\?i\)/, ''), pattern.startsWith('(?i)') ? 'i' : '');
@@ -18,17 +19,23 @@ function run(expression, input) {
 }
 function rewrite(host, pathname, input) {
   const url = `https://${host}${pathname}?fixture=1`;
-  const rules = jqRules.filter(rule => regex(rule.pattern).test(url));
-  assert.ok(rules.length, `No rules for ${pathname}`);
-  return rules.reduce((value, rule) => run(rule.expression, value), input);
+  const rules = scripts.filter(rule => regex(rule.pattern).test(url));
+  assert.equal(rules.length, 1, `Exactly one response script for ${pathname}`);
+  const calls = [];
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', rules[0].file), 'utf8'), {
+    $request: { url }, $response: { body: JSON.stringify(input) }, $done: value => calls.push(value),
+  });
+  assert.equal(calls.length, 1);
+  return calls[0].body === undefined ? input : JSON.parse(calls[0].body);
 }
 
-test('all sixteen response operations are native, executable and fail open on empty objects', () => {
-  assert.equal(jqRules.length, 16);
-  assert.doesNotMatch(moduleText, /script-path\s*=|type=http-response|http-response-jq-file/);
-  for (const rule of jqRules) {
-    assert.match(rule.expression, /\. as \$original \| (?:\[)?try \(/);
-    assert.deepEqual(run(rule.expression, {}), {});
+test('module references three native Surge JS scripts without inline JQ', () => {
+  assert.equal(scripts.length, 3);
+  assert.doesNotMatch(moduleText, /\[Body Rewrite\]|http-response-jq|jq_file/);
+  assert.deepEqual(rewrite('m5.amap.com', '/ws/shield/scene/recommend', {}), {});
+  for (const name of ['AmapUpdatable', 'AmapPoiDetail']) {
+    const source = fs.readFileSync(path.join(__dirname, '..', name + '.jq'), 'utf8');
+    assert.deepEqual(run(source, {}), {});
   }
 });
 
@@ -107,13 +114,13 @@ test('map-local rules target only the seven supplied marketing endpoints', () =>
   }
 });
 
-test('both external JQ operations are fully inline with no remote script dependency', () => {
+test('both JQ sources have separate maintained JS implementations', () => {
   assert.doesNotMatch(moduleText, /https:\/\/kelee\.one\/Resource\/JQLang\//);
-  assert.equal(jqRules.filter(rule => rule.pattern.includes('updatable')).length, 2);
-  assert.equal(jqRules.filter(rule => rule.pattern.includes('poi')).length, 2);
+  assert.equal(scripts.filter(rule => rule.pattern.includes('updatable')).length, 1);
+  assert.equal(scripts.filter(rule => rule.pattern.includes('poi')).length, 1);
 });
 
-test('updatable inline JQ removes nested splash and ETC promotions while retaining navigation configuration', () => {
+test('updatable JS removes nested splash and ETC promotions while retaining navigation configuration', () => {
   const data = Object.fromEntries(['his_input_tip', 'detail_config', 'navi_cloud', 'taxi', 'favorites_info', 'container_isolation', 'nore_rec', 'engine_eyrie'].map(key => [key, { value: '{}' }]));
   data.amap_basemap_config = { value: JSON.stringify({ splash: { url: 'ad' }, ai_splash: {}, mapTheme: 'normal' }) };
   data.navi_cloud.value = JSON.stringify({ end_auto_foot_explore: 1, ETCGuide: 'ad', etc_banner: 'ad', navigation: { voice: true } });
@@ -131,7 +138,7 @@ test('updatable inline JQ removes nested splash and ETC promotions while retaini
   assert.equal(result.code, 1);
 });
 
-test('POI inline JQ keeps booking and review modules and their batch-independent references', () => {
+test('POI JS keeps booking and review modules and their batch-independent references', () => {
   const result = rewrite('info.amap.com', '/ws/shield/search/poi/detail', { code: 1, data: {
     modules: {
       baseInfo: { data: { name: 'fixture-place', user: { userLocRgeo: 'private', homeInfo: {}, companyInfo: {}, public: true } } },

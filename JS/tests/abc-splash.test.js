@@ -1,73 +1,66 @@
 #!/usr/bin/env node
-// ABCSplash.js 真实 HAR 数据回归测试
-// 用 2026-09-24-170947.har 里的真实响应体做样本
+// 合成图片头只验证尺寸过滤逻辑，不代表真机或完整图片解码验收。
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const test = require('node:test');
+const source = fs.readFileSync(path.resolve(__dirname, '../ABCSplash.js'), 'utf8');
+const materialUrl = 'https://midc.cdn-static.abchina.com.cn/distributecenterimg/file/download/0123456789abcdef0123456789abcdef';
 
-const fs = require('fs');
-const vm = require('vm');
-const path = require('path');
-
-const scriptText = fs.readFileSync(path.resolve(__dirname, '../ABCSplash.js'), 'utf8');
-const har = JSON.parse(fs.readFileSync('/tmp/abc.har', 'utf8'));
-const entries = har.log.entries;
-
-let pass = 0, fail = 0;
-function run(url, body) {
-  let payload = null;
-  const sandbox = {
-    $request: { url },
-    $response: { body },
-    console: { log: () => {} },
-    atob: (s) => Buffer.from(s, 'base64').toString('binary'),
-    $done: (p) => { payload = p || {}; },
-  };
-  vm.createContext(sandbox);
-  vm.runInContext(scriptText, sandbox, { timeout: 3000 });
-  return payload;
+function jpegHeader(width, height) {
+  const bytes = Buffer.alloc(40);
+  bytes.set([0xff, 0xd8, 0xff, 0xc0, 0, 17, 8]);
+  bytes.writeUInt16BE(height, 7);
+  bytes.writeUInt16BE(width, 9);
+  return bytes;
 }
 
-console.log('═══ ① 真实开屏图（1125x2082 JPEG 196KB）→ 应拦截 ═══');
-for (const e of entries) {
-  const url = e.request.url;
-  if (!url.includes('100d20c86f8f4726bdd3f5fa66e7bd6c')) continue;
-  const b64 = e.response.content.text;
-  const p = run(url, b64);
-  const ok = p && p.body && p.headers && p.headers['Content-Type'] === 'image/gif';
-  console.log('  拦截返回 tiny-gif:', ok ? '✅' : '❌ ' + JSON.stringify(p).slice(0, 80));
-  ok ? pass++ : fail++;
-  // 验证 tiny-gif 字节
-  if (ok) {
-    const gif = Buffer.from(p.body, 'binary');
-    const valid = gif.slice(0, 6).toString() === 'GIF89a' && gif.length === 42;
-    console.log('  GIF89a 魔数 + 42 字节:', valid ? '✅' : '❌');
-    valid ? pass++ : fail++;
+function pngHeader(width, height) {
+  const bytes = Buffer.alloc(40);
+  bytes.set([0x89, 0x50, 0x4e, 0x47, 13, 10, 26, 10, 0, 0, 0, 13]);
+  bytes.write('IHDR', 12, 'ascii');
+  bytes.writeUInt32BE(width, 16);
+  bytes.writeUInt32BE(height, 20);
+  return bytes;
+}
+
+function run(body, url = materialUrl) {
+  const results = [];
+  vm.runInNewContext(source, {
+    $request: { url }, $response: { body },
+    atob: (value) => Buffer.from(value, 'base64').toString('binary'),
+    console: { log() {} },
+    $done: (value) => results.push(value),
+  }, { timeout: 3000 });
+  assert.equal(results.length, 1, '$done must be called exactly once');
+  return JSON.parse(JSON.stringify(results[0]));
+}
+
+for (const [format, fixture] of [['JPEG', jpegHeader], ['PNG', pngHeader]]) {
+  test(`${format} 1125x2082 splash header becomes a tiny GIF`, () => {
+    const result = run(fixture(1125, 2082).toString('base64'));
+    assert.equal(result.headers['Content-Type'], 'image/gif');
+    const gif = Buffer.from(result.body, 'binary');
+    assert.equal(gif.subarray(0, 6).toString(), 'GIF89a');
+    assert.equal(gif.length, 42);
+  });
+  for (const [width, height] of [[670, 200], [319, 184], [1005, 231], [323, 382]]) {
+    test(`${format} ${width}x${height} business image passes unchanged`, () => {
+      assert.deepEqual(run(fixture(width, height).toString('base64')), {});
+    });
   }
 }
 
-console.log('═══ ② 真实活动小图 → 应放行 ═══');
-const cases = [
-  ['670x200 横幅', '6651c257701c4863a416caf86c0f980b9900032820260922'],
-  ['319x184', 'cadb73a549474cbab6c1d005cf11cdb69900032820250521'],
-  ['1005x231 长横幅', 'b37f7e22f3b7476092581d733814320e9900032820260107'],
-  ['323x382 弹窗', '4e935f25543441fabb56504a0b1353549900032820260924'],
-];
-for (const [label, id] of cases) {
-  for (const e of entries) {
-    if (!e.request.url.includes(id)) continue;
-    const b64 = e.response.content.text;
-    if (!b64) { console.log(`  ${label}: 无 body 跳过`); break; }
-    const p = run(e.request.url, b64);
-    const ok = !p || !p.body;
-    console.log(`  ${label} → 放行:`, ok ? '✅' : '❌ 误拦');
-    ok ? pass++ : fail++;
-    break;
+test('non-material host passes even with splash dimensions', () => {
+  assert.deepEqual(run(jpegHeader(1125, 2082).toString('base64'),
+    'https://mb.cdn-static.abchina.com.cn/product/image'), {});
+});
+
+test('missing, malformed and truncated image bodies pass unchanged', () => {
+  for (const body of [undefined, '', 'not an image', Buffer.alloc(40).toString('base64'),
+    jpegHeader(1125, 2082).subarray(0, 10).toString('base64'),
+    pngHeader(1125, 2082).subarray(0, 20).toString('base64')]) {
+    assert.deepEqual(run(body), {});
   }
-}
-
-console.log('═══ ③ 域名外 URL → 应放行 ═══');
-const p3 = run('https://mb.cdn-static.abchina.com.cn/A230192191308-product/x/fallback/www/img/newboy.37835521.png', 'x');
-const ok3 = !p3 || !p3.body;
-console.log('  mb.cdn URL 放行:', ok3 ? '✅' : '❌');
-ok3 ? pass++ : fail++;
-
-console.log(`\n结果: ${pass} 过 / ${fail} 败`);
-process.exit(fail ? 1 : 0);
+});
