@@ -292,11 +292,11 @@
 - 依赖关系：引用本仓库 raw 脚本 `JS/jf.js`。
 - 维护建议：开屏保持显式 `200 + {}`，响应脚本保持 1 MiB 上限和异常透传。
 
-### `Module/nyyh.sgmodule`
-- 作用：农业银行开屏广告拦截。
+### `Module/ABCSplash.sgmodule`
+- 作用：农行已知开屏素材与 JPEG/PNG 全屏图过滤，替代已删除的 nyyh 模块。
 - 适用客户端/APP：Surge iOS/Mac/tvOS；APP 为农业银行。
-- 类型：URL Rewrite + MITM。
-- 依赖关系：无脚本依赖。
+- 类型：Map Local + Script + MITM。
+- 依赖关系：本仓库 `JS/ABCSplash.js`；二进制响应及 1 MiB 缓冲上限。
 
 ### `Module/panel/Flush-DNS.sgmodule`
 - 作用：Surge 面板一键清 DNS 缓存。
