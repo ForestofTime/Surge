@@ -1,4 +1,24 @@
-# 高德附件规则的 Surge 模块 v2
+# 高德广告净化 Surge 模块 v3
+
+## v3 社区核对与纠错（2026-10-21）
+
+保持一个模块、三个独立 JS，无内联 JQ。v2 的 7 条 Map Local 收敛为 5 条；两个混合接口改由页面脚本局部清理，避免清空业务响应。所有入口采用精确 host/path，允许有或没有查询参数，拒绝追加子路径。
+
+- `marketingOperationStructured`：仅删除 `data.commonMaterial`、`data.tipsOperationLocation`、`data.resourcePlacement`。
+- `promotion-web/resource` 和 `/home`：仅删除社区定义的 10 个营销字段，未知业务字段保留。
+- 我的页保留 `MyOrderCard`，现有入口支持数字及等值字符串 ID，不转换输出类型。
+- 合入旧版 `/ws/aos/alimama/splash_screen` 开屏路径，与现有 valueadded 路径共用一条 Map Local。
+- 合入 `routeInfo`、`routePlan`，只在 `data.tbt.event`、`data.front_end.download` 两个数组过滤 `dynamic_id_s` 严格匹配 `^ads-\d+$` 的项；路线、普通事件、语音和其它容器透传。
+
+社区对照来源：
+
+- [可莉 Loon 插件快照](https://github.com/ifflagged/Romeo/blob/5c03e81d7d06c3c5877a4b3d4d4e0fad316765c4/Modules/Loon/Kelee/Official/Amap_remove_ads.lpx)：与 v2 规则基线一致。原站本次返回 403，未声称直接取得原站最新内容。
+- [RuCu6 Loon 规则快照](https://github.com/ifflagged/Romeo/blob/5c03e81d7d06c3c5877a4b3d4d4e0fad316765c4/Modules/Loon/rucu6/Official/amap.lpx)与[响应脚本快照](https://github.com/ifflagged/Romeo/blob/5c03e81d7d06c3c5877a4b3d4d4e0fad316765c4/Modules/JavaScript/rucu6/amap/rucu6_amap.js)：采用混合接口字段清理、订单卡和导航广告事件分类；未采用删除普通导航提示、天气、业务通知和整包路线卡等更激进操作。作者脚本地址本次返回 HTML，使用固定提交快照，不作为运行依赖。
+- [墨鱼 QX 规则固定版本](https://github.com/ddgksf2013/Rewrite/blob/dc3ea2c1fb2db870676b26da24006083eb1d44d3/AdBlock/AmapAds.conf)：交叉确认 aos 开屏路径；未采用通配主机、全目录媒体拦截及 AMDC 改写。
+
+本轮没有新高德 HAR。31 项合成回归通过，三个响应脚本行覆盖率 100%，总分支覆盖率 98.91%；覆盖率仅代表这些测试触达代码，不代表真实服务器结构或设备 UI 已验证。地点详情仍沿用 v2 的 94 项白名单，未来新增业务模块可能被过滤；不建议与其他高德模块叠加。
+
+## v2 转换基线
 
 来源为用户于 2026-10-20 提供的文本附件；不包含聊天署名、时间及其他聊天内容。
 

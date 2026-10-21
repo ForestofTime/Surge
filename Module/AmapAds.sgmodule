@@ -1,6 +1,6 @@
 #!name=高德地图广告净化
-#!desc=清理高德开屏、搜索、打车推广并精简我的页面。v2
-#!author=附件规则提供者 / 原 JQ 作者 / ForestofTime
+#!desc=清理开屏、搜索及打车推广，保留订单卡与导航业务字段。v3
+#!author=可莉 / RuCu6 / ddgksf2013 / ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/AmapAds.sgmodule
@@ -8,18 +8,16 @@
 # 使用 Surge 原生响应脚本，JQ 源文件独立保存在 JS 目录。
 # 模块无内联 JQ；来源、适配与边界见 docs/amap-native-conversion.md。
 [Map Local]
-(?i)^https:\/\/m5\.amap\.com\/ws\/valueadded\/alimama\/splash_screen\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
-(?i)^https:\/\/m5\.amap\.com\/ws\/faas\/amap-navigation\/main-page-assets\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
-(?i)^https:\/\/m5\.amap\.com\/ws\/faas\/amap-navigation\/main-page-aiqs\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
-(?i)^https:\/\/ai\.amap\.com\/v1\/ai_rec\/home_qs\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
-(?i)^https:\/\/m5-zb\.amap\.com\/ws\/promotion-web\/resource(\/home)?\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
-(?i)^https:\/\/m5\.amap\.com\/ws\/info_bff\/rankingCard\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
-(?i)^https:\/\/m5\.amap\.com\/ws\/shield\/search_business\/process\/marketingOperationStructured\? data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+(?i)^https:\/\/m5\.amap\.com\/ws\/(?:valueadded|aos)\/alimama\/splash_screen(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+(?i)^https:\/\/m5\.amap\.com\/ws\/faas\/amap-navigation\/main-page-assets(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+(?i)^https:\/\/m5\.amap\.com\/ws\/faas\/amap-navigation\/main-page-aiqs(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+(?i)^https:\/\/ai\.amap\.com\/v1\/ai_rec\/home_qs(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+(?i)^https:\/\/m5\.amap\.com\/ws\/info_bff\/rankingCard(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 [Script]
-高德-页面净化 = type=http-response, pattern=(?i)(?:^https:\/\/m5\.amap\.com\/ws\/shield\/dsp\/profile\/index\/nodefaasv3\?|^https:\/\/m5\.amap\.com\/ws\/shield\/scene\/recommend\?|^https:\/\/sns\.amap\.com\/ws\/opc\/tools\/list\?|^https:\/\/info\.amap\.com\/ws\/c3frontend\/af-search\/search\?|^https:\/\/m5-zb\.amap\.com\/ws\/boss\/car\/order\/content_info\?|^https:\/\/m5-zb\.amap\.com\/ws\/amap\/hitch\/passenger\/content_info\?|^https:\/\/center\.amap\.com\/ws\/amc\/server\/conv\/raise_list\?|^https:\/\/info\.amap\.com\/ws\/shield\/search_business\/process\/middleLayer\/sug\?|^https:\/\/m5\.amap\.com\/ws\/smartui\/near_recommend\?), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapAds.js?v=2, requires-body=true, max-size=1048576, timeout=10
-高德-配置净化 = type=http-response, pattern=(?i)^https:\/\/m5\.amap\.com\/ws\/shield\/frogserver\/aocs\/updatable\/1\?, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapUpdatable.js?v=2, requires-body=true, max-size=1048576, timeout=10
-高德-地点详情净化 = type=http-response, pattern=(?i)^https:\/\/info\.amap\.com\/ws\/shield\/search\/poi\/detail\?, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapPoiDetail.js?v=2, requires-body=true, max-size=1048576, timeout=10
+高德-页面净化 = type=http-response, pattern=(?i)^https:\/\/(?:m5\.amap\.com\/ws\/(?:shield\/dsp\/profile\/index\/nodefaasv3|shield\/scene\/recommend|smartui\/near_recommend|shield\/search_business\/process\/marketingOperationStructured|perception\/drive\/(?:routeInfo|routePlan))|sns\.amap\.com\/ws\/opc\/tools\/list|info\.amap\.com\/ws\/(?:c3frontend\/af-search\/search|shield\/search_business\/process\/middleLayer\/sug)|m5-zb\.amap\.com\/ws\/(?:boss\/car\/order\/content_info|amap\/hitch\/passenger\/content_info|promotion-web\/resource(?:\/home)?)|center\.amap\.com\/ws\/amc\/server\/conv\/raise_list)(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapAds.js?v=3, requires-body=true, max-size=1048576, timeout=10
+高德-配置净化 = type=http-response, pattern=(?i)^https:\/\/m5\.amap\.com\/ws\/shield\/frogserver\/aocs\/updatable\/1(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapUpdatable.js?v=3, requires-body=true, max-size=1048576, timeout=10
+高德-地点详情净化 = type=http-response, pattern=(?i)^https:\/\/info\.amap\.com\/ws\/shield\/search\/poi\/detail(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapPoiDetail.js?v=3, requires-body=true, max-size=1048576, timeout=10
 
 [MITM]
 hostname = %APPEND% ai.amap.com, center.amap.com, info.amap.com, m5-zb.amap.com, m5.amap.com, sns.amap.com

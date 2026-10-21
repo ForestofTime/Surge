@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   try {
-    if (!/^https:\/\/info\.amap\.com\/ws\/shield\/search\/poi\/detail\?/i.test($request.url)) return $done({});
+    if (!/^https:\/\/info\.amap\.com\/ws\/shield\/search\/poi\/detail(?:\?|$)/i.test($request.url)) return $done({});
     const body = JSON.parse($response.body);
     const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
     if (!object(body) || !object(body.data)) return $done({});

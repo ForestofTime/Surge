@@ -7,7 +7,7 @@ const source = fs.readFileSync(path.join(__dirname, "../AmapUpdatable.js"), "utf
 const endpoint = "https://m5.amap.com/ws/shield/frogserver/aocs/updatable/1?version=1";
 function run(body, url = endpoint) {
   const calls = [];
-  vm.runInNewContext(source, {$request: {url}, $response: {body}, $done: v => calls.push(v)});
+  vm.runInNewContext(source, {$request: {url}, $response: {body}, $done: v => calls.push(v)}, {filename: path.join(__dirname, '../AmapUpdatable.js')});
   assert.equal(calls.length, 1);
   return JSON.parse(JSON.stringify(calls[0]));
 }
@@ -64,8 +64,9 @@ test("updatable passthrough invalid bodies and protects other hosts/paths", () =
   for (const body of ["bad","null","[]","{}",undefined])
     assert.deepEqual(run(body),{});
   const body = JSON.stringify({data:{splashscreen:1}});
-  for (const url of ["https://other.example/ws/shield/frogserver/aocs/updatable/1?x=1",endpoint.replace("/1?","/2?"),endpoint.replace("https:","http:"),endpoint.split("?")[0]])
+  for (const url of ["https://other.example/ws/shield/frogserver/aocs/updatable/1?x=1",endpoint.replace("/1?","/2?"),endpoint.replace("https:","http:")])
     assert.deepEqual(run(body,url),{});
+  assert.deepEqual(JSON.parse(run(body,endpoint.split("?")[0]).body),{data:{}});
 });
 test("updatable preserves original string bytes when there is no target change", () => {
   assert.deepEqual(run(JSON.stringify({data:{WIA:{value:'{ "safe": 1 }'}, sportsGroupConfig:{value:'{ "safe": 2 }'}}})),{});

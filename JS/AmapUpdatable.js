@@ -6,7 +6,7 @@
  */
 (function () {
   "use strict";
-  const target = /^https:\/\/m5\.amap\.com\/ws\/shield\/frogserver\/aocs\/updatable\/1\?/i;
+  const target = /^https:\/\/m5\.amap\.com\/ws\/shield\/frogserver\/aocs\/updatable\/1(?:\?|$)/i;
   const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
   const own = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
   const removals = [

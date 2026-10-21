@@ -8,7 +8,7 @@ const source = fs.readFileSync(path.join(__dirname, "../AmapPoiDetail.js"), "utf
 const url = "https://info.amap.com/ws/shield/search/poi/detail?foo=bar";
 function run(value, target = url, raw = false) {
   const results = [];
-  vm.runInNewContext(source, { $request: { url: target }, $response: { body: raw ? value : JSON.stringify(value) }, $done: result => results.push(result) });
+  vm.runInNewContext(source, { $request: { url: target }, $response: { body: raw ? value : JSON.stringify(value) }, $done: result => results.push(result) }, { filename: path.join(__dirname, '../AmapPoiDetail.js') });
   assert.equal(results.length, 1);
   return results[0].body === undefined ? value : JSON.parse(results[0].body);
 }
@@ -34,7 +34,8 @@ test("review promotion removed but review action and text retained", () => {
 });
 test("strict endpoint and unknown response shape pass through", () => {
   const input = { data: { modules: { ad: {} } } };
-  for (const target of [url.replace("https:", "http:"), url.split("?")[0], url.replace("info.amap.com", "evil.info.amap.com"), url.replace("/detail?", "/detail/more?")]) assert.deepEqual(run(input, target), input);
+  for (const target of [url.replace("https:", "http:"), url.replace("info.amap.com", "evil.info.amap.com"), url.replace("/detail?", "/detail/more?")]) assert.deepEqual(run(input, target), input);
+  assert.equal(run(input, url.split("?")[0]).data.modules.ad, undefined);
   for (const value of [null, [], {}, { data: null }, { data: [] }, { data: { unfamiliar: 1 } }]) assert.deepEqual(run(value), value);
   assert.equal(run("not json", url, true), "not json");
 });

@@ -7,7 +7,7 @@ const vm = require('node:vm');
 
 const moduleText = fs.readFileSync(path.join(__dirname, '../../Module/AmapAds.sgmodule'), 'utf8');
 const scripts = moduleText.split('\n').filter(line => line.includes(' = type=http-response,')).map(line => {
-  const match = line.match(/pattern=(.*?), script-path=.*\/JS\/([^/?]+)\.js\?v=2/);
+  const match = line.match(/pattern=(.*?), script-path=.*\/JS\/([^/?]+)\.js\?v=3/);
   assert.ok(match);
   return { pattern: match[1], file: match[2] + '.js' };
 });
@@ -24,7 +24,7 @@ function rewrite(host, pathname, input) {
   const calls = [];
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', rules[0].file), 'utf8'), {
     $request: { url }, $response: { body: JSON.stringify(input) }, $done: value => calls.push(value),
-  });
+  }, { filename: path.join(__dirname, '..', rules[0].file) });
   assert.equal(calls.length, 1);
   return calls[0].body === undefined ? input : JSON.parse(calls[0].body);
 }
@@ -92,23 +92,25 @@ test('car tools whitelist preserves business siblings and removes marketing fiel
   assert.deepEqual(result.data.lubanData.kingToolBox.dataList.map(item => item.biz.id), allowed);
 });
 
-test('map-local rules target only the seven supplied marketing endpoints', () => {
+test('map-local rules target dedicated endpoints, mixed resources use response scripts', () => {
   const patterns = moduleText.split('\n').filter(line => line.includes(' data-type=')).map(line => {
     const match = line.match(/^(\S+) data-type=text data="\{\}" status-code=200 header="Content-Type:application\/json"$/);
     assert.ok(match, `Unrecognized Map Local rule: ${line}`);
     return regex(match[1].replace(/^"|"$/g, ''));
   });
-  assert.equal(patterns.length, 7);
+  assert.equal(patterns.length, 5);
   const blocked = [
     ['m5.amap.com', '/ws/valueadded/alimama/splash_screen'],
     ['m5.amap.com', '/ws/faas/amap-navigation/main-page-assets'],
     ['m5.amap.com', '/ws/faas/amap-navigation/main-page-aiqs'],
     ['ai.amap.com', '/v1/ai_rec/home_qs'],
-    ['m5-zb.amap.com', '/ws/promotion-web/resource/home'],
+    ['m5.amap.com', '/ws/aos/alimama/splash_screen'],
     ['m5.amap.com', '/ws/info_bff/rankingCard'],
-    ['m5.amap.com', '/ws/shield/search_business/process/marketingOperationStructured'],
   ];
   for (const [host, pathname] of blocked) assert.ok(patterns.some(rule => rule.test(`https://${host}${pathname}?a=1`)));
+  for (const [host, pathname] of [['m5-zb.amap.com', '/ws/promotion-web/resource/home'], ['m5.amap.com', '/ws/shield/search_business/process/marketingOperationStructured']]) {
+    assert.ok(!patterns.some(rule => rule.test(`https://${host}${pathname}?a=1`)));
+  }
   for (const pathname of ['/ws/navigation/route', '/ws/shield/search/poi/detail', '/ws/boss/car/order/content_info', '/ws/search/keyword']) {
     assert.ok(!patterns.some(rule => rule.test(`https://m5.amap.com${pathname}?a=1`)));
   }
