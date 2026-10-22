@@ -1,19 +1,19 @@
 #!name=兴业生活去广告
-#!desc=拦截兴业生活开屏、弹窗和横幅广告。v1
+#!desc=按独立接口路径拦截兴业生活开屏、弹窗和横幅。v2
 #!author=ForestofTime
 #!category=AdBlock
 #!update=2026-01-07
 
 [URL Rewrite]
 # 拦截开屏广告
-^https?:\/\/.*\.cib\.com\.cn\/.*\/ad - reject
-^https?:\/\/.*\.cib\.com\.cn\/.*\/splash - reject
-^https?:\/\/.*\.cib\.com\.cn\/.*\/banner - reject
+^https?:\/\/(?:[a-z0-9-]+\.)+cib\.com\.cn\/[^?#]*\/ad(?:[/?]|$) - reject
+^https?:\/\/(?:[a-z0-9-]+\.)+cib\.com\.cn\/[^?#]*\/splash(?:[/?]|$) - reject
+^https?:\/\/(?:[a-z0-9-]+\.)+cib\.com\.cn\/[^?#]*\/banner(?:[/?]|$) - reject
 
 [Map Local]
 # 拦截广告接口，返回空数据 (data-type 必须为 text, 并显式声明 status-code + Content-Type)
-^https?:\/\/.*\.cib\.com\.cn\/.*\/advertisement data-type=text data="{}" status-code=200 header="Content-Type:application/json"
-^https?:\/\/.*\.cib\.com\.cn\/.*\/advert data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/(?:[a-z0-9-]+\.)+cib\.com\.cn\/[^?#]*\/advertisement(?:[/?]|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/(?:[a-z0-9-]+\.)+cib\.com\.cn\/[^?#]*\/advert(?:[/?]|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 
 [MITM]
 hostname = %APPEND% *.cib.com.cn

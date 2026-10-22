@@ -92,13 +92,30 @@ function shouldReport(kind, value) {
  * RCS 票抽取：接受裸票（含 |1|RCS|）或 Basic 包裹（解 base64 取末段）。
  * 与 cmcc_ydyp.js ydypHandleRewrite 的抽取规则一致。
  */
+function decodeBase64(value) {
+  const text = String(value).replace(/\s/g, '');
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(text) || text.replace(/=+$/, '').length % 4 === 1
+      || (text.includes('=') && text.length % 4 !== 0)) throw new Error('Invalid base64');
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let bits = 0, buffer = 0, output = '';
+  for (const char of text.replace(/=+$/, '')) {
+    buffer = (buffer << 6) | alphabet.indexOf(char);
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      output += String.fromCharCode((buffer >> bits) & 255);
+    }
+  }
+  return output;
+}
+
 function extractRcsTicket(rawAuth) {
   const raw = String(rawAuth || '').trim();
   if (!raw) return '';
   if (raw.indexOf('|1|RCS|') > 0) return raw;
   let t = raw.replace(/^Basic\s+/i, '');
   try {
-    const decoded = atob(t);
+    const decoded = decodeBase64(t);
     if (decoded && decoded.indexOf(':') > 0) {
       const seg = decoded.split(':');
       t = seg[seg.length - 1];
@@ -120,7 +137,7 @@ function extractPhoneFromBasic(rawAuth) {
   const raw = String(rawAuth || '').trim().replace(/^Basic\s+/i, '');
   if (!raw) return '';
   try {
-    const decoded = atob(raw);
+    const decoded = decodeBase64(raw);
     const seg = decoded.split(':');
     if (seg.length >= 3 && /^1\d{10}$/.test(seg[1])) return seg[1];
   } catch (_) { /* 非 base64 */ }
@@ -187,10 +204,10 @@ function postReceiver(receiverUrl, payload) {
 
   // ① RCS 票：authorization 优先，app_auth 兜底（便签域同型）
   let ticket = extractRcsTicket(authorization) || extractRcsTicket(appAuth);
-  let phone = extractPhoneFromBasic(authorization);
+  let phone = extractPhoneFromBasic(authorization) || extractPhoneFromBasic(appAuth);
   if (!phone && appNumber) {
     try {
-      const decoded = atob(String(appNumber).replace(/^Basic\s+/i, ''));
+      const decoded = decodeBase64(String(appNumber).replace(/^Basic\s+/i, ''));
       if (/^1\d{10}$/.test(decoded)) phone = decoded;
     } catch (_) { /* 非 base64 */ }
   }

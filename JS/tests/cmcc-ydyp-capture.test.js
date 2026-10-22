@@ -60,7 +60,6 @@ test('script extracts RCS ticket from authorization or app_auth with the |1|RCS|
     },
     console,
     setTimeout,
-    atob,
     $done() {},
   };
   vm.createContext(sandbox);
@@ -86,7 +85,6 @@ test('script extracts jwtToken from the cookie header', () => {
     },
     console,
     setTimeout,
-    atob,
     $done() {},
   };
   vm.createContext(sandbox);
@@ -110,7 +108,6 @@ test('script posts nothing when neither ticket nor jwt is present', () => {
     },
     console,
     setTimeout,
-    atob,
     $done() {},
   };
   vm.createContext(sandbox);
@@ -138,12 +135,35 @@ function makeDedupSandbox() {
     },
     console,
     setTimeout,
-    atob,
     $done() {},
   };
   vm.createContext(sandbox);
   return { sandbox, posts };
 }
+
+test('JSC without atob or Buffer captures app_auth and app_number phone', () => {
+  const ticket = 'fixture|1|RCS|1727100000000|sig';
+  for (const headers of [
+    { app_auth: 'Basic ' + Buffer.from('mobile:13812345678:' + ticket).toString('base64') },
+    { authorization: ticket, app_number: Buffer.from('13812345678').toString('base64') },
+  ]) {
+    const { sandbox, posts } = makeDedupSandbox();
+    sandbox.$request.headers = headers;
+    assert.equal(vm.runInContext('typeof atob', sandbox), 'undefined');
+    assert.equal(vm.runInContext('typeof Buffer', sandbox), 'undefined');
+    vm.runInContext(scriptText, sandbox);
+    assert.equal(posts.length, 1);
+    assert.equal(JSON.parse(posts[0].body).ticket, ticket);
+    assert.equal(JSON.parse(posts[0].body).phone, '13812345678');
+  }
+});
+
+test('malformed Basic does not report a ticket', () => {
+  const { sandbox, posts } = makeDedupSandbox();
+  sandbox.$request.headers = { authorization: 'Basic !!!!' };
+  vm.runInContext(scriptText, sandbox);
+  assert.equal(posts.length, 0);
+});
 
 test('dedup: same jwt posts only once within cooldown (anti memory-leak)', () => {
   const { sandbox, posts } = makeDedupSandbox();
