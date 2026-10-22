@@ -30,10 +30,12 @@
 (function () {
   'use strict';
 
-  // ---- script-arguments ----
+  // ---- script-arguments（Surge 里未声明的全局直接引用会 ReferenceError，
+  //      http-request 脚本中根本没有 $response —— 必须一律 typeof 守卫）----
   var ARGS = {};
   try {
-    String($argument || '').split('&').forEach(function (kv) {
+    var argStr = (typeof $argument !== 'undefined' && $argument) ? String($argument) : '';
+    argStr.split('&').forEach(function (kv) {
       var p = String(kv).split('=');
       if (p[0]) ARGS[p[0]] = decodeURIComponent(p.slice(1).join('='));
     });
@@ -41,8 +43,10 @@
   var RECEIVER = ARGS.receiver_url || 'https://hynmac-mini.taila66285.ts.net/cmcc-hebao';
   var PHONE = (ARGS.phone || '').replace(/\D/g, '');
 
-  var url = ($request && $request.url) || '';
-  var inResponse = !!$response;
+  var REQ = (typeof $request !== 'undefined' && $request) ? $request : null;
+  var RESP = (typeof $response !== 'undefined' && $response) ? $response : null;
+  var url = (REQ && REQ.url) || '';
+  var inResponse = !!RESP; // 同一 URL 会挂 request 与 response 两类脚本，按相区分
   var meta = { url: url.slice(0, 300), ts: Math.floor(Date.now() / 1000) };
 
   function forward(type, value, raw) {
@@ -59,7 +63,7 @@
 
   // ① cred —— autoLogin 请求体（http-request, requires-body=true）
   if (!inResponse && /\/biz-orange\/LN\/uam(?:onekey|randcode)login\/autoLogin/.test(url)) {
-    var b = ($request && $request.body) || '';
+    var b = (REQ && REQ.body) || '';
     if (typeof b === 'string' && b.trim().length > 200) {
       forward('cred', b.trim());
     }
@@ -70,7 +74,7 @@
   // ② get_mbl（p.10086.cn）——请求阶段含 authToken=bigck；响应阶段 302 Location 含 ssoToken
   if (/\/ptw\/arrtifact_get_mbl\.xhtml/.test(url)) {
     if (inResponse) {
-      var h = $response.headers || {};
+      var h = RESP.headers || {};
       var loc = h.Location || h.location || '';
       var ms = String(loc).match(/[?&]ssoToken=(\d{8,32})/);
       if (ms) forward('sso', ms[1], loc);
@@ -78,7 +82,7 @@
       var m = url.match(/[?&]authToken=([^&#]+)/);
       var bigck = m ? decodeURIComponent(m[1]) : '';
       if (!bigck) {
-        var ck = ($request && $request.headers && ($request.headers.Cookie || $request.headers.cookie)) || '';
+        var ck = (REQ && REQ.headers && (REQ.headers.Cookie || REQ.headers.cookie)) || '';
         var m2 = String(ck).match(/cmccssotoken=([^;]+)/);
         if (m2) bigck = m2[1].trim();
       }
@@ -90,7 +94,7 @@
 
   // ③ sid —— ssoTokenLogin 响应 Set-Cookie: act_sid=...（http-response）
   if (inResponse && /\/login-common\/ssoTokenLogin/.test(url)) {
-    var hr = $response.headers || {};
+    var hr = RESP.headers || {};
     var sc = hr['Set-Cookie'] || hr['set-cookie'] || '';
     var mi = String(sc).match(/act_sid=([^;]+)/);
     if (mi) forward('sid', mi[1].trim(), sc.slice(0, 400));

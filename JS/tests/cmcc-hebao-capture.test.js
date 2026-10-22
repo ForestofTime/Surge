@@ -40,13 +40,15 @@ function runCapture(s, url, extra) {
   const sandbox = {
     $argument: s.ctx.$argument || 'receiver_url=http://test/hebao',
     $request: s.ctx.$request,
-    $response: s.ctx.$response,
     $httpClient: s.ctx.$httpClient,
     $persistentStore: s.ctx.$persistentStore,
     $notification: s.ctx.$notification,
     $done: s.ctx.$done.bind(s.ctx),
     console: { log() {} },
   };
+  // ★ 关键：Surge 的 http-request 脚本里 $response 是【不存在】的全局，
+  //   不是"值为 undefined 的属性"。必须按不存在来模拟，否则测不出 ReferenceError。
+  if (s.ctx.$response !== undefined) sandbox.$response = s.ctx.$response;
   vm.createContext(sandbox);
   vm.runInContext(SCRIPT_SRC, sandbox);
   return sandbox;
