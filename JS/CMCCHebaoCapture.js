@@ -61,6 +61,14 @@
     );
   }
 
+  // ⓿ PROBE —— 链路自检：手机 Safari 打开 https://p.10086.cn/ 即触发
+  //    （只验证 脚本已加载 + MITM 生效 + Tailnet 可达，不写任何凭据）
+  if (!inResponse && /^https?:\/\/p\.10086\.cn\/?(?:\?.*)?$/.test(url)) {
+    forward('probe', 'ok');
+    $done({});
+    return;
+  }
+
   // ① cred —— autoLogin 请求体（http-request, requires-body=true）
   if (!inResponse && /\/biz-orange\/LN\/uam(?:onekey|randcode)login\/autoLogin/.test(url)) {
     var b = (REQ && REQ.body) || '';
