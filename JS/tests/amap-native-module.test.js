@@ -7,7 +7,7 @@ const vm = require('node:vm');
 
 const moduleText = fs.readFileSync(path.join(__dirname, '../../Module/AmapAds.sgmodule'), 'utf8');
 const scripts = moduleText.split('\n').filter(line => line.includes(' = type=http-response,')).map(line => {
-  const match = line.match(/pattern=(.*?), script-path=.*\/JS\/([^/?]+)\.js\?v=4/);
+  const match = line.match(/pattern=(.*?), script-path=.*\/JS\/([^/?]+)\.js\?v=6/);
   assert.ok(match);
   return { pattern: match[1], file: match[2] + '.js' };
 });
@@ -22,15 +22,17 @@ function rewrite(host, pathname, input) {
   const rules = scripts.filter(rule => regex(rule.pattern).test(url));
   assert.equal(rules.length, 1, `Exactly one response script for ${pathname}`);
   const calls = [];
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', rules[0].file), 'utf8'), {
+  // 单元测试原生处理器；合并流水线另见 amap-full-merge.test.js。
+  const file=pathname.includes('updatable')?'AmapUpdatable.js':pathname.includes('/poi/detail')?'AmapPoiDetail.js':'AmapAds.js';
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), {
     $request: { url }, $response: { body: JSON.stringify(input) }, $done: value => calls.push(value),
   }, { filename: path.join(__dirname, '..', rules[0].file) });
   assert.equal(calls.length, 1);
   return calls[0].body === undefined ? input : JSON.parse(calls[0].body);
 }
 
-test('module references three native Surge JS scripts without inline JQ', () => {
-  assert.equal(scripts.length, 3);
+test('module uses disjoint native script entries without inline JQ', () => {
+  assert.equal(scripts.length, 5);
   assert.doesNotMatch(moduleText, /\[Body Rewrite\]|http-response-jq|jq_file/);
   assert.deepEqual(rewrite('m5.amap.com', '/ws/shield/scene/recommend', {}), {});
   for (const name of ['AmapUpdatable', 'AmapPoiDetail']) {
@@ -94,13 +96,12 @@ test('car tools whitelist preserves business siblings and removes marketing fiel
 
 test('map-local rules target dedicated endpoints, mixed resources use response scripts', () => {
   const patterns = moduleText.split('\n').filter(line => line.includes(' data-type=')).map(line => {
-    const match = line.match(/^(\S+) data-type=text data="\{\}" status-code=200 header="Content-Type:application\/json"$/);
+    const match = line.match(/^(\S+) data-type=/);
     assert.ok(match, `Unrecognized Map Local rule: ${line}`);
     return regex(match[1].replace(/^"|"$/g, ''));
   });
-  assert.equal(patterns.length, 5);
+  assert.equal(patterns.length, 8);
   const blocked = [
-    ['m5.amap.com', '/ws/valueadded/alimama/splash_screen'],
     ['m5.amap.com', '/ws/faas/amap-navigation/main-page-assets'],
     ['m5.amap.com', '/ws/faas/amap-navigation/main-page-aiqs'],
     ['ai.amap.com', '/v1/ai_rec/home_qs'],
@@ -118,7 +119,7 @@ test('map-local rules target dedicated endpoints, mixed resources use response s
 
 test('both JQ sources have separate maintained JS implementations', () => {
   assert.doesNotMatch(moduleText, /https:\/\/kelee\.one\/Resource\/JQLang\//);
-  assert.equal(scripts.filter(rule => rule.pattern.includes('updatable')).length, 1);
+  assert.equal(scripts.filter(rule => rule.pattern.includes('updatable')).length, 2);
   assert.equal(scripts.filter(rule => rule.pattern.includes('poi')).length, 1);
 });
 

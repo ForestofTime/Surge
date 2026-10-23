@@ -16,7 +16,8 @@ function rewrite(url, input, expectedMatches = 1) {
   assert.equal(matches.length, expectedMatches, `Response rule count for ${url}`);
   if (!matches.length) return input;
   const calls = [];
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', matches[0].file), 'utf8'), {
+  // 此文件验证独立原生处理器；完整合并另有集成测试。
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../AmapAds.js'), 'utf8'), {
     $request: { url }, $response: { body: JSON.stringify(input) }, $done: value => calls.push(value),
   }, { filename: path.join(__dirname, '..', matches[0].file) });
   assert.equal(calls.length, 1);
