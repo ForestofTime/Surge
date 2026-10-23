@@ -3,7 +3,7 @@
 // JS/vendor/amap-ddgks.js: c8404d9295e0ad364b32fae289a1c0511f62b10f5a34c7d9901cdd6d039b0b7f
 // JS/vendor/amdc-ddgks.js: 8217f2150f8d12ae04d2c49b5da0a838e83f4de68b34df71c2da16cc1267898f
 // JS/AmapAds.js: 39fed1cad1c3073f5efea812409dfd498e9ae64fb1a0d40a109d5c53b795b0d3
-// JS/AmapUpdatable.js: 07d95ae8823983dbf816b521c5efb17626e74159ca5e4516d0736170d3e27b86
+// JS/AmapUpdatable.js: 1d139ac7da9ea8ef3b33e3eface389cabd530e06a7603362f361c4c4da8f11ed
 // JS/AmapPoiDetail.js: db65a8e69c62d13243d9ed66ec20d90ba132f172e886a6d5a1b7bb8c6df02024
 (function () {
  const request = $request;
@@ -522,6 +522,10 @@ stage(function ($request, $response, $done) {
       } catch (_) { /* Preserve this config verbatim; continue independent configs. */ }
     }
     for (const name of ["sportsGroupConfig", "sportsRouteConfig"]) edit(name, v => strip(v, ["group_banner"]));
+    // 17.02 完整配置启用了重构页面，旧社区布局接口不再请求。
+    // 保留配置版本及其它实验字段，仅关闭已观测的两项布局开关。
+    edit("redesign_user", v => { if (v.redesign_user === 1) v.redesign_user = 0; });
+    edit("redesign_ab", v => { if (v.redesign_new === 1) v.redesign_new = 0; });
     edit("his_input_tip", v => {
       strip(v, ["channel_zhitiao"]);
       v.his_recommend_bangdan = 0;
