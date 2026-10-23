@@ -1,5 +1,5 @@
 #!name=高德地图广告净化
-#!desc=清理开屏、搜索快捷入口及我的推广，保留订单与足迹。v4
+#!desc=内置高德调度及广告平台拦截，净化首页和我的页面。v5
 #!author=可莉 / RuCu6 / ddgksf2013 / ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
@@ -7,6 +7,15 @@
 
 # 使用 Surge 原生响应脚本，JQ 源文件独立保存在 JS 目录。
 # 模块无内联 JQ；来源、适配与边界见 docs/amap-native-conversion.md。
+[General]
+force-http-engine-hosts = %APPEND% amdc.m.taobao.com:80
+
+[Rule]
+# 共享平台按高德 UA 限定；未取得 UA 的连接保持原有规则处理。
+AND,((USER-AGENT,AMapiPhone*),(URL-REGEX,^http:\/\/[^\/]+\/amdc\/mobileDispatch(?:\?|$))),REJECT
+AND,((USER-AGENT,AMapiPhone*),(OR,((DOMAIN,httpdns.alicdn.com,extended-matching),(DOMAIN,httpdns-api.aliyuncs.com,extended-matching),(DOMAIN,httpdns-sc.aliyuncs.com,extended-matching),(DOMAIN,amdc.alipay.com,extended-matching)))),REJECT
+AND,((USER-AGENT,AMapiPhone*),(OR,((DOMAIN,atoken.m.taobao.com,extended-matching),(DOMAIN-SUFFIX,qchannel01.cn,extended-matching)))),REJECT
+
 [Map Local]
 (?i)^https:\/\/m5\.amap\.com\/ws\/(?:valueadded|aos)\/alimama\/splash_screen(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 (?i)^https:\/\/m5\.amap\.com\/ws\/faas\/amap-navigation\/main-page-assets(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
@@ -20,5 +29,5 @@
 高德-地点详情净化 = type=http-response, pattern=(?i)^https:\/\/info\.amap\.com\/ws\/shield\/search\/poi\/detail(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapPoiDetail.js?v=4, requires-body=true, max-size=1048576, timeout=10
 
 [MITM]
-hostname = %APPEND% ai.amap.com, center.amap.com, info.amap.com, m5-zb.amap.com, m5.amap.com, sns.amap.com
+hostname = %APPEND% ai.amap.com, center.amap.com, info.amap.com, m5-zb.amap.com, m5.amap.com, sns.amap.com, atoken.m.taobao.com, www.qchannel01.cn, httpdns.alicdn.com, httpdns-api.aliyuncs.com, httpdns-sc.aliyuncs.com, amdc.alipay.com
 tcp-connection = true
