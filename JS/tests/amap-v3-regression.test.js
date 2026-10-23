@@ -50,7 +50,7 @@ test('v3 profile retains orders and handles numeric string entrance IDs without 
 
 test('v3 scene tools retain numeric string business IDs', () => {
   const input = { data: { toolsRecommend: { data: { default: [{ id: '102' }, { id: 103 }, { id: '999' }] } }, history: ['keep'] } };
-  assert.deepEqual(rewrite('https://m5.amap.com/ws/shield/scene/recommend', input), { data: { toolsRecommend: { data: { default: [{ id: '102' }, { id: 103 }] } }, history: ['keep'] } });
+  assert.deepEqual(rewrite('https://m5.amap.com/ws/shield/scene/recommend', input), { data: { toolsRecommend: { data: { default: [] } }, history: ['keep'] } });
 });
 
 test('v3 response rules do not match appended paths or host suffixes', () => {

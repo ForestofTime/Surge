@@ -34,7 +34,7 @@
     const data = payload.data;
     if (key.endsWith('/nodefaasv3')) {
       if (object(data) && Array.isArray(data.cardList)) {
-        delete data.tipData; delete data.wallet;
+        for (const name of ['tipData', 'wallet', 'memberInfo', 'topMixedCard']) delete data[name];
         data.cardList = data.cardList.filter(item => object(item) && ['MyOrderCard', 'MineNewFootprintCard', 'MineNewBEntranceCardV4'].includes(item.dataKey));
         for (const card of data.cardList) {
           if (card.dataKey !== 'MineNewBEntranceCardV4' || !object(card.content)) continue;
@@ -47,7 +47,7 @@
       // 源规则先删除 shadingWords，后续对此字段的筛选已无效果。
       if (object(data)) delete data.shadingWords;
       const tools = at(data, ['toolsRecommend', 'data']);
-      if (object(tools) && Array.isArray(tools.default)) tools.default = tools.default.filter(item => object(item) && [102, 103, 106, 151].some(id => item.id === id || item.id === String(id)));
+      if (object(tools) && Array.isArray(tools.default)) tools.default = [];
     } else if (key.endsWith('/opc/tools/list')) {
       if (object(data) && Array.isArray(data.category)) {
         for (const category of data.category) {
