@@ -7,7 +7,7 @@ const vm = require('node:vm');
 
 const moduleText = fs.readFileSync(path.join(__dirname, '../../Module/AmapAds.sgmodule'), 'utf8');
 const scripts = moduleText.split('\n').filter(line => line.includes(' = type=http-response,')).map(line => {
-  const match = line.match(/pattern=(.*?), script-path=.*\/JS\/([^/?]+)\.js\?v=7/);
+  const match = line.match(/pattern=(.*?), script-path=.*\/JS\/([^/?]+)\.js\?v=8/);
   assert.ok(match);
   return { pattern: match[1], file: match[2] + '.js' };
 });

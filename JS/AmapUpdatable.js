@@ -332,10 +332,6 @@
       } catch (_) { /* Preserve this config verbatim; continue independent configs. */ }
     }
     for (const name of ["sportsGroupConfig", "sportsRouteConfig"]) edit(name, v => strip(v, ["group_banner"]));
-    // 17.02 完整配置启用了重构页面，旧社区布局接口不再请求。
-    // 保留配置版本及其它实验字段，仅关闭已观测的两项布局开关。
-    edit("redesign_user", v => { if (v.redesign_user === 1) v.redesign_user = 0; });
-    edit("redesign_ab", v => { if (v.redesign_new === 1) v.redesign_new = 0; });
     edit("his_input_tip", v => {
       strip(v, ["channel_zhitiao"]);
       v.his_recommend_bangdan = 0;

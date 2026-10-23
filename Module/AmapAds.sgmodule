@@ -1,5 +1,5 @@
 #!name=高德地图广告净化
-#!desc=整合墨鱼完整规则与现有高德净化，内置高德前置处理。v7
+#!desc=整合墨鱼完整规则与现有高德净化，内置高德前置处理。v8
 #!author=可莉 / RuCu6 / ddgksf2013 / ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
@@ -18,7 +18,7 @@ AND,((USER-AGENT,AMapiPhone*),(OR,((DOMAIN,atoken.m.taobao.com,extended-matching
 
 [Map Local]
 (?i)^https:\/\/(?:[a-z0-9-]+\.)+amap\.com\/v\d+\/ai_rec\/ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
-(?i)^https:\/\/(?:[a-z0-9-]+\.)+amap\.com\/ws\/(?:valueadded\/weather|shield\/scene\/recommend|faas\/amap-navigation\/card-service-route-plan)(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+(?i)^https:\/\/(?:[a-z0-9-]+\.)+amap\.com\/ws\/(?:valueadded\/weather|faas\/amap-navigation\/card-service-route-plan)(?:\?|$) data-type=text data="{}" status-code=200 header="Content-Type:application/json"
 (?i)^https:\/\/(?:[a-z0-9-]+\.)+amap\.com\/ws\/boss\/order_web\/\w{8}_information(?:\?|$) data-type=text data="" status-code=200
 (?i)^https:\/\/(?:[a-z0-9-]+\.)+amap\.com\/uploadimg\/\w+\.gif(?:\?|$) data-type=tiny-gif status-code=200
 
@@ -31,11 +31,12 @@ AND,((USER-AGENT,AMapiPhone*),(OR,((DOMAIN,atoken.m.taobao.com,extended-matching
 (?i)^https:\/\/(?:[a-z0-9-]+\.)+amap\.com\/ws\/asa\/ads_attribution(?:\?|$) - reject
 
 [Script]
-高德-社区兼容接口 = type=http-response, pattern=(?i)^https?:\/\/(?!(?:m5\.amap\.com\/ws\/shield\/frogserver\/aocs\/updatable\/1|m5-zb\.amap\.com\/ws\/promotion-web\/resource(?:\/home)?|m5\.amap\.com\/ws\/shield\/dsp\/profile\/index\/nodefaasv3)(?:\?|$))(?:[a-z0-9-]+\.)+amap\.com\/ws\/(?:shield\/frogserver\/aocs\/updatable[^?]*|promotion-web\/resource[^?]*|shield\/dsp\/profile\/index\/nodefaasv3)(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapMerged.js?v=7, requires-body=true, max-size=1048576, timeout=10
-高德-墨鱼完整补充 = type=http-response, pattern=(?i)(?:^http:\/\/amdc\.m\.taobao\.com(?:\/|$)|^https?:\/\/(?:[a-z0-9-]+\.)+amap\.com\/ws\/(?:message\/notice\/list|shield\/search\/nearbyrec_smart|faas\/amap-navigation\/main-page(?!-assets|-aiqs)|valueadded\/alimama\/splash_screen|msgbox\/pull|shield\/search\/new_hotword|shield\/dsp\/profile\/index\/nodefaas(?!v3(?:\?|$))))(?:[^?]*)(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapMerged.js?v=7, requires-body=true, max-size=1048576, timeout=10
-高德-页面净化 = type=http-response, pattern=(?i)^https:\/\/(?:m5\.amap\.com\/ws\/(?:shield\/dsp\/profile\/index\/nodefaasv3|shield\/scene\/recommend|smartui\/near_recommend|shield\/search_business\/process\/marketingOperationStructured|perception\/drive\/(?:routeInfo|routePlan))|sns\.amap\.com\/ws\/opc\/tools\/list|info\.amap\.com\/ws\/(?:c3frontend\/af-search\/search|shield\/search_business\/process\/middleLayer\/sug)|m5-zb\.amap\.com\/ws\/(?:boss\/car\/order\/content_info|amap\/hitch\/passenger\/content_info|promotion-web\/resource(?:\/home)?)|center\.amap\.com\/ws\/amc\/server\/conv\/raise_list)(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapMerged.js?v=7, requires-body=true, max-size=1048576, timeout=10
-高德-配置净化 = type=http-response, pattern=(?i)^https:\/\/m5\.amap\.com\/ws\/shield\/frogserver\/aocs\/updatable\/1(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapMerged.js?v=7, requires-body=true, max-size=1048576, timeout=10
-高德-地点详情净化 = type=http-response, pattern=(?i)^https:\/\/info\.amap\.com\/ws\/shield\/search\/poi\/detail(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapMerged.js?v=7, requires-body=true, max-size=1048576, timeout=10
+高德-AMDC对齐Loon = type=http-request, pattern=^http:\/\/amdc\.m\.taobao\.com\/amdc\/mobileDispatch(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapAmdc.js?v=8, timeout=5
+高德-社区兼容接口 = type=http-response, pattern=(?i)^https?:\/\/(?!(?:m5\.amap\.com\/ws\/shield\/frogserver\/aocs\/updatable\/1|m5-zb\.amap\.com\/ws\/promotion-web\/resource(?:\/home)?|m5\.amap\.com\/ws\/shield\/dsp\/profile\/index\/nodefaasv3)(?:\?|$))(?:[a-z0-9-]+\.)+amap\.com\/ws\/(?:shield\/frogserver\/aocs\/updatable[^?]*|promotion-web\/resource[^?]*|shield\/dsp\/profile\/index\/nodefaasv3)(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapMerged.js?v=8, requires-body=true, max-size=1048576, timeout=10
+高德-墨鱼完整补充 = type=http-response, pattern=(?i)(?:^https?:\/\/(?:[a-z0-9-]+\.)+amap\.com\/ws\/(?:message\/notice\/list|shield\/search\/nearbyrec_smart|faas\/amap-navigation\/main-page(?!-assets|-aiqs)|valueadded\/alimama\/splash_screen|msgbox\/pull|shield\/search\/new_hotword|shield\/dsp\/profile\/index\/nodefaas(?!v3(?:\?|$))))(?:[^?]*)(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapMerged.js?v=8, requires-body=true, max-size=1048576, timeout=10
+高德-页面净化 = type=http-response, pattern=(?i)^https:\/\/(?:m5\.amap\.com\/ws\/(?:shield\/dsp\/profile\/index\/nodefaasv3|shield\/scene\/recommend|smartui\/near_recommend|shield\/search_business\/process\/marketingOperationStructured|perception\/drive\/(?:routeInfo|routePlan))|sns\.amap\.com\/ws\/opc\/tools\/list|info\.amap\.com\/ws\/(?:c3frontend\/af-search\/search|shield\/search_business\/process\/middleLayer\/sug)|m5-zb\.amap\.com\/ws\/(?:boss\/car\/order\/content_info|amap\/hitch\/passenger\/content_info|promotion-web\/resource(?:\/home)?)|center\.amap\.com\/ws\/amc\/server\/conv\/raise_list)(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapMerged.js?v=8, requires-body=true, max-size=1048576, timeout=10
+高德-配置净化 = type=http-response, pattern=(?i)^https:\/\/m5\.amap\.com\/ws\/shield\/frogserver\/aocs\/updatable\/1(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapMerged.js?v=8, requires-body=true, max-size=1048576, timeout=10
+高德-地点详情净化 = type=http-response, pattern=(?i)^https:\/\/info\.amap\.com\/ws\/shield\/search\/poi\/detail(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapMerged.js?v=8, requires-body=true, max-size=1048576, timeout=10
 
 [MITM]
 hostname = %APPEND% *.amap.com, atoken.m.taobao.com, www.qchannel01.cn, httpdns.alicdn.com, httpdns-api.aliyuncs.com, httpdns-sc.aliyuncs.com, amdc.alipay.com
