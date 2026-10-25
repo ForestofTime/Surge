@@ -12,7 +12,7 @@ function run(payload, pathname = '/discovery-feed/v3/mix/ts', host = 'mobile.xim
     $request: { url: `https://${host}${pathname}` },
     $response: { body: typeof payload === 'string' ? payload : JSON.stringify(payload) },
     $done: value => calls.push(value), console: { log() {} },
-  }, { timeout: 1000 });
+  }, { timeout: 1000, filename: path.resolve(__dirname, '../XimalayaAds.js') });
   assert.equal(calls.length, 1, '$done called exactly once');
   return calls[0].body === undefined ? null : JSON.parse(calls[0].body);
 }
@@ -57,6 +57,26 @@ test('malformed JSON and unknown scope pass through without modifying business r
   for (const p of ['/coin/v1/home', '/signIn', '/discovery-feed/v3/mixOther', '/mobile-user/v2/homePageOther']) assert.equal(run({ body: [{ isAd: true }] }, p), null);
 });
 
+test('splash loading and preload empty creatives and bidding while preserving successful envelope', () => {
+  for (const host of ['adse.ximalaya.com', 'adse.wsa.ximalaya.com']) {
+    for (const endpoint of ['loading', 'preload', 'screen']) {
+      const root = { ret: 0, responseId: 7, data: [{ cover: 'creative' }], bidSlotList: { sdk: ['bid'] }, adTypes: [1], adIds: [7], landingPageResDatas: [{}], dataForVirtualAd: [{}], totalPageCount: 1, currentPage: 1, business: 'keep' };
+      assert.deepEqual(run(root, `/ting/${endpoint}/ts-123?q=1`, host), { ...root, data: [], bidSlotList: {}, adTypes: [], adIds: [], landingPageResDatas: [], dataForVirtualAd: [], totalPageCount: 0 });
+    }
+  }
+});
+
+test('splash guards pass through coins rewarded ads errors unknown schema and lookalikes', () => {
+  const root = { ret: 0, data: [{ reward: 5 }], slotAds: [{ ads: [{}] }] };
+  for (const endpoint of ['/incentive/ting/currentDuration/ts-1', '/incentive/ting/welfare/queryListenTime/ts-1', '/adx/ad?slotId=1', '/adx/adPreInfo', '/ting/loadingOther', '/ting/home/ts-1']) {
+    assert.equal(run(root, endpoint, 'adse.ximalaya.com'), null);
+  }
+  for (const host of ['evil.ximalaya.com', 'adse.ximalaya.com.evil.test']) assert.equal(run(root, '/ting/loading/ts-1', host), null);
+  for (const payload of ['{broken', [], { ret: 1, data: [{}] }, { ret: 0, data: { unknown: true } }, { ret: 0, data: null }]) {
+    assert.equal(run(payload, '/ting/loading/ts-1', 'adse.ximalaya.com'), null);
+  }
+});
+
 test('module avoids rejects and shared scheduling or coin routes', () => {
   assert.doesNotMatch(moduleText, /^\[(?:Map Local|URL Rewrite)\]/m);
   const routes=moduleText.split('\n').filter(line=>line.startsWith('DOMAIN,'));
@@ -67,9 +87,9 @@ test('module avoids rejects and shared scheduling or coin routes', () => {
   for (const line of scripts) {
     assert.match(line, /requires-body=true/);
     assert.match(line, /max-size=\d+/);
-    assert.doesNotMatch(line, /gslb|\/ads|coin|signIn/i);
+    assert.doesNotMatch(line, /gslb|incentive|coin|signIn|adx/i);
   }
   const mitm = moduleText.match(/^hostname\s*=\s*%APPEND%\s*(.*)$/m);
   assert.ok(mitm);
-  assert.deepEqual(mitm[1].split(',').map(x => x.trim()).sort(), ['mobile.ximalaya.com', 'mobilehera.ximalaya.com', 'mobwsa.ximalaya.com'].sort());
+  assert.deepEqual(mitm[1].split(',').map(x => x.trim()).sort(), ['mobile.ximalaya.com', 'mobilehera.ximalaya.com', 'mobwsa.ximalaya.com', 'adse.ximalaya.com', 'adse.wsa.ximalaya.com'].sort());
 });

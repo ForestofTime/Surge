@@ -1,5 +1,5 @@
 #!name=喜马拉雅净化（金币兼容）
-#!desc=净化首页推广，放行共享激励主机以保护金币加载。v2
+#!desc=清理开屏及首页推广，保留金币加载与激励功能。v3
 #!author=ddgksf2013 / 奶思 / ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
@@ -12,7 +12,8 @@ DOMAIN,adse.ximalaya.com,DIRECT,extended-matching
 DOMAIN,adse.wsa.ximalaya.com,DIRECT,extended-matching
 
 [Script]
-喜马拉雅-稳定净化 = type=http-response, pattern=^https:\/\/(?:mobile|mobilehera|mobwsa)\.ximalaya\.com\/(?:discovery-feed\/v\d+\/mix|focus-mobile\/focusPic|discovery-category\/v\d+\/category|discovery-category\/customCategories|mobile-user\/v\d+\/homePage)(?:\/[^?]*)?(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/XimalayaAds.js?v=1, requires-body=true, max-size=1048576, timeout=5
+喜马拉雅-稳定净化 = type=http-response, pattern=^https:\/\/(?:mobile|mobilehera|mobwsa)\.ximalaya\.com\/(?:discovery-feed\/v\d+\/mix|focus-mobile\/focusPic|discovery-category\/v\d+\/category|discovery-category\/customCategories|mobile-user\/v\d+\/homePage)(?:\/[^?]*)?(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/XimalayaAds.js?v=3, requires-body=true, max-size=1048576, timeout=5
+喜马拉雅-开屏净化 = type=http-response, pattern=^https:\/\/adse(?:\.wsa)?\.ximalaya\.com\/ting\/(?:loading|preload|screen)(?:\/ts-\d+)?(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/XimalayaAds.js?v=3, requires-body=true, max-size=1048576, timeout=5
 
 [MITM]
-hostname = %APPEND% mobile.ximalaya.com, mobilehera.ximalaya.com, mobwsa.ximalaya.com
+hostname = %APPEND% mobile.ximalaya.com, mobilehera.ximalaya.com, mobwsa.ximalaya.com, adse.ximalaya.com, adse.wsa.ximalaya.com
