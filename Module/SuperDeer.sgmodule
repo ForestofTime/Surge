@@ -1,13 +1,10 @@
 #!name=超鹿运动去开屏广告
-#!desc=清空超鹿运动开屏配置的 data.splashes。v1
+#!desc=兼容恢复版，暂停开屏改写与解密以排除启动转圈。v2
 #!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/SuperDeer.sgmodule
 
-[Body Rewrite]
-# HAR 已验证：POST /app/getSplashData/V2 的 data.splashes 是开屏素材和跳转入口。
-http-response-jq ^https:\/\/app\.chaolu\.com\.cn\/app\/getSplashData\/V2(?:\?|$) 'if (.data | type) == "object" then .data.splashes = [] else . end'
-
-[MITM]
-hostname = %APPEND% app.chaolu.com.cn
+# v1 清空 splashes 后收到启动持续转圈反馈。
+# 暂停整条改写及本模块 MITM，等待故障 HAR 确认客户端兼容响应。
+# 此恢复版暂不屏蔽开屏广告。
