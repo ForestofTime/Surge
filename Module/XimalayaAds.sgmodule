@@ -1,11 +1,16 @@
 #!name=喜马拉雅净化（金币兼容）
-#!desc=清理首页推荐及我的推广，保留金币和播放调度。v1
+#!desc=净化首页推广，放行共享激励主机以保护金币加载。v2
 #!author=ddgksf2013 / 奶思 / ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/XimalayaAds.sgmodule
 
 # 与旧喜马拉雅模块互斥，安装后停用旧 ScriptHub 转换模块。
+[Rule]
+# 须排在通用广告规则之前；共享主机同时承载金币与广告。
+DOMAIN,adse.ximalaya.com,DIRECT,extended-matching
+DOMAIN,adse.wsa.ximalaya.com,DIRECT,extended-matching
+
 [Script]
 喜马拉雅-稳定净化 = type=http-response, pattern=^https:\/\/(?:mobile|mobilehera|mobwsa)\.ximalaya\.com\/(?:discovery-feed\/v\d+\/mix|focus-mobile\/focusPic|discovery-category\/v\d+\/category|discovery-category\/customCategories|mobile-user\/v\d+\/homePage)(?:\/[^?]*)?(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/XimalayaAds.js?v=1, requires-body=true, max-size=1048576, timeout=5
 

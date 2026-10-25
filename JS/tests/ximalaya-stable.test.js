@@ -58,7 +58,10 @@ test('malformed JSON and unknown scope pass through without modifying business r
 });
 
 test('module avoids rejects and shared scheduling or coin routes', () => {
-  assert.doesNotMatch(moduleText, /^\[(?:Rule|Map Local|URL Rewrite)\]/m);
+  assert.doesNotMatch(moduleText, /^\[(?:Map Local|URL Rewrite)\]/m);
+  const routes=moduleText.split('\n').filter(line=>line.startsWith('DOMAIN,'));
+  assert.deepEqual(routes,['DOMAIN,adse.ximalaya.com,DIRECT,extended-matching','DOMAIN,adse.wsa.ximalaya.com,DIRECT,extended-matching']);
+  assert.doesNotMatch(moduleText,/,REJECT|DOMAIN-SUFFIX/);
   const scripts = moduleText.split(/\r?\n/).filter(line => /type=http-response/.test(line));
   assert.ok(scripts.length > 0);
   for (const line of scripts) {
