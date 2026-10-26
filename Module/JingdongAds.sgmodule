@@ -1,5 +1,5 @@
 #!name=京东去开屏
-#!desc=清理京东开屏配置并拦截开屏素材，禁用 HTTPDNS，保留页面业务。v21
+#!desc=清理京东开屏配置并拦截开屏素材，禁用 HTTPDNS，保留页面业务。v22
 #!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
@@ -11,6 +11,7 @@ AND, ((PROTOCOL, UDP), (DOMAIN, m.360buyimg.com)), REJECT
 AND, ((PROTOCOL, UDP), (DOMAIN, m15.360buyimg.com)), REJECT
 AND, ((PROTOCOL, UDP), (DOMAIN, vod.300hu.com)), REJECT
 AND, ((PROTOCOL, UDP), (DOMAIN, discover.300hu.com)), REJECT
+AND, ((PROTOCOL, UDP), (DOMAIN, storage.360buyimg.com)), REJECT
 
 [Map Local]
 # Loon 抓包中的 HTTPDNS 空 404 语义，仅限已观测的两个路径。
@@ -29,13 +30,15 @@ AND, ((PROTOCOL, UDP), (DOMAIN, discover.300hu.com)), REJECT
 
 [Script]
 # 社区开屏配置逻辑：兼容 URL/POST 入口和明文/Base64；脚本内校验开屏结构。
-京东-开屏配置清理 = type=http-response, pattern=^https?:\/\/api\.m\.jd\.com\/client\.action(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplashConfig.js?v=21, requires-body=true, max-size=2097152, timeout=10
+京东-开屏配置清理 = type=http-response, pattern=^https?:\/\/api\.m\.jd\.com\/client\.action(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplashConfig.js?v=22, requires-body=true, max-size=2097152, timeout=10
 # 只将已确认的 MP4 与流媒体路径交给脚本，再用京东视频 UA 和启动播放器 Referer 二次校验后返回 204。
-京东-主页面启动视频跳过 = type=http-request, pattern=^https?:\/\/vod\.300hu\.com\/(?:vod\/)?\d+\/.*\.mp4(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=21, timeout=10
-京东-主页面启动流跳过 = type=http-request, pattern=^https?:\/\/discover\.300hu\.com\/.*\.(?:m3u8|ts)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=21, timeout=10
+京东-主页面启动视频跳过 = type=http-request, pattern=^https?:\/\/vod\.300hu\.com\/(?:vod\/)?\d+\/.*\.mp4(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=22, timeout=10
+京东-主页面启动流跳过 = type=http-request, pattern=^https?:\/\/discover\.300hu\.com\/.*\.(?:m3u8|ts)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=22, timeout=10
+# 同启动播放器上下文的 storage MP4 回退；其它 CDN 请求透传。
+京东-启动素材视频回退跳过 = type=http-request, pattern=^https?:\/\/storage\.360buyimg\.com\/material-video\/video\/[^?]+\.mp4(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=22, timeout=10
 # AVIF 请求避开 GIF Map Local，由脚本返回透明 AVIF 二进制。
-京东-开屏图AVIF跳过 = type=http-request, pattern=^https?:\/\/(?:m|m\d\d?|img\d\d?|storage\d?\d?)\.360buyimg\.com\/mobilecms\/s(?:1125x2436|1170x2532|1242x2688|1284x2778|1290x2796|1320x2868)_jfs\/.*\.avif(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=21, binary-body-mode=true, timeout=10
+京东-开屏图AVIF跳过 = type=http-request, pattern=^https?:\/\/(?:m|m\d\d?|img\d\d?|storage\d?\d?)\.360buyimg\.com\/mobilecms\/s(?:1125x2436|1170x2532|1242x2688|1284x2778|1290x2796|1320x2868)_jfs\/.*\.avif(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=22, binary-body-mode=true, timeout=10
 
 [MITM]
-hostname = %APPEND% api.m.jd.com, dns.jd.com, m.360buyimg.com, m15.360buyimg.com, vod.300hu.com, discover.300hu.com
+hostname = %APPEND% api.m.jd.com, dns.jd.com, m.360buyimg.com, m15.360buyimg.com, vod.300hu.com, discover.300hu.com, storage.360buyimg.com
 tcp-connection = true

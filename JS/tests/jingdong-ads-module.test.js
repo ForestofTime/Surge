@@ -62,6 +62,41 @@ test('October 8 launch MP4 fallback under /vod/numeric is handled while business
   }
 });
 
+test('October 26 storage material-video fallback requires the JD launch-player context', () => {
+  // 最新 HAR：旧 MP4 已 204，随后 storage 素材视频仍返回 200 / 1,007,862 字节。
+  const url = 'https://storage.360buyimg.com/material-video/video/synthetic-launch.mp4';
+  const launchHeaders = {
+    'User-Agent': 'CFNetwork;jdmall;iphone;version/16.1.0;build/synthetic',
+    Referer: 'play:avplayerSH_JDMainPageViewController_20_',
+  };
+  for (const candidate of [url, url + '?source=synthetic', url.replace('synthetic-launch.mp4', 'nested/rotating-launch.mp4')]) {
+    assert.deepEqual(runRequest(candidate, launchHeaders), { response: { status: 204 } }, 'rotating launch material path must be handled');
+  }
+  for (const [candidate, headers] of [
+    [url, { ...launchHeaders, Referer: 'play:avplayerProductDetail' }],
+    [url, { ...launchHeaders, Referer: 'play:avplayerSH_DiscoverViewController_20_' }],
+    [url, { 'User-Agent': launchHeaders['User-Agent'] }],
+    [url, { Referer: launchHeaders.Referer }],
+    [url, { ...launchHeaders, 'User-Agent': 'JD4iPhone/16.1.0 CFNetwork/1 Darwin/1' }],
+    [url.replace('storage.', 'storage2.'), launchHeaders],
+    [url.replace('/material-video/video/', '/material-video/product/'), launchHeaders],
+    [url.replace('.mp4', '.m3u8'), launchHeaders],
+    [url.replace('.mp4', '.ts'), launchHeaders],
+    [url.replace('.mp4', ''), launchHeaders],
+    ['https://storage.360buyimg.com/material-video/video/', launchHeaders],
+    ['https://storage.360buyimg.com/material-video/video/?source=synthetic', launchHeaders],
+    ['https://storage.360buyimg.com.evil.test/material-video/video/launch', launchHeaders],
+  ]) assert.deepEqual(runRequest(candidate, headers), {}, 'business playback and unknown contexts must pass');
+
+  const rule = sectionLines(moduleText, 'Script').find(line => line.includes('storage') && !line.includes('AVIF'));
+  assert.ok(rule, 'module must dispatch the storage material path');
+  const pattern = new RegExp(rule.match(/pattern=(.*?), script-path=/)[1]);
+  assert.equal(pattern.test(url), true);
+  assert.equal(pattern.test('https://storage.360buyimg.com/material-video/video/'), false);
+  assert.equal(pattern.test('https://storage.360buyimg.com/material-video/video/?source=synthetic'), false);
+  assert.equal(pattern.test(url.replace('.mp4', '.m3u8')), false);
+});
+
 test('AVIF splash bypasses the GIF Map Local and receives actual AVIF bytes', () => {
   // 2026-09-30-104036 HAR: this path class received image/gif, 35 bytes,
   // via Map Local; the AVIF request script did not run.
@@ -87,7 +122,7 @@ test('AVIF splash bypasses the GIF Map Local and receives actual AVIF bytes', ()
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
   assert.match(moduleText, /清理京东开屏配置并拦截开屏素材，禁用 HTTPDNS，保留页面业务/);
-  assert.match(moduleText, /v21$/m);
+  assert.match(moduleText, /v22$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m
@@ -106,8 +141,8 @@ test('publishes a splash-only native Surge module', () => {
 
   assert.match(moduleText, /^京东-主页面启动视频跳过 = type=http-request,/m);
   assert.ok(moduleText.includes('pattern=^https?:\\/\\/vod\\.300hu\\.com\\/(?:vod\\/)?\\d+\\/.*\\.mp4(?:\\?.*)?$'));
-  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=21/);
-  assert.match(moduleText, /京东-开屏配置清理 = type=http-response,.*JingdongSplashConfig\.js\?v=21, requires-body=true/);
+  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=22/);
+  assert.match(moduleText, /京东-开屏配置清理 = type=http-response,.*JingdongSplashConfig\.js\?v=22, requires-body=true/);
   assert.match(moduleText, /^京东-主页面启动流跳过 = type=http-request,/m);
   assert.match(
     moduleText,
@@ -121,6 +156,7 @@ test('keeps only the QUIC fallbacks required by the confirmed splash paths', () 
     'AND, ((PROTOCOL, UDP), (DOMAIN, m15.360buyimg.com)), REJECT',
     'AND, ((PROTOCOL, UDP), (DOMAIN, vod.300hu.com)), REJECT',
     'AND, ((PROTOCOL, UDP), (DOMAIN, discover.300hu.com)), REJECT',
+    'AND, ((PROTOCOL, UDP), (DOMAIN, storage.360buyimg.com)), REJECT',
   ]);
 });
 
@@ -170,7 +206,7 @@ test('HTTPDNS fallback maps only the two HAR-confirmed paths to an empty 404', (
 
 test('limits MITM to the confirmed splash delivery hosts', () => {
   assert.deepEqual(sectionLines(moduleText, 'MITM'), [
-    'hostname = %APPEND% api.m.jd.com, dns.jd.com, m.360buyimg.com, m15.360buyimg.com, vod.300hu.com, discover.300hu.com',
+    'hostname = %APPEND% api.m.jd.com, dns.jd.com, m.360buyimg.com, m15.360buyimg.com, vod.300hu.com, discover.300hu.com, storage.360buyimg.com',
     'tcp-connection = true',
   ]);
 });
