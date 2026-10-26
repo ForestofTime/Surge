@@ -6,10 +6,10 @@ const vm = require('node:vm');
 
 const scriptPath = path.resolve(__dirname, '../JingdongSplashConfig.js');
 
-function run(body, url = 'https://api.m.jd.com/client.action?functionId=start', method = 'GET') {
+function run(body, url = 'https://api.m.jd.com/client.action?functionId=start', method = 'GET', requestBody) {
   const calls = [];
   vm.runInNewContext(fs.readFileSync(scriptPath, 'utf8'), {
-    $request: { url, method, headers: {} },
+    $request: { url, method, headers: {}, body: requestBody },
     $response: { body },
     $done: value => calls.push(value),
     console: { log() {} },
@@ -22,8 +22,8 @@ function run(body, url = 'https://api.m.jd.com/client.action?functionId=start', 
   return JSON.parse(JSON.stringify(calls[0]));
 }
 
-function cleared(input, expected, url, method) {
-  const result = run(JSON.stringify(input), url, method);
+function cleared(input, expected, url, method, requestBody) {
+  const result = run(JSON.stringify(input), url, method, requestBody);
   assert.equal(typeof result.body, 'string');
   assert.deepEqual(JSON.parse(result.body), expected);
 }
@@ -73,6 +73,74 @@ test('explicit unrelated URL function never mutates business images even with sp
   for (const functionId of ['uniformRecommend', 'personinfoBusiness', 'getPageConfig', 'basicConfig']) {
     assert.deepEqual(run(JSON.stringify(input), `https://api.m.jd.com/client.action?functionId=${functionId}`, 'POST'), {});
   }
+});
+
+test('basicConfig disables only existing socket-ahead and HTTPDNS settings', () => {
+  const input = {
+    code: '0',
+    data: {
+      JDMessage: { socketmonitor: { isSocketEstablishedAhead: '1', isSocketReport: 1, heartbeat: 30 }, unrelated: true },
+      JDHttpToolKit: { httpdns: { httpdns: '1', ttl: 60 }, network: { retry: 3 } },
+      orderCounts: { receive: 4 },
+      images: [{ imageUrl: 'https://example.test/business.jpg' }],
+      showTimesDaily: 3,
+    },
+  };
+  const expected = {
+    ...input,
+    data: {
+      ...input.data,
+      JDMessage: { ...input.data.JDMessage, socketmonitor: { ...input.data.JDMessage.socketmonitor, isSocketEstablishedAhead: 0, isSocketReport: 0 } },
+      JDHttpToolKit: { ...input.data.JDHttpToolKit, httpdns: { ...input.data.JDHttpToolKit.httpdns, httpdns: 0 } },
+    },
+  };
+  for (const url of [
+    'https://api.m.jd.com/client.action?functionId=basicConfig',
+    'https://api.m.jd.com/client.action?client=apple&functionId=basicConfig',
+  ]) cleared(input, expected, url);
+  for (const requestBody of [
+    'client=apple&functionId=basicConfig',
+    JSON.stringify({ client: 'apple', functionId: 'basicConfig' }),
+  ]) cleared(input, expected, 'https://api.m.jd.com/client.action', 'POST', requestBody);
+});
+
+test('basicConfig supports Base64 without altering the transport encoding', () => {
+  const input = { data: { JDMessage: { socketmonitor: { isSocketReport: 1 } } }, message: '成功😀' };
+  const result = run(Buffer.from(JSON.stringify(input)).toString('base64'), 'https://api.m.jd.com/client.action?functionId=basicConfig');
+  assert.equal(typeof result.body, 'string');
+  assert.deepEqual(JSON.parse(Buffer.from(result.body, 'base64').toString('utf8')), {
+    ...input, data: { JDMessage: { socketmonitor: { isSocketReport: 0 } } },
+  });
+});
+
+test('basicConfig never invents missing fields and leaves unknown or already-disabled configuration unchanged', () => {
+  for (const input of [
+    { data: { JDMessage: { socketmonitor: {} }, JDHttpToolKit: { httpdns: {} }, orderCounts: { receive: 4 } } },
+    { data: { JDMessage: { socketmonitor: { isSocketReport: 0 } }, JDHttpToolKit: { httpdns: { httpdns: 0 } } } },
+    { data: { JDMessage: [], JDHttpToolKit: { httpdns: null } } },
+    { images: [{ imageUrl: 'https://example.test/business.jpg' }], showTimesDaily: 3 },
+  ]) assert.deepEqual(run(JSON.stringify(input), 'https://api.m.jd.com/client.action?functionId=basicConfig'), {});
+  const input = { data: { JDMessage: { socketmonitor: { isSocketReport: 1 } } } };
+  cleared(input, { data: { JDMessage: { socketmonitor: { isSocketReport: 0 } } } }, 'https://api.m.jd.com/client.action?functionId=basicConfig');
+});
+
+test('explicit unrelated POST function never falls back to splash structural guessing', () => {
+  const input = { images: [{ imageUrl: 'https://example.test/product.jpg' }], showTimesDaily: 3, orders: { unpaid: 5 } };
+  for (const requestBody of [
+    'functionId=uniformRecommend&client=apple',
+    JSON.stringify({ functionId: 'personinfoBusiness' }),
+    'functionId=basicConfiguration',
+  ]) assert.deepEqual(run(JSON.stringify(input), 'https://api.m.jd.com/client.action', 'POST', requestBody), {});
+});
+
+test('basicConfig guards reject unrelated function identifiers, hosts and paths', () => {
+  const input = JSON.stringify({ data: { JDMessage: { socketmonitor: { isSocketReport: 1 } } } });
+  for (const url of [
+    'https://api.m.jd.com/?functionId=basicConfigExtra',
+    'https://api.m.jd.com/?functionId=basicConfig',
+    'https://api.m.jd.com.evil.test/?functionId=basicConfig',
+    'https://api.m.jd.com/other.action?functionId=basicConfig',
+  ]) assert.deepEqual(run(input, url), {});
 });
 
 test('startup device-level payload remains untouched', () => {

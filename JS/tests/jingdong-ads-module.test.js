@@ -66,7 +66,7 @@ test('AVIF splash bypasses the GIF Map Local and receives actual AVIF bytes', ()
   // 2026-09-30-104036 HAR: this path class received image/gif, 35 bytes,
   // via Map Local; the AVIF request script did not run.
   const url = 'https://m.360buyimg.com/mobilecms/s1125x2436_jfs/t1/example/launch.jpg.avif';
-  const mapPattern = sectionLines(moduleText, 'Map Local')[0].split(' ')[0];
+  const mapPattern = sectionLines(moduleText, 'Map Local').find(line => line.includes('data-type=tiny-gif')).split(' ')[0];
   assert.equal(new RegExp(mapPattern).test(url), false, 'GIF mapping must not shadow AVIF script');
   assert.equal(new RegExp(mapPattern).test(url.replace('.avif', '')), true, 'JPEG mapping must remain');
 
@@ -86,8 +86,8 @@ test('AVIF splash bypasses the GIF Map Local and receives actual AVIF bytes', ()
 
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
-  assert.match(moduleText, /清理京东开屏配置并拦截开屏素材，保留页面业务/);
-  assert.match(moduleText, /v20$/m);
+  assert.match(moduleText, /清理京东开屏配置并拦截开屏素材，禁用 HTTPDNS，保留页面业务/);
+  assert.match(moduleText, /v21$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m
@@ -106,8 +106,8 @@ test('publishes a splash-only native Surge module', () => {
 
   assert.match(moduleText, /^京东-主页面启动视频跳过 = type=http-request,/m);
   assert.ok(moduleText.includes('pattern=^https?:\\/\\/vod\\.300hu\\.com\\/(?:vod\\/)?\\d+\\/.*\\.mp4(?:\\?.*)?$'));
-  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=20/);
-  assert.match(moduleText, /京东-开屏配置清理 = type=http-response,.*JingdongSplashConfig\.js\?v=20, requires-body=true/);
+  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=21/);
+  assert.match(moduleText, /京东-开屏配置清理 = type=http-response,.*JingdongSplashConfig\.js\?v=21, requires-body=true/);
   assert.match(moduleText, /^京东-主页面启动流跳过 = type=http-request,/m);
   assert.match(
     moduleText,
@@ -125,8 +125,8 @@ test('keeps only the QUIC fallbacks required by the confirmed splash paths', () 
 });
 
 test('maps the full-screen canvas class across the rotating image hosts', () => {
-  const rules = sectionLines(moduleText, 'Map Local');
-  assert.equal(rules.length, 1, 'exactly one Map Local rule');
+  const rules = sectionLines(moduleText, 'Map Local').filter(line => line.includes('data-type=tiny-gif'));
+  assert.equal(rules.length, 1, 'exactly one image Map Local rule');
   const [rule] = rules;
 
   // 尺寸段是稳定的；主机前缀会轮换（m. / m11. / m15. / img30. / storage.）。
@@ -149,9 +149,28 @@ test('maps the full-screen canvas class across the rotating image hosts', () => 
   }
 });
 
+test('HTTPDNS fallback maps only the two HAR-confirmed paths to an empty 404', () => {
+  const rules = sectionLines(moduleText, 'Map Local');
+  assert.equal(rules.length, 2, 'one HTTPDNS rule and one image rule');
+  const rule = rules.find(line => line.includes('dns'));
+  assert.ok(rule);
+  assert.match(rule, /data-type=text data="" status-code=404$/);
+  const pattern = new RegExp(rule.split(' ')[0]);
+  for (const url of ['https://dns.jd.com/v6/b', 'https://dns.jd.com/v6/d?synthetic=1']) {
+    assert.equal(pattern.test(url), true, 'confirmed HTTPDNS path matches');
+  }
+  for (const url of [
+    'https://dns.jd.com/v6/business',
+    'https://dns.jd.com/v6/b/extra',
+    'https://dns.jd.com/v7/b',
+    'https://dns.jd.com.evil.test/v6/d',
+    'https://api.m.jd.com/client.action?functionId=orderDetail',
+  ]) assert.equal(pattern.test(url), false, 'unconfirmed business path stays out');
+});
+
 test('limits MITM to the confirmed splash delivery hosts', () => {
   assert.deepEqual(sectionLines(moduleText, 'MITM'), [
-    'hostname = %APPEND% api.m.jd.com, m.360buyimg.com, m15.360buyimg.com, vod.300hu.com, discover.300hu.com',
+    'hostname = %APPEND% api.m.jd.com, dns.jd.com, m.360buyimg.com, m15.360buyimg.com, vod.300hu.com, discover.300hu.com',
     'tcp-connection = true',
   ]);
 });
@@ -301,7 +320,7 @@ test('fixture: the old text stub is the documented cause of the still-visible sp
     assert.equal(entry.size, 1, 'exactly one byte of text');
   }
   // 新规则必须不再产出这种响应。
-  const rules = sectionLines(moduleText, 'Map Local');
+  const rules = sectionLines(moduleText, 'Map Local').filter(line => line.includes('360buyimg'));
   assert.ok(rules.every((rule) => !/data-type=text/.test(rule)), 'no text stub may remain');
   assert.ok(rules.every((rule) => /data-type=tiny-gif/.test(rule)), 'decodable image instead');
 });

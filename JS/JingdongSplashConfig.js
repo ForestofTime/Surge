@@ -1,7 +1,7 @@
 /**
  * 京东开屏配置清理。参考 fmz200/wool_scripts 的 start.images/showTimesDaily
  * 及 zbsdsb/loon-adblock-plugins 的明文/Base64 双协议处理。
- * 仅清开屏配置，不合并首页、订单、物流楼层清理或域名拒绝。
+ * 兼容用户提供的 Loon basicConfig 配置；不清理首页、订单或物流楼层。
  */
 (function () {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -41,15 +41,46 @@
     const body = $response.body;
     if (typeof body !== 'string' || !body || body.length > 2000000) return $done({});
     const match = url.match(/[?&]functionId=([^&]*)/i);
-    const functionId = match ? decodeURIComponent(match[1]) : '';
-    if (match && !['start', 'startup', 'queryMaterialAdverts'].includes(functionId)) return $done({});
+    let functionId = match ? decodeURIComponent(match[1]) : '';
+    if (!match && String($request.method || '').toUpperCase() === 'POST' && typeof $request.body === 'string') {
+      const requestBody = $request.body;
+      if (/^\s*\{/.test(requestBody)) {
+        const requestData = JSON.parse(requestBody);
+        if (plainObject(requestData) && typeof requestData.functionId === 'string') functionId = requestData.functionId;
+      } else {
+        const bodyMatch = requestBody.match(/(?:^|&)functionId=([^&]*)/);
+        if (bodyMatch) functionId = decodeURIComponent(bodyMatch[1].replace(/\+/g, ' '));
+      }
+    }
+    if (functionId && !['start', 'startup', 'queryMaterialAdverts', 'basicConfig'].includes(functionId)) return $done({});
     let payload, encoded = false;
     try { payload = JSON.parse(body); }
     catch (_) { payload = JSON.parse(decode(body)); encoded = true; }
     if (!plainObject(payload)) return $done({});
+    if (functionId === 'basicConfig') {
+      // 只修改已存在的三个控制字段，保留其它 DNS、业务和通知设置。
+      const paths = [
+        ['data', 'JDMessage', 'socketmonitor', 'isSocketEstablishedAhead'],
+        ['data', 'JDMessage', 'socketmonitor', 'isSocketReport'],
+        ['data', 'JDHttpToolKit', 'httpdns', 'httpdns'],
+      ];
+      let changed = false;
+      for (const keys of paths) {
+        let parent = payload;
+        for (const key of keys.slice(0, -1)) parent = plainObject(parent) ? parent[key] : undefined;
+        const key = keys[keys.length - 1];
+        if (plainObject(parent) && Object.prototype.hasOwnProperty.call(parent, key) && parent[key] !== 0) {
+          parent[key] = 0;
+          changed = true;
+        }
+      }
+      if (!changed) return $done({});
+      const result = JSON.stringify(payload);
+      return $done({ body: encoded ? encode(result) : result });
+    }
     const target = plainObject(payload.data) && Array.isArray(payload.data.images) ? payload.data : payload;
     if (!Array.isArray(target.images)) return $done({});
-    if (!match) {
+    if (!functionId) {
       // POST 函数不在 URL 时，只接受完整开屏结构；不把普通商品图片列表当开屏。
       if (String($request.method || '').toUpperCase() !== 'POST'
         || !Object.prototype.hasOwnProperty.call(target, 'showTimesDaily')
