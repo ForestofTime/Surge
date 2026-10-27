@@ -6,11 +6,14 @@
  *   或 discover.300hu.com 的 M3U8/TS；
  *   同时要求京东视频 UA + 主页面启动播放器 Referer。
  * 不依赖 Referer 后缀中会轮换的场景数字。
- * 不按创意 URL、文件名或素材 ID 判断，普通商品视频和直播请求透传。
+ * 可选实验会处理三个已知主机的搜索播放器视频，可能影响正常搜索视频。
+ * 不按创意 URL、文件名或素材 ID 判断，商品详情视频和直播请求透传。
  */
 
 const LAUNCH_PLAYER_REFERER =
   /^play:(?:ijkplayer|avplayer)SH_JDMainPageViewController_/i;
+const SEARCH_PLAYER_REFERER =
+  /^play:(?:ijkplayer|avplayer)SH_FinalSearchListViewController_/i;
 const JD_VIDEO_USER_AGENT =
   /^(?:ffmpeg\/[^;]+|CFNetwork(?:\/[^;]+)?);jdmall;(?:iphone|ipad);/i;
 
@@ -61,14 +64,14 @@ function isLaunchMediaRequest() {
   try {
     const url = String($request.url || '');
     const referer = requestHeader('Referer');
+    const searchPreload = typeof $argument === 'string' && $argument.trim() === 'true';
+    const launchPath = /^https?:\/\/vod\.300hu\.com\/(?:vod\/)?\d+\/.*\.mp4(?:\?.*)?$/i.test(url) ||
+      /^https?:\/\/storage\.360buyimg\.com\/material-video\/video\/[^?]+\.mp4(?:\?.*)?$/i.test(url) ||
+      /^https?:\/\/discover\.300hu\.com\/.*\.(?:m3u8|ts)(?:\?.*)?$/i.test(url);
+    const searchPath = /^https?:\/\/(?:vod\.300hu\.com|discover\.300hu\.com|storage\.360buyimg\.com)\/[^?]*\.(?:mp4|m3u8|ts)(?:\?.*)?$/i.test(url);
     return (
-      (
-        /^https?:\/\/vod\.300hu\.com\/(?:vod\/)?\d+\/.*\.mp4(?:\?.*)?$/i.test(url) ||
-        /^https?:\/\/storage\.360buyimg\.com\/material-video\/video\/[^?]+\.mp4(?:\?.*)?$/i.test(url) ||
-        /^https?:\/\/discover\.300hu\.com\/.*\.(?:m3u8|ts)(?:\?.*)?$/i.test(url)
-      ) &&
       JD_VIDEO_USER_AGENT.test(requestHeader('User-Agent')) &&
-      LAUNCH_PLAYER_REFERER.test(referer)
+      ((launchPath && LAUNCH_PLAYER_REFERER.test(referer)) || (searchPreload && searchPath && SEARCH_PLAYER_REFERER.test(referer)))
     );
   } catch (_) {
     return false;
