@@ -40,7 +40,7 @@ function runRequest(url, headers, argument) {
   return JSON.parse(JSON.stringify(runRawRequest(url, headers, argument)));
 }
 
-test('experimental search-context preload is strictly opt-in for known video hosts', () => {
+test('search-context preload requires an enabled argument for known video hosts', () => {
   const searchHeaders = {
     'User-Agent': 'CFNetwork;jdmall;iphone;version/16.1.50;build/synthetic',
     Referer: 'play:avplayerSH_FinalSearchListViewController_20_',
@@ -75,14 +75,25 @@ test('experimental search-context preload is strictly opt-in for known video hos
   }
 });
 
-test('module exposes search preload opt-in default false to all three video dispatch rules', () => {
-  assert.match(moduleText, /^#!arguments=.*search_preload:false/m);
+test('module enables search preload by default and passes its configurable argument to all three video dispatch rules', () => {
+  assert.match(moduleText, /^#!arguments=.*search_preload:true/m);
   const rules = sectionLines(moduleText, 'Script').filter(line => /京东-主页面启动视频跳过|京东-主页面启动流跳过|京东-启动素材视频回退跳过/.test(line));
   assert.equal(rules.length, 3);
   for (const rule of rules) {
     assert.match(rule, /argument="?\{\{\{search_preload\}\}\}"?/);
-    assert.match(rule, /JingdongSplash\.js\?v=23/);
+    assert.match(rule, /JingdongSplash\.js\?v=24/);
   }
+});
+
+test('module default blocks search preload while the false override restores playback', () => {
+  const defaultArgument = moduleText.match(/^#!arguments=.*?search_preload:([^,\s]+)/m)?.[1];
+  const headers = {
+    'User-Agent': 'CFNetwork;jdmall;iphone;version/16.1.50;build/synthetic',
+    Referer: 'play:avplayerSH_FinalSearchListViewController_20_',
+  };
+  const url = 'https://storage.360buyimg.com/material-video/video/synthetic.mp4';
+  assert.deepEqual(runRequest(url, headers, defaultArgument), { response: { status: 204 } });
+  assert.deepEqual(runRequest(url, headers, 'false'), {});
 });
 
 test('experimental search videos cover rotating paths and formats on the three known hosts only', () => {
@@ -165,7 +176,7 @@ test('October 26 storage material-video fallback requires the JD launch-player c
   assert.equal(pattern.test(url), true);
   assert.equal(pattern.test('https://storage.360buyimg.com/material-video/video/'), false);
   assert.equal(pattern.test('https://storage.360buyimg.com/material-video/video/?source=synthetic'), false);
-  assert.equal(pattern.test(url.replace('.mp4', '.m3u8')), true, 'dispatch must reach opt-in guard');
+  assert.equal(pattern.test(url.replace('.mp4', '.m3u8')), true, 'dispatch must reach configurable guard');
 });
 
 test('AVIF splash bypasses the GIF Map Local and receives actual AVIF bytes', () => {
@@ -192,8 +203,8 @@ test('AVIF splash bypasses the GIF Map Local and receives actual AVIF bytes', ()
 
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
-  assert.match(moduleText, /清理京东开屏；可选拦截预加载，可能影响搜索视频/);
-  assert.match(moduleText, /v23$/m);
+  assert.match(moduleText, /清理京东开屏及疑似预加载视频，可能影响搜索视频/);
+  assert.match(moduleText, /v24$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m
@@ -211,8 +222,8 @@ test('publishes a splash-only native Surge module', () => {
   }
 
   assert.match(moduleText, /^京东-主页面启动视频跳过 = type=http-request,/m);
-  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=23/);
-  assert.match(moduleText, /京东-开屏配置清理 = type=http-response,.*JingdongSplashConfig\.js\?v=23, requires-body=true/);
+  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=24/);
+  assert.match(moduleText, /京东-开屏配置清理 = type=http-response,.*JingdongSplashConfig\.js\?v=24, requires-body=true/);
   assert.match(moduleText, /^京东-主页面启动流跳过 = type=http-request,/m);
 });
 
@@ -463,7 +474,7 @@ test('fixture: every blocked launch video carries the launch-player Referer and 
 test('README describes the reduced scope and keeps the one-click import link', () => {
   assert.match(
     readmeText,
-    /`Module\/JingdongAds\.sgmodule` \| 京东去开屏 \| AdBlock \| 清理京东开屏；可选拦截预加载，可能影响搜索视频/
+    /`Module\/JingdongAds\.sgmodule` \| 京东去开屏 \| AdBlock \| 清理京东开屏及疑似预加载视频，可能影响搜索视频/
   );
   assert.match(
     readmeText,

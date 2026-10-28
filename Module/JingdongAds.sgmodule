@@ -1,11 +1,11 @@
 #!name=京东去开屏
-#!desc=清理京东开屏；可选拦截预加载，可能影响搜索视频。v23
+#!desc=清理京东开屏及疑似预加载视频，可能影响搜索视频。v24
 #!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
 #!raw-url=https://raw.githubusercontent.com/ForestofTime/Surge/main/Module/JingdongAds.sgmodule
-#!arguments=search_preload:false
-#!arguments-desc=实验选项：将 search_preload 设为 true 可拦截疑似开屏预加载，但可能影响搜索页视频；false 关闭。
+#!arguments=search_preload:true
+#!arguments-desc=默认拦截疑似预加载，可能影响搜索页视频；将 search_preload 设为 false 可关闭。
 
 [Rule]
 # 正常模式禁用开屏素材主机的 QUIC，使请求回落到可由 Map Local 或脚本处理的 HTTP/2。
@@ -32,13 +32,13 @@ AND, ((PROTOCOL, UDP), (DOMAIN, storage.360buyimg.com)), REJECT
 
 [Script]
 # 社区开屏配置逻辑：兼容 URL/POST 入口和明文/Base64；脚本内校验开屏结构。
-京东-开屏配置清理 = type=http-response, pattern=^https?:\/\/api\.m\.jd\.com\/client\.action(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplashConfig.js?v=23, requires-body=true, max-size=2097152, timeout=10
+京东-开屏配置清理 = type=http-response, pattern=^https?:\/\/api\.m\.jd\.com\/client\.action(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplashConfig.js?v=24, requires-body=true, max-size=2097152, timeout=10
 # 三个主机的视频请求交脚本，脚本校验 UA、播放器及实验开关；默认主页面规则不变。
-京东-主页面启动视频跳过 = type=http-request, pattern=^https?:\/\/vod\.300hu\.com\/[^?]*\.(?:mp4|m3u8|ts)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=23, argument="{{{search_preload}}}", timeout=10
-京东-主页面启动流跳过 = type=http-request, pattern=^https?:\/\/discover\.300hu\.com\/[^?]*\.(?:mp4|m3u8|ts)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=23, argument="{{{search_preload}}}", timeout=10
-京东-启动素材视频回退跳过 = type=http-request, pattern=^https?:\/\/storage\.360buyimg\.com\/[^?]*\.(?:mp4|m3u8|ts)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=23, argument="{{{search_preload}}}", timeout=10
+京东-主页面启动视频跳过 = type=http-request, pattern=^https?:\/\/vod\.300hu\.com\/[^?]*\.(?:mp4|m3u8|ts)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=24, argument="{{{search_preload}}}", timeout=10
+京东-主页面启动流跳过 = type=http-request, pattern=^https?:\/\/discover\.300hu\.com\/[^?]*\.(?:mp4|m3u8|ts)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=24, argument="{{{search_preload}}}", timeout=10
+京东-启动素材视频回退跳过 = type=http-request, pattern=^https?:\/\/storage\.360buyimg\.com\/[^?]*\.(?:mp4|m3u8|ts)(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=24, argument="{{{search_preload}}}", timeout=10
 # AVIF 请求避开 GIF Map Local，由脚本返回透明 AVIF 二进制。
-京东-开屏图AVIF跳过 = type=http-request, pattern=^https?:\/\/(?:m|m\d\d?|img\d\d?|storage\d?\d?)\.360buyimg\.com\/mobilecms\/s(?:1125x2436|1170x2532|1242x2688|1284x2778|1290x2796|1320x2868)_jfs\/.*\.avif(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=23, binary-body-mode=true, timeout=10
+京东-开屏图AVIF跳过 = type=http-request, pattern=^https?:\/\/(?:m|m\d\d?|img\d\d?|storage\d?\d?)\.360buyimg\.com\/mobilecms\/s(?:1125x2436|1170x2532|1242x2688|1284x2778|1290x2796|1320x2868)_jfs\/.*\.avif(?:\?.*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/JingdongSplash.js?v=24, binary-body-mode=true, timeout=10
 
 [MITM]
 hostname = %APPEND% api.m.jd.com, dns.jd.com, m.360buyimg.com, m15.360buyimg.com, vod.300hu.com, discover.300hu.com, storage.360buyimg.com
