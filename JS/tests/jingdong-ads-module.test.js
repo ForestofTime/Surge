@@ -40,6 +40,30 @@ function runRequest(url, headers, argument) {
   return JSON.parse(JSON.stringify(runRawRequest(url, headers, argument)));
 }
 
+test('blocks JD native x- promotional video family without blocking foreign or other contexts', () => {
+  const headers = {
+    'User-Agent': 'JD4iPhone/16.1.50 CFNetwork/3896.200.61 Darwin/27.2.0',
+    Referer: 'x-',
+  };
+  const base = 'https://vod.300hu.com/101007/synthetic/rotating-creative';
+  const rule = sectionLines(moduleText, 'Script').find(line => line.startsWith('京东-主页面启动视频跳过'));
+  const pattern = new RegExp(rule.match(/pattern=(.*?), script-path=/)[1]);
+  for (const ext of ['mp4', 'm3u8', 'ts']) {
+    assert.equal(pattern.test(`${base}.${ext}?synthetic=1`), true, 'module must dispatch to the request script');
+    assert.deepEqual(runRequest(`${base}.${ext}?synthetic=1`, headers), { response: { status: 204 } });
+  }
+  for (const h of [
+    { ...headers, 'User-Agent': 'OtherApp/1 CFNetwork/3896' },
+    { ...headers, Referer: 'product-detail' },
+    { ...headers, Referer: '' },
+  ]) assert.deepEqual(runRequest(`${base}.mp4`, h), {});
+  for (const url of [
+    'https://jvod.300hu.com/101007/synthetic/rotating.mp4',
+    'https://vod.300hu.com.evil.test/101007/synthetic/rotating.mp4',
+    'https://vod.300hu.com/101007/synthetic/metadata.json',
+  ]) assert.deepEqual(runRequest(url, headers), {});
+});
+
 test('search-context preload requires an enabled argument for known video hosts', () => {
   const searchHeaders = {
     'User-Agent': 'CFNetwork;jdmall;iphone;version/16.1.50;build/synthetic',
@@ -81,7 +105,7 @@ test('module enables search preload by default and passes its configurable argum
   assert.equal(rules.length, 3);
   for (const rule of rules) {
     assert.match(rule, /argument="?\{\{\{search_preload\}\}\}"?/);
-    assert.match(rule, /JingdongSplash\.js\?v=24/);
+    assert.match(rule, /JingdongSplash\.js\?v=25/);
   }
 });
 
@@ -203,8 +227,8 @@ test('AVIF splash bypasses the GIF Map Local and receives actual AVIF bytes', ()
 
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
-  assert.match(moduleText, /清理京东开屏及疑似预加载视频，可能影响搜索视频/);
-  assert.match(moduleText, /v24$/m);
+  assert.match(moduleText, /清理京东开屏及疑似推广视频，可能影响搜索和商品视频/);
+  assert.match(moduleText, /v25$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m
@@ -222,8 +246,8 @@ test('publishes a splash-only native Surge module', () => {
   }
 
   assert.match(moduleText, /^京东-主页面启动视频跳过 = type=http-request,/m);
-  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=24/);
-  assert.match(moduleText, /京东-开屏配置清理 = type=http-response,.*JingdongSplashConfig\.js\?v=24, requires-body=true/);
+  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=25/);
+  assert.match(moduleText, /京东-开屏配置清理 = type=http-response,.*JingdongSplashConfig\.js\?v=25, requires-body=true/);
   assert.match(moduleText, /^京东-主页面启动流跳过 = type=http-request,/m);
 });
 
@@ -474,7 +498,7 @@ test('fixture: every blocked launch video carries the launch-player Referer and 
 test('README describes the reduced scope and keeps the one-click import link', () => {
   assert.match(
     readmeText,
-    /`Module\/JingdongAds\.sgmodule` \| 京东去开屏 \| AdBlock \| 清理京东开屏及疑似预加载视频，可能影响搜索视频/
+    /`Module\/JingdongAds\.sgmodule` \| 京东去开屏 \| AdBlock \| 清理京东开屏及疑似推广视频，可能影响搜索和商品视频/
   );
   assert.match(
     readmeText,
