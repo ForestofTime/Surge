@@ -40,6 +40,23 @@ function runRequest(url, headers, argument) {
   return JSON.parse(JSON.stringify(runRawRequest(url, headers, argument)));
 }
 
+test('November 1 shared material video is blocked in cart as well as the main page', () => {
+  const url = 'https://storage.360buyimg.com/material-video/video/rotating-campaign.mp4';
+  const headers = {
+    'User-Agent': 'CFNetwork;jdmall;iphone;version/16.1.81;build/synthetic',
+    Referer: 'play:avplayerSH_SCSCartContainerViewController_20_',
+  };
+  for (const ref of [headers.Referer, 'play:ijkplayerSH_SCSCartContainerViewController_42_']) {
+    assert.deepEqual(runRequest(url, { ...headers, Referer: ref }), { response: { status: 204 } });
+  }
+  for (const [candidate, h] of [
+    [url, { ...headers, 'User-Agent': 'OtherApp/1' }],
+    [url, { ...headers, Referer: 'play:avplayerProductDetail' }],
+    [url.replace('/material-video/video/', '/material-video/product/'), headers],
+    [url.replace('storage.360buyimg.com', 'storage.360buyimg.com.evil.test'), headers],
+  ]) assert.deepEqual(runRequest(candidate, h), {});
+});
+
 test('blocks JD native x- promotional video family without blocking foreign or other contexts', () => {
   const headers = {
     'User-Agent': 'JD4iPhone/16.1.50 CFNetwork/3896.200.61 Darwin/27.2.0',
@@ -105,7 +122,7 @@ test('module enables search preload by default and passes its configurable argum
   assert.equal(rules.length, 3);
   for (const rule of rules) {
     assert.match(rule, /argument="?\{\{\{search_preload\}\}\}"?/);
-    assert.match(rule, /JingdongSplash\.js\?v=25/);
+    assert.match(rule, /JingdongSplash\.js\?v=26/);
   }
 });
 
@@ -227,8 +244,8 @@ test('AVIF splash bypasses the GIF Map Local and receives actual AVIF bytes', ()
 
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
-  assert.match(moduleText, /清理京东开屏及疑似推广视频，可能影响搜索和商品视频/);
-  assert.match(moduleText, /v25$/m);
+  assert.match(moduleText, /清理京东开屏及疑似推广视频，可能影响搜索、购物车和商品视频/);
+  assert.match(moduleText, /v26$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m
@@ -246,8 +263,8 @@ test('publishes a splash-only native Surge module', () => {
   }
 
   assert.match(moduleText, /^京东-主页面启动视频跳过 = type=http-request,/m);
-  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=25/);
-  assert.match(moduleText, /京东-开屏配置清理 = type=http-response,.*JingdongSplashConfig\.js\?v=25, requires-body=true/);
+  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=26/);
+  assert.match(moduleText, /京东-开屏配置清理 = type=http-response,.*JingdongSplashConfig\.js\?v=26, requires-body=true/);
   assert.match(moduleText, /^京东-主页面启动流跳过 = type=http-request,/m);
 });
 
@@ -498,7 +515,7 @@ test('fixture: every blocked launch video carries the launch-player Referer and 
 test('README describes the reduced scope and keeps the one-click import link', () => {
   assert.match(
     readmeText,
-    /`Module\/JingdongAds\.sgmodule` \| 京东去开屏 \| AdBlock \| 清理京东开屏及疑似推广视频，可能影响搜索和商品视频/
+    /`Module\/JingdongAds\.sgmodule` \| 京东去开屏 \| AdBlock \| 清理京东开屏及疑似推广视频，可能影响搜索、购物车和商品视频/
   );
   assert.match(
     readmeText,
