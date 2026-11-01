@@ -1,4 +1,4 @@
-// 菜鸟淘宝小程序去广告 v10：返回成功空响应阻止旧广告缓存回退，并按展示结构过滤 mshow 促销内容。
+// 菜鸟淘宝小程序去广告：保留业务数据，定向清理红包模型和商品推广流。
 const TARGET_DNS_HOSTS = new Set([
   'guide-acs.m.taobao.com',
   'acs4miniapp-inner.m.taobao.com',
@@ -17,6 +17,8 @@ try {
     result = buildEmptyAdvertisementResponse(requestUrl);
   } else if (hasResponse && isAmdcRequest(requestUrl) && isTaobaoUserAgent(userAgent)) {
     result = cleanAmdcResponse(String($response.body || ''));
+  } else if (hasResponse && isScopedMiniFeedRequest(requestUrl, requestHeaders)) {
+    result = cleanMiniFeedResponse(requestUrl, String($response.body || ''));
   } else if (hasResponse && isBatchAdvertisementRequest(requestUrl)) {
     result = cleanBatchShowResponse(String($response.body || ''));
   } else if (hasResponse && isMshowRequest(requestUrl)) {
@@ -99,6 +101,44 @@ function queryParameter(url, name) {
     if (key === name) return separator < 0 ? '' : part.slice(separator + 1);
   }
   return '';
+}
+
+function isScopedMiniFeedRequest(url, headers) {
+  if (!/^https?:\/\/guide-acs4miniapp-inner\.m\.taobao\.com\/gw\/(?:mtop\.taote\.interaction\.ifgateway\.copper|mtop\.tmall\.kangaroo\.core\.service\.route\.aldlampservicefixedresv2)\/1\.0\/(?:\?|$)/i.test(url)) return false;
+  const key = Object.keys(headers || {}).find(k => k.toLowerCase() === 'x-appkey');
+  return !!key && String(headers[key]) === '21380790';
+}
+
+function cleanMiniFeedResponse(url, body) {
+  const raw = queryParameter(url, 'data');
+  if (!raw) return {};
+  const request = JSON.parse(decodeURIComponent(raw.replace(/\+/g, '%20')));
+  const payload = JSON.parse(body);
+  if (!payload || !payload.data || typeof payload.data !== 'object') return {};
+  if (/\/mtop\.taote\.interaction\.ifgateway\.copper\//i.test(url)) {
+    if (request.bizCode !== 'dailyRedPacket' || request.bizType !== 'dailyRedPacket') return {};
+    const models = typeof request.models === 'string' ? JSON.parse(request.models) : request.models;
+    if (!Array.isArray(models) || !models.some(item => item && item.assetType === 'biz-cainiaoMiniQuery')) return {};
+    if (!Array.isArray(payload.data.models)) return {};
+    const filtered = payload.data.models.filter(item => !(item && item.assetType === 'biz-cainiaoMiniQuery' && item.data && Array.isArray(item.data.awardBOList)));
+    if (filtered.length === payload.data.models.length) return {};
+    payload.data.models = filtered;
+    return { body: JSON.stringify(payload) };
+  }
+  if (String(request.bizId) !== '20240729' || String(request.resId) !== '38684820') return {};
+  const slot = payload.data.resultValue && payload.data.resultValue[String(request.resId)];
+  if (!slot || !Array.isArray(slot.data)) return {};
+  let changed = false;
+  for (const item of slot.data) {
+    const feed = item && item.commonChannelFeeds;
+    if (!feed || feed.name !== 'commonChannelFeeds' || !Array.isArray(feed.itemList) || feed.itemList.length === 0) continue;
+    feed.itemList = [];
+    changed = true;
+  }
+  if (!changed) return {};
+  if (typeof slot.bottom === 'string') slot.bottom = 'true';
+  else if (typeof slot.bottom === 'boolean') slot.bottom = true;
+  return { body: JSON.stringify(payload) };
 }
 
 function cleanAmdcResponse(body) {
