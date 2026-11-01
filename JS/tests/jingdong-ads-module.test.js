@@ -122,7 +122,7 @@ test('module enables search preload by default and passes its configurable argum
   assert.equal(rules.length, 3);
   for (const rule of rules) {
     assert.match(rule, /argument="?\{\{\{search_preload\}\}\}"?/);
-    assert.match(rule, /JingdongSplash\.js\?v=26/);
+    assert.match(rule, /JingdongSplash\.js\?v=27/);
   }
 });
 
@@ -244,8 +244,8 @@ test('AVIF splash bypasses the GIF Map Local and receives actual AVIF bytes', ()
 
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
-  assert.match(moduleText, /清理京东开屏及疑似推广视频，可能影响搜索、购物车和商品视频/);
-  assert.match(moduleText, /v26$/m);
+  assert.match(moduleText, /清理京东开屏及疑似素材，可能影响权益页大图、商品图和视频/);
+  assert.match(moduleText, /v27$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m
@@ -263,8 +263,8 @@ test('publishes a splash-only native Surge module', () => {
   }
 
   assert.match(moduleText, /^京东-主页面启动视频跳过 = type=http-request,/m);
-  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=26/);
-  assert.match(moduleText, /京东-开屏配置清理 = type=http-response,.*JingdongSplashConfig\.js\?v=26, requires-body=true/);
+  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=27/);
+  assert.match(moduleText, /京东-开屏配置清理 = type=http-response,.*JingdongSplashConfig\.js\?v=27, requires-body=true/);
   assert.match(moduleText, /^京东-主页面启动流跳过 = type=http-request,/m);
 });
 
@@ -324,7 +324,7 @@ test('HTTPDNS fallback maps only the two HAR-confirmed paths to an empty 404', (
 
 test('limits MITM to the confirmed splash delivery hosts', () => {
   assert.deepEqual(sectionLines(moduleText, 'MITM'), [
-    'hostname = %APPEND% api.m.jd.com, dns.jd.com, m.360buyimg.com, m15.360buyimg.com, vod.300hu.com, discover.300hu.com, storage.360buyimg.com',
+    'hostname = %APPEND% api.m.jd.com, dns.jd.com, m.360buyimg.com, m15.360buyimg.com, img30.360buyimg.com, vod.300hu.com, discover.300hu.com, storage.360buyimg.com',
     'tcp-connection = true',
   ]);
 });
@@ -515,7 +515,7 @@ test('fixture: every blocked launch video carries the launch-player Referer and 
 test('README describes the reduced scope and keeps the one-click import link', () => {
   assert.match(
     readmeText,
-    /`Module\/JingdongAds\.sgmodule` \| 京东去开屏 \| AdBlock \| 清理京东开屏及疑似推广视频，可能影响搜索、购物车和商品视频/
+    /`Module\/JingdongAds\.sgmodule` \| 京东去开屏 \| AdBlock \| 清理京东开屏及疑似素材，可能影响权益页大图、商品图和视频/
   );
   assert.match(
     readmeText,
