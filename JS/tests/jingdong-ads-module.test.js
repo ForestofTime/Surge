@@ -40,6 +40,20 @@ function runRequest(url, headers, argument) {
   return JSON.parse(JSON.stringify(runRawRequest(url, headers, argument)));
 }
 
+test('repeated native product prefetch is blocked across pages but foreign clients and paths pass', () => {
+  const url = 'https://jvod.300hu.com/vod/product/synthetic/rotating.mp4';
+  const jd = { 'User-Agent': 'JD4iPhone/16.1.81 CFNetwork/3896 Darwin/27.2' };
+  for (const extension of ['mp4', 'm3u8', 'ts']) {
+    assert.deepEqual(runRequest(url.replace('.mp4', '.' + extension), jd), { response: { status: 204 } });
+    assert.deepEqual(runRequest(url.replace('.mp4', '.' + extension), { 'User-Agent': 'ffmpeg/4;jdmall;iphone;version/16;build/test', Referer: 'any-page' }), { response: { status: 204 } });
+  }
+  assert.deepEqual(runRequest(url, { 'User-Agent': 'OtherApp/1' }), {});
+  assert.deepEqual(runRequest(url.replace('/vod/product/', '/vod/live/'), jd), {});
+  assert.deepEqual(runRequest(url.replace('jvod.300hu.com', 'jvod.300hu.com.evil.test'), jd), {});
+  const line = sectionLines(moduleText, 'Script').find(x => x.startsWith('京东-疑似商品视频跳过'));
+  assert.ok(line); assert.equal(new RegExp(line.match(/pattern=(.*?), script-path=/)[1]).test(url), true);
+});
+
 test('November 1 my-page player cannot download the rotating main-page promotional media', () => {
   const headers = {
     'User-Agent': 'CFNetwork;jdmall;iphone;version/16.1.81;build/synthetic',
@@ -56,7 +70,7 @@ test('November 1 my-page player cannot download the rotating main-page promotion
     assert.deepEqual(runRequest(url, { ...headers, 'User-Agent': 'OtherApp/1' }), {});
     for (const extension of ['m3u8', 'ts']) assert.deepEqual(runRequest(url.replace('.mp4', '.' + extension), headers), { response: { status: 204 } });
   }
-  for (const url of ['https://jvod.300hu.com/vod/product/rotating.mp4', 'https://storage.360buyimg.com/ordinary/video/rotating.mp4', 'https://vod.300hu.com/302/metadata.json']) {
+  for (const url of ['https://jvod.300hu.com/vod/live/rotating.mp4', 'https://storage.360buyimg.com/ordinary/video/rotating.mp4', 'https://vod.300hu.com/302/metadata.json']) {
     assert.deepEqual(runRequest(url, headers), {});
   }
 });
@@ -125,7 +139,7 @@ test('search-context preload requires an enabled argument for known video hosts'
     ]) assert.deepEqual(runRequest(url, headers, 'true'), {}, 'other playback contexts must pass');
   }
   for (const url of [
-    'https://jvod.300hu.com/vod/product/synthetic.mp4',
+    'https://jvod.300hu.com/vod/live/synthetic.mp4',
     'https://vod.300hu.com/100831/synthetic/metadata.json',
     'https://storage.360buyimg.com.evil.test/material-video/video/synthetic.mp4',
   ]) assert.deepEqual(runRequest(url, searchHeaders, 'true'), {}, 'business and unknown media must pass');
@@ -141,7 +155,7 @@ test('module enables search preload by default and passes its configurable argum
   assert.equal(rules.length, 3);
   for (const rule of rules) {
     assert.match(rule, /argument="?\{\{\{search_preload\}\}\}"?/);
-    assert.match(rule, /JingdongSplash\.js\?v=28/);
+    assert.match(rule, /JingdongSplash\.js\?v=29/);
   }
 });
 
@@ -255,7 +269,7 @@ test('AVIF splash bypasses the GIF Map Local and receives actual AVIF bytes', ()
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
   assert.match(moduleText, /清理京东开屏及疑似素材，可能影响权益页大图、商品图和视频/);
-  assert.match(moduleText, /v28$/m);
+  assert.match(moduleText, /v29$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m
@@ -273,8 +287,8 @@ test('publishes a splash-only native Surge module', () => {
   }
 
   assert.match(moduleText, /^京东-主页面启动视频跳过 = type=http-request,/m);
-  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=28/);
-  assert.match(moduleText, /京东-开屏配置清理 = type=http-response,.*JingdongSplashConfig\.js\?v=28, requires-body=true/);
+  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=29/);
+  assert.match(moduleText, /京东-开屏配置清理 = type=http-response,.*JingdongSplashConfig\.js\?v=29, requires-body=true/);
   assert.match(moduleText, /^京东-主页面启动流跳过 = type=http-request,/m);
 });
 
@@ -334,7 +348,7 @@ test('HTTPDNS fallback maps only the two HAR-confirmed paths to an empty 404', (
 
 test('limits MITM to the confirmed splash delivery hosts', () => {
   assert.deepEqual(sectionLines(moduleText, 'MITM'), [
-    'hostname = %APPEND% api.m.jd.com, dns.jd.com, m.360buyimg.com, m15.360buyimg.com, img30.360buyimg.com, vod.300hu.com, discover.300hu.com, storage.360buyimg.com',
+    'hostname = %APPEND% api.m.jd.com, dns.jd.com, m.360buyimg.com, m15.360buyimg.com, img30.360buyimg.com, vod.300hu.com, jvod.300hu.com, discover.300hu.com, storage.360buyimg.com',
     'tcp-connection = true',
   ]);
 });
@@ -385,7 +399,7 @@ test('short-circuits the new AVPlayer main-page launch video without matching pr
   );
 
   for (const [url, headers] of [
-    ['https://jvod.300hu.com/vod/product/path/product.mp4', launchHeaders],
+    ['https://jvod.300hu.com/vod/live/path/product.mp4', launchHeaders],
     ['https://vod.300hu.com/100831/path/product.mp4', { Referer: launchHeaders.Referer }],
   ]) {
     assert.deepEqual(runRequest(url, headers), {});
@@ -417,7 +431,7 @@ test('blocks rotating main-page launch-player suffixes while preserving product 
     Referer: 'play:ijkplayerSH_JDMainPageViewController_140_19_9_1',
   };
   for (const [url, headers] of [
-    ['https://jvod.300hu.com/vod/product/path/product.mp4', jdVideoHeaders],
+    ['https://jvod.300hu.com/vod/live/path/product.mp4', jdVideoHeaders],
     ['https://discover.300hu.com/explain-m3u8/live/stream.m3u8', { ...jdVideoHeaders, Referer: 'play:ijkplayerSH_DiscoverViewController_140_19_9_1' }],
     ['https://discover.300hu.com/explain-record/live/segment.ts', { ...jdVideoHeaders, Referer: 'play:ijkplayerSH_DiscoverViewController_140_19_9_1' }],
   ]) {
@@ -486,7 +500,7 @@ test('fixture: the old text stub is the documented cause of the still-visible sp
   assert.ok(rules.every((rule) => /data-type=tiny-gif/.test(rule)), 'decodable image instead');
 });
 
-test('fixture: the launch video script fired and product video passed through', () => {
+test('fixture: launch and repeated candidate product video are blocked', () => {
   const blocked = fixture.launchVideoEntries.filter((e) => matchedRequestScript(e));
   const passed = fixture.launchVideoEntries.filter((e) => !matchedRequestScript(e));
 
@@ -500,13 +514,12 @@ test('fixture: the launch video script fired and product video passed through', 
     );
   }
 
-  // 放行的那条是京东视频的普通广告片（UA 为 JD4iPhone/*，无启动播放器 Referer），
-  // 不是开屏 —— 必须继续放行，否则会误伤商品/内容视频。
+  // 用户明确接受误伤商品视频，已观察到的商品视频路径也做拦截。
   for (const entry of passed) {
     assert.deepEqual(
       runRequest(entry.url, entry.requestHeaders),
-      {},
-      'non-launch video must stay passthrough: ' + entry.url
+      { response: { status: 204 } },
+      'candidate product video must be blocked: ' + entry.url
     );
   }
 });
