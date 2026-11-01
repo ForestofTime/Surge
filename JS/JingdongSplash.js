@@ -9,6 +9,7 @@
  * 另处理京东原生客户端访问相同素材路径，可能影响正常商品视频。
  * 对已观察到的素材路径不限制页面，可影响购物车、我的及商品视频。
  * 可选实验会处理三个已知主机的搜索播放器视频，可能影响正常搜索视频。
+ * 重复下载的 jvod 商品视频路径也拦截，可能影响商品详情视频。
  * 不按创意 URL、文件名或素材 ID 判断；其他路径和直播请求透传。
  */
 
@@ -74,11 +75,12 @@ function isLaunchMediaRequest() {
     const searchPath = /^https?:\/\/(?:vod\.300hu\.com|discover\.300hu\.com|storage\.360buyimg\.com)\/[^?]*\.(?:mp4|m3u8|ts)(?:\?.*)?$/i.test(url);
     const materialPath = /^https?:\/\/storage\.360buyimg\.com\/material-video\/video\/[^?]+\.(?:mp4|m3u8|ts)(?:\?.*)?$/i.test(url);
     const nativeVodPath = /^https?:\/\/vod\.300hu\.com\/(?:vod\/)?\d+\/[^?]*\.(?:mp4|m3u8|ts)(?:\?.*)?$/i.test(url);
+    const productVideoPath = /^https?:\/\/jvod\.300hu\.com\/vod\/product\/[^?]+\.(?:mp4|m3u8|ts)(?:\?.*)?$/i.test(url);
     return (
       (JD_VIDEO_USER_AGENT.test(requestHeader('User-Agent')) &&
-      ((launchPath && LAUNCH_PLAYER_REFERER.test(referer)) || materialPath || nativeVodPath ||
+      ((launchPath && LAUNCH_PLAYER_REFERER.test(referer)) || materialPath || nativeVodPath || productVideoPath ||
        (searchPreload && searchPath && SEARCH_PLAYER_REFERER.test(referer)))) ||
-      ((nativeVodPath || materialPath) && JD_NATIVE_USER_AGENT.test(requestHeader('User-Agent')))
+      ((nativeVodPath || materialPath || productVideoPath) && JD_NATIVE_USER_AGENT.test(requestHeader('User-Agent')))
     );
   } catch (_) {
     return false;
