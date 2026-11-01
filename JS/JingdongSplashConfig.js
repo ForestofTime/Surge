@@ -52,11 +52,24 @@
         if (bodyMatch) functionId = decodeURIComponent(bodyMatch[1].replace(/\+/g, ' '));
       }
     }
-    if (functionId && !['start', 'startup', 'queryMaterialAdverts', 'basicConfig'].includes(functionId)) return $done({});
+    if (functionId && !['start', 'startup', 'queryMaterialAdverts', 'basicConfig', 'xview2Config'].includes(functionId)) return $done({});
     let payload, encoded = false;
     try { payload = JSON.parse(body); }
     catch (_) { payload = JSON.parse(decode(body)); encoded = true; }
     if (!plainObject(payload)) return $done({});
+    if (functionId === 'xview2Config') {
+      // 用户要求清除该活动的疑似开屏层；只过滤匹配活动名的层，其余业务层保留。
+      if (!plainObject(payload.data) || !Array.isArray(payload.data.targets)) return $done({});
+      let changed = false;
+      for (const target of payload.data.targets) {
+        if (!plainObject(target) || !Array.isArray(target.layers)) continue;
+        const remaining = target.layers.filter(layer => !plainObject(layer) || typeof layer.name !== 'string' || !layer.name.includes('多买多返'));
+        if (remaining.length !== target.layers.length) { target.layers = remaining; changed = true; }
+      }
+      if (!changed) return $done({});
+      const result = JSON.stringify(payload);
+      return $done({ body: encoded ? encode(result) : result });
+    }
     if (functionId === 'basicConfig') {
       // 只修改已存在的三个控制字段，保留其它 DNS、业务和通知设置。
       const paths = [

@@ -1,23 +1,21 @@
 /**
  * 京东 App 开屏媒体请求跳过
  *
- * 仅处理 HAR 已确认的主页面启动播放器请求：
+ * 处理 HAR 中观察到的疑似广告路径及播放器请求：
  *   vod.300hu.com 数字业务路径 MP4、storage.360buyimg.com 的 material-video/video MP4，
  *   或 discover.300hu.com 的 M3U8/TS；
- *   同时要求京东视频 UA + 主页面启动播放器 Referer。
+ *   已知素材路径要求京东视频 UA，不限制页面；其他流要求主页面播放器 Referer。
  * 不依赖 Referer 后缀中会轮换的场景数字。
- * 另处理 vod 主机上京东原生客户端 x- 上下文的视频，可能影响正常商品视频。
- * 购物车也会下载首页拦截过的相同 material-video，故同时处理该上下文。
+ * 另处理京东原生客户端访问相同素材路径，可能影响正常商品视频。
+ * 对已观察到的素材路径不限制页面，可影响购物车、我的及商品视频。
  * 可选实验会处理三个已知主机的搜索播放器视频，可能影响正常搜索视频。
- * 不按创意 URL、文件名或素材 ID 判断，其他上下文和直播请求透传。
+ * 不按创意 URL、文件名或素材 ID 判断；其他路径和直播请求透传。
  */
 
 const LAUNCH_PLAYER_REFERER =
   /^play:(?:ijkplayer|avplayer)SH_JDMainPageViewController_/i;
 const SEARCH_PLAYER_REFERER =
   /^play:(?:ijkplayer|avplayer)SH_FinalSearchListViewController_/i;
-const CART_PLAYER_REFERER =
-  /^play:(?:ijkplayer|avplayer)SH_SCSCartContainerViewController_/i;
 const JD_VIDEO_USER_AGENT =
   /^(?:ffmpeg\/[^;]+|CFNetwork(?:\/[^;]+)?);jdmall;(?:iphone|ipad);/i;
 const JD_NATIVE_USER_AGENT = /^JD4iPhone\/[^\s]+\s+CFNetwork\//i;
@@ -74,14 +72,13 @@ function isLaunchMediaRequest() {
       /^https?:\/\/storage\.360buyimg\.com\/material-video\/video\/[^?]+\.mp4(?:\?.*)?$/i.test(url) ||
       /^https?:\/\/discover\.300hu\.com\/.*\.(?:m3u8|ts)(?:\?.*)?$/i.test(url);
     const searchPath = /^https?:\/\/(?:vod\.300hu\.com|discover\.300hu\.com|storage\.360buyimg\.com)\/[^?]*\.(?:mp4|m3u8|ts)(?:\?.*)?$/i.test(url);
-    const cartMaterialPath = /^https?:\/\/storage\.360buyimg\.com\/material-video\/video\/[^?]+\.mp4(?:\?.*)?$/i.test(url);
+    const materialPath = /^https?:\/\/storage\.360buyimg\.com\/material-video\/video\/[^?]+\.(?:mp4|m3u8|ts)(?:\?.*)?$/i.test(url);
     const nativeVodPath = /^https?:\/\/vod\.300hu\.com\/(?:vod\/)?\d+\/[^?]*\.(?:mp4|m3u8|ts)(?:\?.*)?$/i.test(url);
     return (
       (JD_VIDEO_USER_AGENT.test(requestHeader('User-Agent')) &&
-      ((launchPath && LAUNCH_PLAYER_REFERER.test(referer)) ||
-       (cartMaterialPath && CART_PLAYER_REFERER.test(referer)) ||
+      ((launchPath && LAUNCH_PLAYER_REFERER.test(referer)) || materialPath || nativeVodPath ||
        (searchPreload && searchPath && SEARCH_PLAYER_REFERER.test(referer)))) ||
-      (nativeVodPath && JD_NATIVE_USER_AGENT.test(requestHeader('User-Agent')) && referer === 'x-')
+      ((nativeVodPath || materialPath) && JD_NATIVE_USER_AGENT.test(requestHeader('User-Agent')))
     );
   } catch (_) {
     return false;
