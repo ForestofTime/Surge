@@ -28,6 +28,22 @@ function cleared(input, expected, url, method, requestBody) {
   assert.deepEqual(JSON.parse(result.body), expected);
 }
 
+test('xview campaign layers are removed across targets while unrelated layers remain', () => {
+  const input = { code: 0, data: { targets: [
+    { targetName: 'JDMainPageViewController', layers: [{ name: '多买多返-1', renderData: { keep: 1 } }, { name: '订单提示', order: 4 }], targetId: 34 },
+    { targetName: 'MyJdHomeViewController', layers: [{ name: '多买多返-2' }, { name: '物流提醒' }], targetId: 90 },
+    { targetName: 'FinalSearchListViewController', layers: [{ name: '多买多返' }, { name: '搜索入口' }] },
+  ], untouched: { orderCount: 4 } }, message: '成功' };
+  const expected = structuredClone(input);
+  expected.data.targets[0].layers.shift(); expected.data.targets[1].layers.shift(); expected.data.targets[2].layers.shift();
+  for (const [url, method, body] of [
+    ['https://api.m.jd.com/client.action?functionId=xview2Config', 'GET', undefined],
+    ['https://api.m.jd.com/client.action', 'POST', 'functionId=xview2Config&client=apple'],
+  ]) cleared(input, expected, url, method, body);
+  assert.deepEqual(run(JSON.stringify(input), 'https://api.m.jd.com/client.action?functionId=another'), {});
+  assert.deepEqual(run(JSON.stringify({ data: { targets: [{ targetName: 'JDMainPageViewController', layers: [{ name: '物流提醒' }] }] } }), 'https://api.m.jd.com/client.action?functionId=xview2Config'), {});
+});
+
 test('known splash functions clear images and daily display count without altering sibling business fields', () => {
   for (const functionId of ['start', 'startup', 'queryMaterialAdverts']) {
     const input = { code: 0, images: [{ imageUrl: 'https://example.test/splash.jpg' }], showTimesDaily: 3, orders: { unpaid: 2 }, token: 'synthetic' };

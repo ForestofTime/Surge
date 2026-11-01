@@ -40,6 +40,27 @@ function runRequest(url, headers, argument) {
   return JSON.parse(JSON.stringify(runRawRequest(url, headers, argument)));
 }
 
+test('November 1 my-page player cannot download the rotating main-page promotional media', () => {
+  const headers = {
+    'User-Agent': 'CFNetwork;jdmall;iphone;version/16.1.81;build/synthetic',
+    Referer: 'play:avplayerSH_MyJdHomeViewController_20_',
+  };
+  const storage = 'https://storage.360buyimg.com/material-video/video/rotating.mp4';
+  const vod = 'https://vod.300hu.com/302/synthetic/rotating.mp4';
+  for (const url of [storage, vod]) {
+    assert.deepEqual(runRequest(url, headers), { response: { status: 204 } });
+    assert.deepEqual(runRequest(url, { ...headers, Referer: 'play:ijkplayerSH_MyJdHomeViewController_55_' }), { response: { status: 204 } });
+    assert.deepEqual(runRequest(url, { ...headers, Referer: 'play:avplayerProductDetail' }), { response: { status: 204 } });
+    assert.deepEqual(runRequest(url, { 'User-Agent': headers['User-Agent'] }), { response: { status: 204 } });
+    assert.deepEqual(runRequest(url, { 'User-Agent': 'JD4iPhone/16.1.81 CFNetwork/3896.200.61 Darwin/27.2.0' }), { response: { status: 204 } });
+    assert.deepEqual(runRequest(url, { ...headers, 'User-Agent': 'OtherApp/1' }), {});
+    for (const extension of ['m3u8', 'ts']) assert.deepEqual(runRequest(url.replace('.mp4', '.' + extension), headers), { response: { status: 204 } });
+  }
+  for (const url of ['https://jvod.300hu.com/vod/product/rotating.mp4', 'https://storage.360buyimg.com/ordinary/video/rotating.mp4', 'https://vod.300hu.com/302/metadata.json']) {
+    assert.deepEqual(runRequest(url, headers), {});
+  }
+});
+
 test('November 1 shared material video is blocked in cart as well as the main page', () => {
   const url = 'https://storage.360buyimg.com/material-video/video/rotating-campaign.mp4';
   const headers = {
@@ -51,13 +72,12 @@ test('November 1 shared material video is blocked in cart as well as the main pa
   }
   for (const [candidate, h] of [
     [url, { ...headers, 'User-Agent': 'OtherApp/1' }],
-    [url, { ...headers, Referer: 'play:avplayerProductDetail' }],
     [url.replace('/material-video/video/', '/material-video/product/'), headers],
     [url.replace('storage.360buyimg.com', 'storage.360buyimg.com.evil.test'), headers],
   ]) assert.deepEqual(runRequest(candidate, h), {});
 });
 
-test('blocks JD native x- promotional video family without blocking foreign or other contexts', () => {
+test('blocks JD native promotional video family across contexts without blocking foreign clients', () => {
   const headers = {
     'User-Agent': 'JD4iPhone/16.1.50 CFNetwork/3896.200.61 Darwin/27.2.0',
     Referer: 'x-',
@@ -71,9 +91,8 @@ test('blocks JD native x- promotional video family without blocking foreign or o
   }
   for (const h of [
     { ...headers, 'User-Agent': 'OtherApp/1 CFNetwork/3896' },
-    { ...headers, Referer: 'product-detail' },
-    { ...headers, Referer: '' },
   ]) assert.deepEqual(runRequest(`${base}.mp4`, h), {});
+  for (const referer of ['product-detail', '']) assert.deepEqual(runRequest(`${base}.mp4`, { ...headers, Referer: referer }), { response: { status: 204 } });
   for (const url of [
     'https://jvod.300hu.com/101007/synthetic/rotating.mp4',
     'https://vod.300hu.com.evil.test/101007/synthetic/rotating.mp4',
@@ -87,8 +106,8 @@ test('search-context preload requires an enabled argument for known video hosts'
     Referer: 'play:avplayerSH_FinalSearchListViewController_20_',
   };
   const urls = [
-    'https://vod.300hu.com/100831/synthetic/campaign.mp4',
-    'https://storage.360buyimg.com/material-video/video/synthetic.mp4?source=test',
+    'https://vod.300hu.com/ordinary/synthetic/campaign.mp4',
+    'https://storage.360buyimg.com/ordinary/video/synthetic.mp4?source=test',
   ];
   for (const url of urls) {
     for (const argument of [undefined, '', 'false', '0', 'invalid', 'TRUEish']) {
@@ -112,7 +131,7 @@ test('search-context preload requires an enabled argument for known video hosts'
   ]) assert.deepEqual(runRequest(url, searchHeaders, 'true'), {}, 'business and unknown media must pass');
   const launch = { ...searchHeaders, Referer: 'play:avplayerSH_JDMainPageViewController_20_' };
   for (const argument of [undefined, 'false', 'true', 'invalid']) {
-    assert.deepEqual(runRequest(urls[0], launch, argument), { response: { status: 204 } }, 'existing launch rule remains active');
+    assert.deepEqual(runRequest('https://vod.300hu.com/100831/synthetic/campaign.mp4', launch, argument), { response: { status: 204 } }, 'existing launch rule remains active');
   }
 });
 
@@ -122,7 +141,7 @@ test('module enables search preload by default and passes its configurable argum
   assert.equal(rules.length, 3);
   for (const rule of rules) {
     assert.match(rule, /argument="?\{\{\{search_preload\}\}\}"?/);
-    assert.match(rule, /JingdongSplash\.js\?v=27/);
+    assert.match(rule, /JingdongSplash\.js\?v=28/);
   }
 });
 
@@ -132,7 +151,7 @@ test('module default blocks search preload while the false override restores pla
     'User-Agent': 'CFNetwork;jdmall;iphone;version/16.1.50;build/synthetic',
     Referer: 'play:avplayerSH_FinalSearchListViewController_20_',
   };
-  const url = 'https://storage.360buyimg.com/material-video/video/synthetic.mp4';
+  const url = 'https://storage.360buyimg.com/ordinary/video/synthetic.mp4';
   assert.deepEqual(runRequest(url, headers, defaultArgument), { response: { status: 204 } });
   assert.deepEqual(runRequest(url, headers, 'false'), {});
 });
@@ -175,9 +194,6 @@ test('October 8 launch MP4 fallback under /vod/numeric is handled while business
   assert.equal(new RegExp(pattern).test(url), true, 'module must dispatch the new launch path');
   assert.deepEqual(runRequest(url, headers), { response: { status: 204 } });
   for (const [otherUrl, otherHeaders] of [
-    [url, { ...headers, Referer: 'play:ijkplayerProductDetail' }],
-    [url, { ...headers, Referer: 'play:ijkplayerSH_DiscoverViewController_24_' }],
-    [url, { 'User-Agent': 'JD4iPhone/16.0.70 CFNetwork/3896.200.52 Darwin/27.2.0' }],
     [url.replace('/vod/24/', '/vod/product/'), headers],
     [url.replace('vod.300hu', 'jvod.300hu'), headers],
   ]) {
@@ -196,15 +212,9 @@ test('October 26 storage material-video fallback requires the JD launch-player c
     assert.deepEqual(runRequest(candidate, launchHeaders), { response: { status: 204 } }, 'rotating launch material path must be handled');
   }
   for (const [candidate, headers] of [
-    [url, { ...launchHeaders, Referer: 'play:avplayerProductDetail' }],
-    [url, { ...launchHeaders, Referer: 'play:avplayerSH_DiscoverViewController_20_' }],
-    [url, { 'User-Agent': launchHeaders['User-Agent'] }],
     [url, { Referer: launchHeaders.Referer }],
-    [url, { ...launchHeaders, 'User-Agent': 'JD4iPhone/16.1.0 CFNetwork/1 Darwin/1' }],
     [url.replace('storage.', 'storage2.'), launchHeaders],
     [url.replace('/material-video/video/', '/material-video/product/'), launchHeaders],
-    [url.replace('.mp4', '.m3u8'), launchHeaders],
-    [url.replace('.mp4', '.ts'), launchHeaders],
     [url.replace('.mp4', ''), launchHeaders],
     ['https://storage.360buyimg.com/material-video/video/', launchHeaders],
     ['https://storage.360buyimg.com/material-video/video/?source=synthetic', launchHeaders],
@@ -245,7 +255,7 @@ test('AVIF splash bypasses the GIF Map Local and receives actual AVIF bytes', ()
 test('publishes a splash-only native Surge module', () => {
   assert.match(moduleText, /^#!name=京东去开屏$/m);
   assert.match(moduleText, /清理京东开屏及疑似素材，可能影响权益页大图、商品图和视频/);
-  assert.match(moduleText, /v27$/m);
+  assert.match(moduleText, /v28$/m);
   assert.match(
     moduleText,
     /^#!raw-url=https:\/\/raw\.githubusercontent\.com\/ForestofTime\/Surge\/main\/Module\/JingdongAds\.sgmodule$/m
@@ -263,8 +273,8 @@ test('publishes a splash-only native Surge module', () => {
   }
 
   assert.match(moduleText, /^京东-主页面启动视频跳过 = type=http-request,/m);
-  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=27/);
-  assert.match(moduleText, /京东-开屏配置清理 = type=http-response,.*JingdongSplashConfig\.js\?v=27, requires-body=true/);
+  assert.match(moduleText, /\/JS\/JingdongSplash\.js\?v=28/);
+  assert.match(moduleText, /京东-开屏配置清理 = type=http-response,.*JingdongSplashConfig\.js\?v=28, requires-body=true/);
   assert.match(moduleText, /^京东-主页面启动流跳过 = type=http-request,/m);
 });
 
@@ -340,7 +350,6 @@ test('only short-circuits the HAR-confirmed JD main-page launch-player video req
   );
 
   for (const [url, headers] of [
-    ['https://vod.300hu.com/1030/path/ordinary.mp4', { ...launchHeaders, Referer: 'play:ijkplayerProductDetail' }],
     ['https://vod.300hu.com/record/multibitrate/stream.m3u8', launchHeaders],
     ['https://vod.300hu.com/1030/path/creative.mp4', { Referer: launchHeaders.Referer }],
     ['https://example.com/1030/path/creative.mp4', launchHeaders],
@@ -376,7 +385,6 @@ test('short-circuits the new AVPlayer main-page launch video without matching pr
   );
 
   for (const [url, headers] of [
-    ['https://vod.300hu.com/100831/path/product.mp4', { ...launchHeaders, Referer: 'play:avplayerProductDetail' }],
     ['https://jvod.300hu.com/vod/product/path/product.mp4', launchHeaders],
     ['https://vod.300hu.com/100831/path/product.mp4', { Referer: launchHeaders.Referer }],
   ]) {
@@ -409,7 +417,6 @@ test('blocks rotating main-page launch-player suffixes while preserving product 
     Referer: 'play:ijkplayerSH_JDMainPageViewController_140_19_9_1',
   };
   for (const [url, headers] of [
-    ['https://vod.300hu.com/2048/path/product.mp4', { ...jdVideoHeaders, Referer: 'play:ijkplayerProductDetail' }],
     ['https://jvod.300hu.com/vod/product/path/product.mp4', jdVideoHeaders],
     ['https://discover.300hu.com/explain-m3u8/live/stream.m3u8', { ...jdVideoHeaders, Referer: 'play:ijkplayerSH_DiscoverViewController_140_19_9_1' }],
     ['https://discover.300hu.com/explain-record/live/segment.ts', { ...jdVideoHeaders, Referer: 'play:ijkplayerSH_DiscoverViewController_140_19_9_1' }],
