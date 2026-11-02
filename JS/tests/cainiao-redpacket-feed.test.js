@@ -46,3 +46,19 @@ test('module dispatches both routes with response bodies', () => {
   const pattern = new RegExp(line.match(/pattern=(.*?), script-path=/)[1]);
   assert.equal(pattern.test(url(copper, reward)), true); assert.equal(pattern.test(url(feed, goods)), true);
 });
+
+test('marketing visibility-only switches are explicitly disabled while service arrays remain', () => {
+  const input = { data: { '2454': [{ materialContentMapper: { visible: 'true', advRecGmtModifiedTime: 'synthetic' } }], '2531': [{ materialContentMapper: { visible: true } }], '954': [{ materialContentMapper: { icon: 'pickup', title: '取包裹' } }] } };
+  const out = run('https://netflow-mtop.cainiao.com/gw/mtop.cainiao.guoguo.nbnetflow.ads.mshow/1.0/', input);
+  assert.equal(out.data['2454'][0].materialContentMapper.visible, 'false');
+  assert.equal(out.data['2531'][0].materialContentMapper.visible, false);
+  assert.deepEqual(out.data['954'], input.data['954']);
+});
+
+test('native-proxy routes on other known MTop hosts receive the same narrow filter', () => {
+  const input = { data: { models: [{ assetType: 'biz-cainiaoMiniQuery', data: { awardBOList: [1] } }] } };
+  for (const h of ['acs.m.taobao.com', 'guide-acs.m.taobao.com', 'acs4miniapp-inner.m.taobao.com']) {
+    const out = run(url(copper, reward).replace('guide-acs4miniapp-inner.m.taobao.com', h), input);
+    assert.deepEqual(out.data.models, []);
+  }
+});
