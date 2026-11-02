@@ -165,7 +165,7 @@ function removeTargetDnsEntries(payload) {
     const filtered = payload.dns.filter((entry) => {
       if (!entry || typeof entry !== 'object') return true;
       const host = entry.host || entry.domain || entry.hostname;
-      return !TARGET_DNS_HOSTS.has(String(host || '').toLowerCase());
+      return !TARGET_DNS_HOSTS.has(String(host || '').toLowerCase()) && !isSharedNativeRoute(host, entry);
     });
     if (filtered.length === payload.dns.length) return false;
     payload.dns = filtered;
@@ -175,7 +175,7 @@ function removeTargetDnsEntries(payload) {
   if (typeof payload.dns === 'object') {
     let changed = false;
     for (const key of Object.keys(payload.dns)) {
-      if (!TARGET_DNS_HOSTS.has(key.toLowerCase())) continue;
+      if (!TARGET_DNS_HOSTS.has(key.toLowerCase()) && !isSharedNativeRoute(key, payload.dns[key])) continue;
       delete payload.dns[key];
       changed = true;
     }
@@ -183,6 +183,13 @@ function removeTargetDnsEntries(payload) {
   }
 
   return false;
+}
+
+function isSharedNativeRoute(host, entry) {
+  if (String(host || '').toLowerCase() !== 'acs.m.taobao.com' || !entry || !Array.isArray(entry.servers)) return false;
+  return entry.servers.some(server => Array.isArray(server && server.channels) && server.channels.some(channel =>
+    Array.isArray(channel && channel.attributes) && channel.attributes.some(attribute =>
+      attribute && (attribute.publickey === 'acs' || /^(?:http3|spdy)$/i.test(String(attribute.protocol || ''))))));
 }
 
 function cleanMshowResponse(body) {
