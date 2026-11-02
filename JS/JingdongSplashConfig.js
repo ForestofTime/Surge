@@ -35,6 +35,18 @@
   function plainObject(value) {
     return value !== null && typeof value === 'object' && !Array.isArray(value);
   }
+  function promotionalFullscreenLayer(layer) {
+    if (!plainObject(layer) || typeof layer.name !== 'string') return false;
+    if (layer.name.includes('多买多返')) return true;
+    if (/登录|隐私|协议|支付|订单|物流|认证|安全/.test(layer.name)) return false;
+    if (!/红包|优惠券|弹窗|推广|权益|CPS|新客|拉新|新人/.test(layer.name)) return false;
+    const layout = layer.layout;
+    if (Number(layer.renderType) !== 6 || !plainObject(layout) || !plainObject(layer.renderData)) return false;
+    const w = Number(layout.screenWidth), h = Number(layout.screenHeight);
+    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return false;
+    return Number(layout.width) >= w * 0.9 && Number(layout.height) >= h * 0.9
+      && /^https:\/\/storage\.360buyimg\.com\/xview\//i.test(String(layer.renderData.url || ''));
+  }
   try {
     const url = String($request.url || '');
     if (!/^https?:\/\/api\.m\.jd\.com\/client\.action(?:\?|$)/i.test(url)) return $done({});
@@ -58,12 +70,12 @@
     catch (_) { payload = JSON.parse(decode(body)); encoded = true; }
     if (!plainObject(payload)) return $done({});
     if (functionId === 'xview2Config') {
-      // 用户要求清除该活动的疑似开屏层；只过滤匹配活动名的层，其余业务层保留。
+      // 用户接受过滤疑似组合开屏：按全屏布局、资源包及促销标记判定，保留业务层。
       if (!plainObject(payload.data) || !Array.isArray(payload.data.targets)) return $done({});
       let changed = false;
       for (const target of payload.data.targets) {
         if (!plainObject(target) || !Array.isArray(target.layers)) continue;
-        const remaining = target.layers.filter(layer => !plainObject(layer) || typeof layer.name !== 'string' || !layer.name.includes('多买多返'));
+        const remaining = target.layers.filter(layer => !promotionalFullscreenLayer(layer));
         if (remaining.length !== target.layers.length) { target.layers = remaining; changed = true; }
       }
       if (!changed) return $done({});
