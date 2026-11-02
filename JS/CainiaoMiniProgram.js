@@ -104,7 +104,7 @@ function queryParameter(url, name) {
 }
 
 function isScopedMiniFeedRequest(url, headers) {
-  if (!/^https?:\/\/guide-acs4miniapp-inner\.m\.taobao\.com\/gw\/(?:mtop\.taote\.interaction\.ifgateway\.copper|mtop\.tmall\.kangaroo\.core\.service\.route\.aldlampservicefixedresv2)\/1\.0\/(?:\?|$)/i.test(url)) return false;
+  if (!/^https?:\/\/(?:guide-acs\.m\.taobao\.com|acs4miniapp-inner\.m\.taobao\.com|guide-acs4miniapp-inner\.m\.taobao\.com|acs\.m\.taobao\.com|netflow-mtop\.cainiao\.com|netflow-reply-mtop\.cainiao\.com)\/gw\/(?:mtop\.taote\.interaction\.ifgateway\.copper|mtop\.tmall\.kangaroo\.core\.service\.route\.aldlampservicefixedresv2)\/1\.0\/(?:\?|$)/i.test(url)) return false;
   const key = Object.keys(headers || {}).find(k => k.toLowerCase() === 'x-appkey');
   return !!key && String(headers[key]) === '21380790';
 }
@@ -194,6 +194,14 @@ function cleanMshowResponse(body) {
   let changed = false;
   for (const key of Object.keys(payload.data)) {
     if (!/^\d+$/.test(key) || !Array.isArray(payload.data[key])) continue;
+    for (const item of payload.data[key]) {
+      const mapper = item && item.materialContentMapper;
+      if (!mapper || typeof mapper !== 'object' || Array.isArray(mapper)) continue;
+      const fields = Object.keys(mapper).filter(k => k !== 'advRecGmtModifiedTime');
+      if (fields.length !== 1 || fields[0] !== 'visible') continue;
+      if (mapper.visible === 'true') { mapper.visible = 'false'; changed = true; }
+      else if (mapper.visible === true) { mapper.visible = false; changed = true; }
+    }
     const filtered = payload.data[key].filter((item) => !hasPromotionalPresentation(item));
     if (filtered.length === payload.data[key].length) continue;
     payload.data[key] = filtered;

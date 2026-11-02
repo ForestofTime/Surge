@@ -1,5 +1,5 @@
 #!name=菜鸟淘宝小程序去广告
-#!desc=清理菜鸟小程序广告与 HTTPDNS，保留包裹和取寄件。v11
+#!desc=清理菜鸟小程序广告与 HTTPDNS，保留包裹和取寄件。v12
 #!author=ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
@@ -13,16 +13,16 @@ DOMAIN,netflow-reply-mtop.cainiao.com,REJECT,extended-matching,pre-matching
 
 [Script]
 # 仅处理菜鸟淘宝小程序 appkey。响应为 base64 JSON 时保持 base64 编码，只移除五个已确认的 MTop 直连域名。
-菜鸟小程序-HTTPDNS清理 = type=http-response, pattern=^https?:\/\/(?:amdc\.m\.taobao\.com|(?:\d+\.){3}\d+)(?::\d+)?\/amdc\/mobileDispatch\?(?:[^&#]*&)*appkey=21380790(?:&[^#]*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CainiaoMiniProgram.js?v=11, requires-body=true, max-size=1048576, timeout=10
+菜鸟小程序-HTTPDNS清理 = type=http-response, pattern=^https?:\/\/(?:amdc\.m\.taobao\.com|(?:\d+\.){3}\d+)(?::\d+)?\/amdc\/mobileDispatch\?(?:[^&#]*&)*appkey=21380790(?:&[^#]*)?$, script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CainiaoMiniProgram.js?v=12, requires-body=true, max-size=1048576, timeout=10
 
 # show、show.login 与 batch.show 在发网前返回标准 MTop 成功空响应，阻止 FAIL_SYS_NETWORK_ERROR 触发持久缓存回退。
-菜鸟小程序-广告请求置空 = type=http-request, pattern=^https?:\/\/(?:guide-acs\.m\.taobao\.com|acs4miniapp-inner\.m\.taobao\.com|guide-acs4miniapp-inner\.m\.taobao\.com|acs\.m\.taobao\.com|netflow-mtop\.cainiao\.com|netflow-reply-mtop\.cainiao\.com)\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.(?:show(?:\.login)?|batch\.show)(?:\/|\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CainiaoMiniProgram.js?v=11, timeout=10
+菜鸟小程序-广告请求置空 = type=http-request, pattern=^https?:\/\/(?:guide-acs\.m\.taobao\.com|acs4miniapp-inner\.m\.taobao\.com|guide-acs4miniapp-inner\.m\.taobao\.com|acs\.m\.taobao\.com|netflow-mtop\.cainiao\.com|netflow-reply-mtop\.cainiao\.com)\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.(?:show(?:\.login)?|batch\.show)(?:\/|\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CainiaoMiniProgram.js?v=12, timeout=10
 
 # mshow 保留取件、寄件、服务入口等业务数组，移除悬浮、全图横幅、组合横幅和纯促销角标结构；其余广告接口响应继续作为回退兜底。
-菜鸟小程序-广告位过滤 = type=http-response, pattern=^https?:\/\/(?:guide-acs\.m\.taobao\.com|acs4miniapp-inner\.m\.taobao\.com|guide-acs4miniapp-inner\.m\.taobao\.com|acs\.m\.taobao\.com|netflow-mtop\.cainiao\.com|netflow-reply-mtop\.cainiao\.com)\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.(?:mshow(?:\.cn)?|show(?:\.login)?|batch\.show)(?:\/|\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CainiaoMiniProgram.js?v=11, requires-body=true, max-size=1048576, timeout=10
+菜鸟小程序-广告位过滤 = type=http-response, pattern=^https?:\/\/(?:guide-acs\.m\.taobao\.com|acs4miniapp-inner\.m\.taobao\.com|guide-acs4miniapp-inner\.m\.taobao\.com|acs\.m\.taobao\.com|netflow-mtop\.cainiao\.com|netflow-reply-mtop\.cainiao\.com)\/gw\/mtop\.cainiao\.guoguo\.nbnetflow\.ads\.(?:mshow(?:\.cn)?|show(?:\.login)?|batch\.show)(?:\/|\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CainiaoMiniProgram.js?v=12, requires-body=true, max-size=1048576, timeout=10
 
 # 共享接口只处理菜鸟红包模型及抓包确认的底部商品流；脚本内再核验请求和响应结构。
-菜鸟小程序-红包商品流过滤 = type=http-response, pattern=^https?:\/\/guide-acs4miniapp-inner\.m\.taobao\.com\/gw\/(?:mtop\.taote\.interaction\.ifgateway\.copper|mtop\.tmall\.kangaroo\.core\.service\.route\.aldlampservicefixedresv2)\/1\.0\/(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CainiaoMiniProgram.js?v=11, requires-body=true, max-size=1048576, timeout=10
+菜鸟小程序-红包商品流过滤 = type=http-response, pattern=^https?:\/\/(?:guide-acs\.m\.taobao\.com|acs4miniapp-inner\.m\.taobao\.com|guide-acs4miniapp-inner\.m\.taobao\.com|acs\.m\.taobao\.com|netflow-mtop\.cainiao\.com|netflow-reply-mtop\.cainiao\.com)\/gw\/(?:mtop\.taote\.interaction\.ifgateway\.copper|mtop\.tmall\.kangaroo\.core\.service\.route\.aldlampservicefixedresv2)\/1\.0\/(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/CainiaoMiniProgram.js?v=12, requires-body=true, max-size=1048576, timeout=10
 
 [MITM]
 hostname = %APPEND% guide-acs.m.taobao.com, acs4miniapp-inner.m.taobao.com, guide-acs4miniapp-inner.m.taobao.com, acs.m.taobao.com, netflow-mtop.cainiao.com, netflow-reply-mtop.cainiao.com
