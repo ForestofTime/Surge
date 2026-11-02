@@ -28,6 +28,16 @@ function cleared(input, expected, url, method, requestBody) {
   assert.deepEqual(JSON.parse(result.body), expected);
 }
 
+test('full-screen promotional XView packages are removed while business and small layers remain', () => {
+  const full = { renderType: 6, renderData: { url: 'https://storage.360buyimg.com/xview/11/2026/rotating.zip' }, layout: { width: 750, height: 1334, screenWidth: 750, screenHeight: 1334 } };
+  const ad = { ...full, name: '新人红包弹窗' };
+  const business = { ...full, name: '支付安全提醒弹窗' };
+  const small = { ...full, name: '优惠券横幅', layout: { ...full.layout, height: 80 } };
+  const unknown = { ...full, name: '业务组件' };
+  const input = { code: 0, data: { targets: [{ layers: [ad, business, small, unknown] }], orders: { receive: 4 } } };
+  cleared(input, { ...input, data: { ...input.data, targets: [{ layers: [business, small, unknown] }] } }, 'https://api.m.jd.com/client.action?functionId=xview2Config');
+});
+
 test('xview campaign layers are removed across targets while unrelated layers remain', () => {
   const input = { code: 0, data: { targets: [
     { targetName: 'JDMainPageViewController', layers: [{ name: '多买多返-1', renderData: { keep: 1 } }, { name: '订单提示', order: 4 }], targetId: 34 },
