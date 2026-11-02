@@ -62,3 +62,12 @@ test('native-proxy routes on other known MTop hosts receive the same narrow filt
     assert.deepEqual(out.data.models, []);
   }
 });
+
+test('AMDC removes shared ACS native routes but preserves plain HTTPS and other business hosts', () => {
+  const native = { host: 'acs.m.taobao.com', servers: [{ channels: [{ attributes: [{ protocol: 'http2', publickey: 'acs', port: 443 }] }] }] };
+  const ordinary = { host: 'package.example.test', servers: [{ channels: [{ attributes: [{ protocol: 'https', port: 443 }] }] }] };
+  const endpoint = 'http://amdc.m.taobao.com/amdc/mobileDispatch?appkey=21380790';
+  assert.deepEqual(run(endpoint, { dns: [native, ordinary] }, { 'User-Agent': '淘宝/59353127' }), { dns: [ordinary] });
+  const plain = { ...ordinary, host: 'acs.m.taobao.com' };
+  assert.equal(run(endpoint, { dns: [plain, ordinary] }, { 'User-Agent': '淘宝/59353127' }), null);
+});
