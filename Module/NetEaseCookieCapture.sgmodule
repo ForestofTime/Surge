@@ -1,5 +1,5 @@
 #!name=网易云云贝凭据抓取（Tailnet 同步）
-#!desc=v5（多路探测 antiCheat 头名并用诊断输出；v4 起抓 antiCheat/UA。原 v4 说明：2026-11-03）：除 MUSIC_U 外一并回传 X-antiCheatToken 与 UA——ncmm 的 xeapi 任务（红包雨/看视频赚云贝/每日推歌）缺这两样会报 "xeapi public key response missing sk"。v3 修正则双斜杠。设备端哑捕获。
+#!desc=v7（关键修：主规则 requires-body=true，否则 xeapi body 恒空；头改全量。v6 新增取证。原 v6：新增 xeapi/广告/任务请求取证，body 原样落盘；v5 多路探测 antiCheat 头名。原 v5 说明：多路探测 antiCheat 头名并用诊断输出；v4 起抓 antiCheat/UA。原 v4 说明：2026-11-03）：除 MUSIC_U 外一并回传 X-antiCheatToken 与 UA——ncmm 的 xeapi 任务（红包雨/看视频赚云贝/每日推歌）缺这两样会报 "xeapi public key response missing sk"。v3 修正则双斜杠。设备端哑捕获。
 #!author=ForestofTime
 #!category=Automation
 #!homepage=https://github.com/ForestofTime/Surge
@@ -9,7 +9,7 @@
 #!icon=https://raw.githubusercontent.com/shindgewongxj/WHATINStash/main/icon/netease.png
 
 [Script]
-网易云-凭据捕获 = type=http-request,pattern=^https?:\/\/(?:[A-Za-z0-9-]+\.)*(?:music|interface)\d*\.163\.com,requires-body=false,max-size=16384,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/netease-cookie/js/NetEaseCookieCapture.js?v=5,script-arguments="receiver_url={{{receiver_url}}}"
+网易云-凭据捕获 = type=http-request,pattern=^https?:\/\/(?:[A-Za-z0-9-]+\.)*(?:music|interface)\d*\.163\.com,requires-body=true,max-size=32768,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/netease-cookie/js/NetEaseCookieCapture.js?v=7,script-arguments="receiver_url={{{receiver_url}}}"
 
 [MITM]
 hostname = %APPEND% music.163.com, *.music.163.com, interface.music.163.com, interface3.music.163.com

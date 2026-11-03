@@ -54,6 +54,29 @@
   var payload = { type: 'cookie', url: url.slice(0, 300) };
   var has = false;
 
+  // ── 取证：xeapi / 广告 / 任务类请求，把完整 body 与关键头原样回传 ──
+  // 目的：真机「看视频赚云贝」那 15 阶段走的 xeapi 加密体，脚本侧复刻需要真样本。
+  if (/\/(xeapi|api)\/.*(ad\/power\/yunbei|usertool\/task|incentive|reward|watch)/i.test(url)) {
+    // 头全量（白名单会漏掉真实头名，v6 就因为只挑固定几个而看不到 antiCheat）
+    var h2 = {};
+    for (var hn in headers) {
+      var hv = String(headers[hn]);
+      h2[String(hn).toLowerCase()] = hv.length > 600 ? hv.slice(0, 600) + '…' : hv;
+    }
+    $httpClient.post(
+      { url: RECEIVER, headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'xeapi-probe',
+          url: url.slice(0, 400),
+          method: String((REQ && REQ.method) || 'POST'),
+          body: String((REQ && (REQ.body || REQ.bodyBytes)) || '').slice(0, 8000),
+          headers: h2,
+          ua: ua.slice(0, 400),
+        }) },
+      function () {}
+    );
+  }
+
   if (ck && /MUSIC_U=[^;]{40,}/.test(ck)) { payload.cookie = ck.slice(0, 8000); has = true; }
   // 抗作弊 token 的头名各家版本不一，逐个兜
   if (!ac) {
