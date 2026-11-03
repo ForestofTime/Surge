@@ -55,7 +55,16 @@
   var has = false;
 
   if (ck && /MUSIC_U=[^;]{40,}/.test(ck)) { payload.cookie = ck.slice(0, 8000); has = true; }
+  // 抗作弊 token 的头名各家版本不一，逐个兜
+  if (!ac) {
+    ['x-anticheattoken', 'anti-cheat-token', 'anticheattoken', 'x-anti-cheat-token', 'x-ac-token'].some(function (n) {
+      var v = headerOf(headers, n);
+      if (v && v.length > 8) { ac = v; return true; }
+      return false;
+    });
+  }
   if (ac && ac.length > 8) { payload.antiCheat = ac.slice(0, 600); has = true; }
+  else { payload.hdrKeys = Object.keys(headers).join(',').slice(0, 600); }
   if (ua && /neteasemusic|NeteaseMusic/i.test(ua)) { payload.ua = ua.slice(0, 400); has = true; }
 
   if (has) {
