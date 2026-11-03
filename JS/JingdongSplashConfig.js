@@ -121,6 +121,26 @@
       target.showTimesDaily = 0;
       changed = true;
     }
+    // images 已为空时也必须清理容器控制，不能把透明素材等同于关闭开屏。
+    // 仅在已确认的开屏 images 结构中处理现有字段，不触碰普通启动/订单配置。
+    const presentation = {
+      countdown: 0, dynamicDisplay: 0, firework: 0,
+      saoasaoSwitch: 0, isNewCarousel: 0, saoasaoUrl: '', callback: '',
+    };
+    for (const key of Object.keys(presentation)) {
+      if (!Object.prototype.hasOwnProperty.call(target, key) || target[key] === presentation[key]) continue;
+      target[key] = presentation[key];
+      changed = true;
+    }
+    for (const key of ['controlMaterials', 'layOut']) {
+      if (!Object.prototype.hasOwnProperty.call(target, key)) continue;
+      const value = target[key];
+      const empty = typeof value === 'string' ? (key === 'controlMaterials' ? 'null' : '{}')
+        : Array.isArray(value) ? [] : plainObject(value) ? {} : null;
+      if (JSON.stringify(value) === JSON.stringify(empty)) continue;
+      target[key] = empty;
+      changed = true;
+    }
     if (!changed) return $done({});
     const result = JSON.stringify(payload);
     return $done({ body: encoded ? encode(result) : result });
