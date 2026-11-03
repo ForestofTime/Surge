@@ -32,6 +32,7 @@
 
   // ---- script-arguments（Surge 里未声明的全局直接引用会 ReferenceError，
   //      http-request 脚本中根本没有 $response —— 必须一律 typeof 守卫）----
+  var DEFAULT_PHONE = '15606946707';
   var ARGS = {};
   try {
     var argStr = (typeof $argument !== 'undefined' && $argument) ? String($argument) : '';
@@ -41,7 +42,9 @@
     });
   } catch (e) {}
   var RECEIVER = ARGS.receiver_url || 'https://hynmac-mini.taila66285.ts.net/cmcc-hebao';
-  var PHONE = (ARGS.phone || '').replace(/\D/g, '');
+  // $argument 万一没带 phone（模块未更新 / Surge 未替换占位符），
+  // 就退回本模块的单账号口径手机号，别让一次真机 autoLogin 白白烧掉。
+  var PHONE = String(ARGS.phone || DEFAULT_PHONE || '').replace(/\D/g, '');
 
   var REQ = (typeof $request !== 'undefined' && $request) ? $request : null;
   var RESP = (typeof $response !== 'undefined' && $response) ? $response : null;
