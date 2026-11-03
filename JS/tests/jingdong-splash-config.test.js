@@ -28,6 +28,31 @@ function cleared(input, expected, url, method, requestBody) {
   assert.deepEqual(JSON.parse(result.body), expected);
 }
 
+test('empty-image startup responses also disable remaining splash presentation controls', () => {
+  // Synthetic shape of 2026-11-03-094533.har; no account or material identifiers.
+  const input = { images: [], code: '0', countdown: 1, showTimesDaily: 0,
+    controlMaterials: 'null', layOut: {}, firework: 0, dynamicDisplay: 0,
+    saoasaoSwitch: 1, saoasaoUrl: 'https://example.test/scan.png',
+    callback: JSON.stringify({ adMaterialId: 'synthetic' }), isNewCarousel: 1,
+    areaCode: '0', orderCounts: { receive: 4 } };
+  const expected = { ...input, countdown: 0, saoasaoSwitch: 0,
+    saoasaoUrl: '', callback: '', isNewCarousel: 0 };
+  cleared(input, expected);
+  const result = run(Buffer.from(JSON.stringify(input)).toString('base64'));
+  assert.deepEqual(JSON.parse(Buffer.from(result.body, 'base64').toString()), expected);
+  assert.deepEqual(run(JSON.stringify(expected)), {}, 'disabled response is idempotent');
+  assert.deepEqual(run(JSON.stringify(input), 'https://api.m.jd.com/client.action?functionId=orderDetail'), {});
+});
+
+test('splash-only auxiliary material and layout fields are emptied without deleting business siblings', () => {
+  const input = { data: { images: [], showTimesDaily: 0, countdown: '2',
+    controlMaterials: JSON.stringify({ url: 'https://example.test/creative.json' }),
+    layOut: { component: 'creative' }, dynamicDisplay: 1, firework: 1,
+    untouched: { count: 7 } } };
+  cleared(input, { data: { ...input.data, countdown: 0, controlMaterials: 'null',
+    layOut: {}, dynamicDisplay: 0, firework: 0 } });
+});
+
 test('full-screen promotional XView packages are removed while business and small layers remain', () => {
   const full = { renderType: 6, renderData: { url: 'https://storage.360buyimg.com/xview/11/2026/rotating.zip' }, layout: { width: 750, height: 1334, screenWidth: 750, screenHeight: 1334 } };
   const ad = { ...full, name: '新人红包弹窗' };
