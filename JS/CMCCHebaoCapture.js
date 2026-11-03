@@ -110,6 +110,21 @@
     return;
   }
 
+  // ③.5 award —— 任务/领奖链路原始抓包（http-request, requires-body=true）
+  //      目的：真机点「去完成 / 领取」时到底发了什么（body 字段、签名、token 用法），
+  //      脚本侧 awardingFinishTask 恒回 MKM11124，需要真机样本对齐。
+  if (!inResponse && /\/signExchange\/(awardingFinishTask|finishingTask|drawPrize|exchange)/.test(url)) {
+    var ab = (REQ && typeof REQ.body === 'string') ? REQ.body : '';
+    var hd = (REQ && REQ.headers) || {};
+    var pick = {};
+    for (var hk in hd) {
+      if (/^(x-lemon-sign|x-gry-type|content-type|cookie|user-agent|ump-token|sid)$/i.test(hk)) pick[hk] = String(hd[hk]).slice(0, 400);
+    }
+    forward('award', JSON.stringify({ url: url, body: ab.slice(0, 2000), headers: pick }));
+    $done({});
+    return;
+  }
+
   // ④ opdfp —— ump 活动接口 URL（http-request, requires-body=false）
   if (!inResponse && /^https?:\/\/ump\.cmpay\.com\/activities\//.test(url)) {
     var mo = url.match(/[?&]opDfp=([A-Za-z0-9_-]{40,160})/);
