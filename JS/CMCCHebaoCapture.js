@@ -113,8 +113,9 @@
   // ③.5 award —— 任务/领奖链路原始抓包（http-request, requires-body=true）
   //      目的：真机点「去完成 / 领取」时到底发了什么（body 字段、签名、token 用法），
   //      脚本侧 awardingFinishTask 恒回 MKM11124，需要真机样本对齐。
-  if (!inResponse && /\/signExchange\/(awardingFinishTask|finishingTask|drawPrize|exchange)/.test(url)) {
-    var ab = (REQ && typeof REQ.body === 'string') ? REQ.body : '';
+  if (!inResponse && /ump\.cmpay\.com\/activities\/v1\//.test(url)) {
+    var ab = '';
+    try { ab = (REQ && REQ.body != null) ? String(REQ.body) : ''; } catch (e1) { ab = ''; }
     var hd = (REQ && REQ.headers) || {};
     var pick = {};
     for (var hk in hd) {
