@@ -1,5 +1,5 @@
 #!name=网易云云贝凭据抓取（Tailnet 同步）
-#!desc=v2（2026-11-03）：截 music.163.com 的 Cookie 头（MUSIC_U），经 Tailnet receiver 直写青龙并立刻跑一发云贝签到。设备端哑捕获，幂等/校验/落库全在 Mac。
+#!desc=v3（2026-11-03）：修 v2 的正则多写一个斜杠导致永不匹配。v2 起覆盖 interface3 等子域与 *.music.163.com MITM。设备端哑捕获，幂等/校验/落库全在 Mac。
 #!author=ForestofTime
 #!category=Automation
 #!homepage=https://github.com/ForestofTime/Surge
@@ -9,7 +9,7 @@
 #!icon=https://raw.githubusercontent.com/shindgewongxj/WHATINStash/main/icon/netease.png
 
 [Script]
-网易云-凭据捕获 = type=http-request,pattern=^https?:\/\/(?:[\w-]+\.)*(?:music|interface)\.163\.com\//,requires-body=false,max-size=16384,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/netease-cookie/js/NetEaseCookieCapture.js?v=2,script-arguments="receiver_url={{{receiver_url}}}"
+网易云-凭据捕获 = type=http-request,pattern=^https?:\/\/(?:[A-Za-z0-9-]+\.)*(?:music|interface)\d*\.163\.com,requires-body=false,max-size=16384,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/netease-cookie/js/NetEaseCookieCapture.js?v=3,script-arguments="receiver_url={{{receiver_url}}}"
 
 [MITM]
-hostname = %APPEND% music.163.com, interface.music.163.com, *.music.163.com
+hostname = %APPEND% music.163.com, *.music.163.com, interface.music.163.com, interface3.music.163.com
