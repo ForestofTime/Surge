@@ -1,5 +1,5 @@
 #!name=和包悦看凭据抓取（Tailnet 同步）
-#!desc=v8（2026-11-03）：① 捕获脚本对 phone 做兜底（模块未更新时 cred 不再被拒收，此前一次真机 autoLogin 白烧）；② 领奖链路取证放宽到全部 /activities/v1/（v7 起）。功能：截和包 autoLogin 密文 / 大网 bigck / act_sid / opDfp 直写青龙 store。
+#!desc=v9（2026-11-03）：取证收尾——领奖抓包规则回收为只盯 signExchange 四个端点（v7 曾临时放宽到全部 /activities/v1/，流量太吵）。结论：任务类完成动作发生在目标 App 内，服务端靠回调判定，脚本无法点亮。功能：截和包 autoLogin 密文 / 大网 bigck / act_sid / opDfp 直写青龙 store。
 #!author=ForestofTime
 #!category=Automation
 #!homepage=https://github.com/ForestofTime/Surge
@@ -9,14 +9,14 @@
 #!icon=https://raw.githubusercontent.com/shindgewongxj/WHATINStash/main/icon/cmcc.png
 
 [Script]
-和包-凭据捕获 = type=http-request,pattern=^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/LN\/uam(?:onekey|randcode)login\/autoLogin,requires-body=true,max-size=16384,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/cmcc-hebao/js/CMCCHebaoCapture.js?v=8,script-arguments="receiver_url={{{receiver_url}}}&phone={{{phone}}}"
-和包-大网token捕获 = type=http-request,pattern=^https?:\/\/p\.10086\.cn\/ptw\/arrtifact_get_mbl\.xhtml,requires-body=false,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/cmcc-hebao/js/CMCCHebaoCapture.js?v=8,script-arguments="receiver_url={{{receiver_url}}}&phone={{{phone}}}"
-和包-取票302捕获 = type=http-response,pattern=^https?:\/\/p\.10086\.cn\/ptw\/arrtifact_get_mbl\.xhtml,requires-body=false,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/cmcc-hebao/js/CMCCHebaoCapture.js?v=8,script-arguments="receiver_url={{{receiver_url}}}&phone={{{phone}}}"
-和包-活动会话捕获 = type=http-response,pattern=^https?:\/\/ump\.cmpay\.com\/activities\/v1\/login-common\/ssoTokenLogin,requires-body=false,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/cmcc-hebao/js/CMCCHebaoCapture.js?v=8,script-arguments="receiver_url={{{receiver_url}}}&phone={{{phone}}}"
-和包-设备指纹捕获 = type=http-request,pattern=^https?:\/\/ump\.cmpay\.com\/activities\/,requires-body=false,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/cmcc-hebao/js/CMCCHebaoCapture.js?v=8,script-arguments="receiver_url={{{receiver_url}}}&phone={{{phone}}}"
+和包-凭据捕获 = type=http-request,pattern=^https?:\/\/client\.app\.coc\.10086\.cn\/biz-orange\/LN\/uam(?:onekey|randcode)login\/autoLogin,requires-body=true,max-size=16384,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/cmcc-hebao/js/CMCCHebaoCapture.js?v=9,script-arguments="receiver_url={{{receiver_url}}}&phone={{{phone}}}"
+和包-大网token捕获 = type=http-request,pattern=^https?:\/\/p\.10086\.cn\/ptw\/arrtifact_get_mbl\.xhtml,requires-body=false,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/cmcc-hebao/js/CMCCHebaoCapture.js?v=9,script-arguments="receiver_url={{{receiver_url}}}&phone={{{phone}}}"
+和包-取票302捕获 = type=http-response,pattern=^https?:\/\/p\.10086\.cn\/ptw\/arrtifact_get_mbl\.xhtml,requires-body=false,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/cmcc-hebao/js/CMCCHebaoCapture.js?v=9,script-arguments="receiver_url={{{receiver_url}}}&phone={{{phone}}}"
+和包-活动会话捕获 = type=http-response,pattern=^https?:\/\/ump\.cmpay\.com\/activities\/v1\/login-common\/ssoTokenLogin,requires-body=false,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/cmcc-hebao/js/CMCCHebaoCapture.js?v=9,script-arguments="receiver_url={{{receiver_url}}}&phone={{{phone}}}"
+和包-设备指纹捕获 = type=http-request,pattern=^https?:\/\/ump\.cmpay\.com\/activities\/,requires-body=false,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/cmcc-hebao/js/CMCCHebaoCapture.js?v=9,script-arguments="receiver_url={{{receiver_url}}}&phone={{{phone}}}"
 
-和包-任务领奖抓包 = type=http-request,pattern=^https?:\/\/ump\.cmpay\.com\/activities\/v1\/,requires-body=true,max-size=32768,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/cmcc-hebao/js/CMCCHebaoCapture.js?v=8,script-arguments="receiver_url={{{receiver_url}}}&phone={{{phone}}}"
-和包-链路自检 = type=http-request,pattern=^https?:\/\/p\.10086\.cn\/?(?:\?.*)?$,requires-body=false,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/cmcc-hebao/js/CMCCHebaoCapture.js?v=8,script-arguments="receiver_url={{{receiver_url}}}&phone={{{phone}}}"
+和包-任务领奖抓包 = type=http-request,pattern=^https?:\/\/ump\.cmpay\.com\/activities\/v1\/signExchange\/(?:awardingFinishTask|finishingTask|drawPrize|exchange),requires-body=true,max-size=32768,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/cmcc-hebao/js/CMCCHebaoCapture.js?v=9,script-arguments="receiver_url={{{receiver_url}}}&phone={{{phone}}}"
+和包-链路自检 = type=http-request,pattern=^https?:\/\/p\.10086\.cn\/?(?:\?.*)?$,requires-body=false,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/cmcc-hebao/js/CMCCHebaoCapture.js?v=9,script-arguments="receiver_url={{{receiver_url}}}&phone={{{phone}}}"
 
 [MITM]
 hostname = %APPEND% client.app.coc.10086.cn, p.10086.cn, ump.cmpay.com
