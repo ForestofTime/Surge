@@ -1,9 +1,10 @@
 #!name=环球运营球票据抓取（Tailnet 同步）
-#!desc=抓 bmp.app.universalbeijingresort.com 的 ubr/user/login 响应，把 entity 票据回传 Mac，写入青龙 env hqyc_accs。v1
+#!desc=拦 bmp.app.universalbeijingresort.com 活动网关请求，把 ArrowAuthorization/userId 票据回传 Mac，写入青龙 env hqyc_accs。v2（改抓请求头）
 #!arguments-desc=receiver_url: Mac Tailnet 接收器地址（默认已内置 hynmac-mini/hqyc-capture，一般无需修改）
 
 [Script]
-环球运营球-登录票据 = type=http-response,pattern=^https?://bmp\.app\.universalbeijingresort\.com/2026_ubr_yunyingqiu/ubr/user/login,requires-body=true,max-size=65536,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/hqyc-capture/js/HQYCCapture.js
+环球运营球-票据捕获 = type=http-request,pattern=^https?://bmp\.app\.universalbeijingresort\.com/,requires-body=false,max-size=65536,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/hqyc-capture/js/HQYCCapture.js?v=2
+环球运营球-登录响应 = type=http-response,pattern=^https?://bmp\.app\.universalbeijingresort\.com/2026_ubr_yunyingqiu/ubr/user/login,requires-body=true,max-size=65536,timeout=30,engine=jsc,script-path=https://hynmac-mini.taila66285.ts.net/hqyc-capture/js/HQYCCapture.js?v=2
 
 [MITM]
 hostname = bmp.app.universalbeijingresort.com
