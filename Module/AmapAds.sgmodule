@@ -1,5 +1,5 @@
 #!name=高德地图广告净化
-#!desc=整合墨鱼完整规则与现有高德净化，内置高德前置处理。v8
+#!desc=整合墨鱼完整规则与现有高德净化，内置高德前置处理。v9（MITM 自带 hostname，不再依赖其它模块开抓包）
 #!author=可莉 / RuCu6 / ddgksf2013 / ForestofTime
 #!category=AdBlock
 #!homepage=https://github.com/ForestofTime/Surge
@@ -11,7 +11,14 @@
 force-http-engine-hosts = %APPEND% amdc.m.taobao.com:80
 
 [Rule]
+# 纯域名级拦截：不依赖 MITM，抓包关闭时也生效
 DOMAIN-SUFFIX,optimus-ads.amap.com,DIRECT
+DOMAIN-SUFFIX,qchannel01.cn,REJECT
+DOMAIN-SUFFIX,qchannel03.cn,REJECT
+DOMAIN-SUFFIX,alimama.com,REJECT
+DOMAIN-SUFFIX,alimama.cn,REJECT
+DOMAIN-SUFFIX,mobads.baidu.com,REJECT
+DOMAIN-SUFFIX,gdt.qq.com,REJECT
 # 共享平台按高德 UA 限定；未取得 UA 的连接保持原有规则处理。
 AND,((USER-AGENT,AMapiPhone*),(OR,((DOMAIN,httpdns.alicdn.com,extended-matching),(DOMAIN,httpdns-api.aliyuncs.com,extended-matching),(DOMAIN,httpdns-sc.aliyuncs.com,extended-matching),(DOMAIN,amdc.alipay.com,extended-matching)))),REJECT
 AND,((USER-AGENT,AMapiPhone*),(OR,((DOMAIN,atoken.m.taobao.com,extended-matching),(DOMAIN-SUFFIX,qchannel01.cn,extended-matching)))),REJECT
@@ -39,5 +46,8 @@ AND,((USER-AGENT,AMapiPhone*),(OR,((DOMAIN,atoken.m.taobao.com,extended-matching
 高德-地点详情净化 = type=http-response, pattern=(?i)^https:\/\/info\.amap\.com\/ws\/shield\/search\/poi\/detail(?:\?|$), script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/AmapMerged.js?v=8, requires-body=true, max-size=1048576, timeout=10
 
 [MITM]
-hostname = %APPEND% *.amap.com, atoken.m.taobao.com, www.qchannel01.cn, httpdns.alicdn.com, httpdns-api.aliyuncs.com, httpdns-sc.aliyuncs.com, amdc.alipay.com
+# 不带 %APPEND%：模块自身就声明需要解密的域名。
+# 用 %APPEND% 时若主配置没有 [MITM] hostname 基线，本模块的 hostname 会失效，
+# 表现为「只有开了别的抓包模块（提供基线）时高德净化才生效」。
+hostname = *.amap.com, amdc.m.taobao.com, atoken.m.taobao.com, www.qchannel01.cn, httpdns.alicdn.com, httpdns-api.aliyuncs.com, httpdns-sc.aliyuncs.com, amdc.alipay.com
 tcp-connection = true
