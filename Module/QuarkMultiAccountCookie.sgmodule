@@ -3,7 +3,7 @@
 #!category=Cookie 捕获
 
 [MITM]
-hostname = coral2.quark.cn, broccoli.uc.cn
+hostname = %APPEND% coral2.quark.cn, broccoli.uc.cn
 
 [Script]
 夸克-多账号Cookie捕获 = type=http-request,pattern=^https?:\/\/(coral2\.quark|broccoli\.uc)\.cn\/.+,requires-body=false,timeout=5,engine=jsc,script-path=https://raw.githubusercontent.com/ForestofTime/Surge/main/JS/QuarkMultiAccountCookie.js
