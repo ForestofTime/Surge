@@ -10,9 +10,9 @@
 # (Unknown VIF virtual IP 风暴, 2026-09-22 两次触发 Surge 重启), real-IP 从根上消除该形态。
 # 附带收益: 长连接不再因映射刷新被切断。
 always-real-ip = %APPEND% *.quark.cn, *.uc.cn, quark.cn, uc.cn
-# 2026-11-14 补: 夸克「云端加速」隧道走 *.ucweb.com:8080 (如 vs5.hzcm.u3.ucweb.com),
-# 该域名族此前未被 real-IP 覆盖; 抓包时 fake-IP 会把这层隧道打断,
-# 表现为打开福利中心 -1601 / 「检测到网络代理」诊断页 (不抓包则正常)。
+# 2026-11-14 补: *.ucweb.com 此前未被 real-IP 覆盖 (夸克云端加速隧道 vs5.hzcm.u3.ucweb.com:8080,
+# 以及 ucus.ucweb.com 统计端)。仅补齐覆盖, 与福利中心 -1601 无关 ——
+# 那个问题的真因是抓包工具对 * 全量 MITM, 夸克证书校验失败, 见仓库 docs 记录。
 always-real-ip = %APPEND% *.ucweb.com, ucweb.com
 
 [Rule]
