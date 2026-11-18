@@ -18,7 +18,6 @@ URL-REGEX,^https://promotion-[0-9]+\.pddpic\.com/vgt/app_banner/.*$,REJECT
 DOMAIN,titan.pinduoduo.com,REJECT-NO-DROP,extended-matching,pre-matching
 DOMAIN,xg.pinduoduo.com,REJECT,extended-matching,pre-matching
 DOMAIN,cdl-1.pddpic.com,REJECT,extended-matching,pre-matching
-DOMAIN,titan.pinduoduo.com,REJECT,extended-matching,pre-matching
 DOMAIN,cdl-p2.pddpic.com,REJECT,extended-matching,pre-matching
 DOMAIN,cd-1.pddpic.com,REJECT,extended-matching,pre-matching
 DOMAIN,apm.pinduoduo.com,REJECT,extended-matching,pre-matching
